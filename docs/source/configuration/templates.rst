@@ -2,7 +2,6 @@
 Templates
 ======================================
 
-Two Parts: Output Path and Data Sources
 
 
 Parser Config
@@ -28,6 +27,7 @@ item space, that does not occur in the session or is the successor.
 
 .. code-block:: json
 
+    ...
     {
         type: 'session',
         csv_file: '../tests/example_dataset/train.csv',
@@ -45,6 +45,7 @@ item space, that does not occur in the session or is the successor.
             }
         ]
     }
+    ...
 
 Templates for Specific Models
 -----------------------------
@@ -67,6 +68,7 @@ It can be triggered by adding the following element instead of
 
 .. code-block:: json
 
+    ...
     pos_neg_data_sources: {
         parser: {
             item_column_name: "column_name"
@@ -79,6 +81,7 @@ It can be triggered by adding the following element instead of
         test_file_prefix: "train",
         seed: 42
     },
+    ...
 
 By default, the template configures the framework to
 
@@ -96,6 +99,7 @@ Mask Datasource
 
 .. code-block:: json
 
+    ...
     mask_data_sources: {
         loader: {
             batch_size: 9,
@@ -107,3 +111,4 @@ Mask Datasource
         mask_seed: 123456,
         split_type: 'leave_one_out'
     }
+    ...

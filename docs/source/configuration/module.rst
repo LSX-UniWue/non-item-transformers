@@ -85,10 +85,10 @@ The ``sampled`` metrics config, requires the following parameters:
    files.
 -  ``num_negative_samples``: The number of negative samples to draw from
    the provided probability file.
--  ``metrics`` you can define all metrics you can also define using all
+-  ``metrics``: you can define all metrics you can also define using all
    items of the dataset.
 
-TODO: point to the help script to calculate the file
+The probability file is generated automatically during the dataset generation process TODO: point to the help script to calculate the file
 
 Fixed Subset
 ~~~~~~~~~~~~

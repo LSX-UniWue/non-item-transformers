@@ -2,6 +2,16 @@
 Trainer
 =======
 
+Maximum number of epochs:
+------------------------
+.. code::json
+
+    ...
+    trainer: {
+        ...
+        max_epochs: 5
+    }
+
 Early Stopping:
 ---------------
 
@@ -23,6 +33,7 @@ the following to the trainer config:
     },
     ...
 
+
 See `Pytorch Lightning
 Docu <https://pytorch-lightning.readthedocs.io/en/stable/common/early_stopping.html?highlight=early%20stopping#early-stopping-based-on-metric-using-the-earlystopping-callback>`__
 for more details.
@@ -30,13 +41,38 @@ for more details.
 Checkpoints
 -----------
 
-TODO
+.. code:: json:
+
+    ...
+    trainer: {
+        ...
+        checkpoint: {
+            monitor: "recall@5",
+            save_top_k: 3,
+            mode: 'max'
+        },
+        ...
+    },
 
 Loggers
 -------
 
 Tensorboard
 ~~~~~~~~~~~
+.. code:: json
+
+    ...
+    trainer: {
+        ...
+        loggers: {
+            ...
+            tensorboard: {},
+            ...
+        },
+        ...
+    },
+    ...
+
 
 CSV
 ~~~

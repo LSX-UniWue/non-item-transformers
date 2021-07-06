@@ -1,12 +1,11 @@
+.. _User Guide:
 User Guide
 ==========
 
-Pre-Requisites:
+Prerequisite:
+- Built the virtual environment as described in the `Project Overview <./project_overview.html>`__
 
-- Built the virtual environment as described in the :ref:`Project Overview <_project_overview>`
-
-First of all you need to activate your virtual environment. This is
-accomplished using one of the two following commands
+First of all you need to activate your virtual environment. This is accomplished using one of the two following commands:
 
 .. code:: bash
 
@@ -24,8 +23,7 @@ For all data sets a CLI is provided via `Typer <https://typer.tiangolo.com/>`__.
 
 MovieLens Data Set
 ~~~~~~~~~~~~~~~~~~
-To download and pre-process the MovieLens data set use the following
-commands:
+To download and pre-process the MovieLens data set use the following commands:
 
 .. code:: bash
 
@@ -34,8 +32,7 @@ commands:
     python -m runner.dataset.create_csv_dataset_splits ./dataset/ml-1m_5/ml-1m.csv ./dataset/ml-1m_5/index.csv ./dataset/ml-1m_5/splits/ "train;0.9" "valid;0.05" "test;0.05"
     python -m runner.dataset.create_next_item_index ./dataset/ml-1m_5/splits/test.csv ./dataset/ml-1m_5/index.csv ./dataset/ml-1m_5/splits/test.nip.csv movieId
 
-This downloads the MovieLens data set and prepares the data split for
-next item recommendation.
+This downloads the MovieLens data set and prepares the data split for next item recommendation.
 
 Yoochoose Data Set
 ~~~~~~~~~~~~~~~~~~
@@ -43,7 +40,7 @@ Yoochoose Data Set
 Pre-Requisites:
 - Downloaded the `yoochoose data set <https://www.kaggle.com/chadgostopp/recsys-challenge-2015/download>`__
 
-Training implemented Models
+Training Implemented Models
 ---------------------------
 
 Executing Trained Models

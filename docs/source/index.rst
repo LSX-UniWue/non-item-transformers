@@ -19,10 +19,6 @@ Welcome to The-Jane-Doe-Framework's documentation!
    dataset/dataset_cli
    dataset/indices
    dataset/refactoring_notes_dataset_cli
-   configuration/datasources
-   configuration/module
-   configuration/tokenizer
-   configuration/trainer
 
 
 

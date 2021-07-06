@@ -3,7 +3,7 @@
 The-Jane-Doe-Framework (Name subject to change)
 ===============================================
 
-The jane-doe-framework is a project which aims at alleviating the lack
+The Jane-Doe-Framework is a project which aims at alleviating the lack
 of comparison in research literature concerning recommendation systems.
 
 The idea behind the project is to provide popular metrics, data sets and
@@ -30,13 +30,12 @@ This project uses:
 Getting Started
 ---------------
 
-This section describes how to setup your python environment and to
-execute your first model.
+This section describes how to setup your python environment and execute your first model.
 
-Setup Enviroment
+Setup Environment
 ~~~~~~~~~~~~~~~~
 
-Pre-requisites:
+Prerequisites:
 
 - Generated and added an SSH-Key to your GitLab account. (Find out how: https://docs.gitlab.com/ee/ssh/#adding-an-ssh-key-to-your-gitlab-account)
 
@@ -65,8 +64,7 @@ using `Poetry <https://python-poetry.org/docs/#installation>`__.
     pip install poetry
     poetry install
 
-If you are interested in how to use the framwork continue to the `User
-Guide <./user_guide.md>`__.
+If you are interested in how to use the framework continue to the `User Guide <./user_guide.html>`__. :ref:`User Guide`
 
 If you are interested in the development of the framework continue to
-the `Developer Guide <./developer_guide.md>`__.
+the `Developer Guide <./developer_guide.html>`__.
