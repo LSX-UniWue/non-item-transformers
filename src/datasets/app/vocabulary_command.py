@@ -23,7 +23,7 @@ def build(data_file_path: Path = typer.Argument(..., exists=True, help="path to 
     :param delimiter: delimiter used in data file
     :return: None, Side Effect: vocabulary for data file is written to vocabulary_output_file_path
     """
-    create_vocabulary.create_token_vocabulary(item_header_name=item_header_name,
+    create_vocabulary.create_token_vocabulary(column=item_header_name,
                                               data_file_path=data_file_path,
                                               session_index_path=session_index_path,
                                               vocabulary_output_file_path=vocabulary_output_file_path,

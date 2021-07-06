@@ -37,7 +37,7 @@ class BaseNextItemPredictionTrainingModule(MetricsTrait, pl.LightningModule):
                  beta_1: float = 0.99,
                  beta_2: float = 0.998,
                  weight_decay: float = 0,
-                 loss_function: Optional[SequenceRecommenderLoss] = None
+                 loss_function: SequenceRecommenderLoss = CrossEntropyLoss()
                  ):
         """
         Initializes the training module.
@@ -54,8 +54,6 @@ class BaseNextItemPredictionTrainingModule(MetricsTrait, pl.LightningModule):
 
         self.metrics = metrics
 
-        if loss_function is None:
-            loss_function = CrossEntropyLoss(item_tokenizer)
         self.loss_function = loss_function
 
         self.save_hyperparameters(self.hyperparameters)
@@ -188,6 +186,7 @@ class NextItemPredictionTrainingModule(BaseNextItemPredictionTrainingModule):
         self.log(LOG_KEY_VALIDATION_LOSS, loss, prog_bar=True)
 
         mask = None if len(target.size()) == 1 else ~ target.eq(self.item_tokenizer.pad_token_id)
+
         return build_eval_step_return_dict(input_seq, logits, target, mask=mask)
 
 

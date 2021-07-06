@@ -56,6 +56,19 @@ class Config:
 
         return value
 
+    def set_if_absent(self, path: Union[str, List[str]], value: Any) -> None:
+        """
+        Saves the provided path to the value if it does not exist already.
+
+        :param path: a path.
+        :param value: The new value for path.
+        """
+
+        if self.has_path(path):
+            return
+
+        self.set(path, value)
+
     def get(self,
             path: Union[str, List[str]]
             ) -> Optional[Any]:
@@ -66,6 +79,34 @@ class Config:
         :return: a value, or None if the path does not exist.
         """
         return self._get_path(path)
+
+    def pop(self, path: Union[str, List[str]]) -> Optional[Any]:
+        """
+        Gets the value associated with a path and deletes it afterwards. If the path is not found, None is returned.
+
+        :param path: a path.
+        :return; a value, or None if the path does not exist
+        """
+        value = self.get(path)
+        self.remove(path)
+        return value
+
+    def pop_or_default(self, path: Union[str, List[str]], default: Any) -> Any:
+        """
+        Gets the value associated with a path and removes it or returns the default if it does not exist
+
+        :param path: a path.
+        :param default: default value to use if the path could not be found.
+
+        :return: a value.
+        """
+        value = self.pop(path)
+
+        if value is None:
+            return default
+
+        return value
+
 
     def has_path(self, path: Union[str, List[str]]) -> bool:
         """
@@ -105,6 +146,26 @@ class Config:
             return default
 
         return value
+
+    def remove(self, path: Union[str, List[str]]):
+        """
+        Removes the value associated with a path
+
+        :param path: a path.
+        """
+        if self.has_path(path):
+            if isinstance(path, str):
+                path = path.split(".")
+
+            current_section = self.config
+
+            for i, key in enumerate(path[:-1]):
+                if not isinstance(current_section, Dict) or key not in current_section:
+                    return
+                else:
+                    current_section = current_section[key]
+
+            current_section.pop(path[-1])
 
     def get_config(self, path: List[str]) -> 'Config':
         if not isinstance(path, list):

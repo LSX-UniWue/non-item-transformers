@@ -27,6 +27,7 @@ class NARMSequenceRepresentationComponent(SequenceRepresentationLayer):
         self.local_encoder = LocalEncoderLayer(global_encoder_size, global_encoder_size)
         self.context_dropout = nn.Dropout(context_dropout)
 
+
     def forward(self, embedded_sequence: EmbeddedElementsSequence) -> SequenceRepresentation:
         sequence = embedded_sequence.embedded_sequence
         padding_mask = embedded_sequence.input_sequence.padding_mask

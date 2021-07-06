@@ -5,9 +5,9 @@ from asme.init.container import Container
 from asme.init.context import Context
 from asme.init.factories.common.conditional_based_factory import ConditionalFactory
 from asme.init.factories.common.dependencies_factory import DependenciesFactory
-from asme.init.factories.data_sources.data_sources import DataSourcesFactory
 from asme.init.factories.features.features_factory import FeaturesFactory
 from asme.init.factories.features.tokenizer_factory import TOKENIZERS_PREFIX
+from asme.init.factories.data_sources.datamodule import DataModuleFactory
 from asme.init.factories.modules.modules import GenericModuleFactory
 from asme.init.factories.trainer import TrainerBuilderFactory
 from asme.init.object_factory import ObjectFactory, CanBuildResult, CanBuildResultType
@@ -38,6 +38,7 @@ class ContainerFactory(ObjectFactory):
     def __init__(self):
         super().__init__()
         self.features_factory = FeaturesFactory()
+        self.datamodule_factory = DataModuleFactory()
         self.dependencies = DependenciesFactory(
             [
                 ConditionalFactory('type', {'kebert4rec': GenericModuleFactory(MaskedTrainingModule,
@@ -72,7 +73,6 @@ class ContainerFactory(ObjectFactory):
                                             'bpr': GenericModuleFactory(BprModule, model_cls=None)},
                                    config_key='module',
                                    config_path=['module']),
-                DataSourcesFactory(),
                 TrainerBuilderFactory()
             ]
         )
@@ -81,6 +81,13 @@ class ContainerFactory(ObjectFactory):
                   config: Config,
                   context: Context
                   ) -> CanBuildResult:
+
+        datamodule_config = config.get_config(self.datamodule_factory.config_path())
+        can_build_result = self.datamodule_factory.can_build(datamodule_config, context)
+
+        if can_build_result.type != CanBuildResultType.CAN_BUILD:
+            return can_build_result
+
         can_build_result = self.dependencies.can_build(config, context)
 
         if can_build_result.type != CanBuildResultType.CAN_BUILD:
@@ -92,12 +99,22 @@ class ContainerFactory(ObjectFactory):
               config: Config,
               context: Context
               ) -> Container:
+
+        # We have to build the datamodule first such that we can invoke preprocessing
+        datamodule_config = config.get_config(self.datamodule_factory.config_path())
+        datamodule = self.datamodule_factory.build(datamodule_config, context)
+        context.set(self.datamodule_factory.config_path(), datamodule)
+        # Preprocess the dataset
+        datamodule.prepare_data()
+
         features_config = config.get_config(self.features_factory.config_path())
         meta_information = list(self.features_factory.build(features_config, context).values())
         context.set(features_config.base_path, meta_information)
         for info in meta_information:
-            if info.tokenizer:
+            if info.tokenizer is not None:
                 context.set([TOKENIZERS_PREFIX, info.feature_name], info.tokenizer)
+
+
         all_dependencies = self.dependencies.build(config, context)
 
         for key, object in all_dependencies.items():

@@ -13,6 +13,10 @@ TARGET_EXTRACTOR_PROCESSOR_CONFIG = {
     'type': 'target_extractor'
 }
 
+POS_NEG_PROCESSOR_CONFIG = {
+    'type': 'pos_neg'
+}
+
 
 class DatasetSplit(Enum):
 
@@ -47,8 +51,6 @@ class DataSourceTemplateProcessor(TemplateProcessor):
 
         template_config = config.get(TEMPLATES_CONFIG_KEY)
         template_present = self._get_template_key() in template_config
-        if CONFIG_DATASOURCES_KEY in template_config and template_present:
-            raise KeyError('data_sources already specified. Can not apply template.')
 
         return template_present
 
@@ -201,21 +203,20 @@ class LeaveOneOutNextPositionDatasetBuilder(DatasetBuilder):
 
 class LeaveOneOutSequenceWindowDatasetBuilder(DatasetBuilder):
 
-    def __init__(self,
-                 window_size: int
-                 ):
-        self.window_size = window_size
+    def __init__(self):
+        pass
 
     def can_build_dataset_definition(self, dataset_split_type: DatasetSplit):
         return dataset_split_type == DatasetSplit.LEAVE_ONE_OUT
 
     def build_dataset_definition(self, stage: Stage, config: Dict[str, Any]) -> Dict[str, Any]:
         base_path = Path(config['path'])
+        window_size = config["window_size"]
         prefix = _get_prefix(config, stage)
         index_file_path = f"{prefix}.{stage}"
         csv_file = base_path / f'{prefix}.csv'
         csv_file_index = base_path / f'{prefix}.session.idx'
-        nip_index_file = base_path / 'loo' / f'{index_file_path}.slidingwindow.{self.window_size}.idx'
+        nip_index_file = base_path / 'loo' / f'{index_file_path}.slidingwindow.{window_size}.idx'
         return {
             'type': 'sequence_position',
             'csv_file': str(csv_file),
@@ -225,21 +226,20 @@ class LeaveOneOutSequenceWindowDatasetBuilder(DatasetBuilder):
 
 
 class NextPositionWindowDatasetBuilder(DatasetBuilder):
-    def __init__(self,
-                 window_size: int
-                 ):
-        self.window_size = window_size
+    def __init__(self):
+        pass
 
     def can_build_dataset_definition(self, dataset_split_type: DatasetSplit):
         return dataset_split_type == DatasetSplit.RATIO_SPLIT
 
     def build_dataset_definition(self, stage: Stage, config: Dict[str, Any]) -> Dict[str, Any]:
         base_path = Path(config['path'])
+        window_size = config["window_size"]
         prefix = _get_prefix(config, stage)
         prefix = f"{prefix}.{stage}"
         csv_file = base_path / f'{prefix}.csv'
         csv_file_index = base_path / f'{prefix}.session.idx'
-        nip_index_file = base_path / f'{prefix}.slidingwindow.{self.window_size}.idx'
+        nip_index_file = base_path / f'{prefix}.slidingwindow.{window_size}.idx'
         return {
             'type': 'sequence_position',
             'csv_file': str(csv_file),
@@ -323,11 +323,14 @@ def build_datasource(dataset_builders: List[DatasetBuilder],
 
 def _transfer_properties(source_dict: Dict[str, Any],
                          target_dict: Dict[str, Any],
-                         keys_to_transfer: List[str]
+                         keys_to_transfer: List[str],
+                         target_key_names: List[str] = None,
                          ) -> Dict[str, Any]:
-    for key in keys_to_transfer:
-        value = source_dict.get(key)
+    if target_key_names is None:
+        target_key_names = keys_to_transfer
+    for source_key, target_key in zip(keys_to_transfer, target_key_names):
+        value = source_dict.get(source_key)
         if value is not None:
-            target_dict[key] = value
+            target_dict[target_key] = value
 
     return target_dict

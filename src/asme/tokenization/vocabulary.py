@@ -8,6 +8,7 @@ class Vocabulary(object):
     def __init__(self,
                  token_to_id: OrderedDict[str, int]
                  ):
+        #FIXME (AD): make sure that tokens are strings, otherwise get_id fails to retrieve the correct id
         self.token_to_id = token_to_id
         self.id_to_token = collections.OrderedDict([(id, token) for token, id in token_to_id.items()])
 

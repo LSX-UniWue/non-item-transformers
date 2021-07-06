@@ -1,4 +1,4 @@
-from asme.models.common.components.representations.sequence_embedding import SequenceElementsEmbeddingComponent
+from asme.models.common.components.sequence_embedding import SequenceElementsEmbeddingComponent
 from asme.models.common.layers.layers import IdentitySequenceRepresentationModifierLayer
 from asme.models.narm.components import NARMSequenceRepresentationComponent, BilinearProjectionComponent
 from asme.models.sequence_recommendation_model import SequenceRecommenderModel
@@ -64,3 +64,5 @@ class NarmModel(SequenceRecommenderModel):
                          sequence_representation_layer,
                          sequence_representation_modifier_layer,
                          projection_layer)
+
+

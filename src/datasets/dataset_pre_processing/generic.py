@@ -109,7 +109,7 @@ def generic_create_vocabularies_and_popularities(dataset_metadata: DatasetMetada
         vocabulary_output_file_path: Path = output_dir_path / f"{file_prefix}.vocabulary.{column_name}.txt"
         popularity_output_file_path: Path = output_dir_path / f"{file_prefix}.popularity.{column_name}.txt"
 
-        create_token_vocabulary(item_header_name=column_name,
+        create_token_vocabulary(column=column_name,
                                 data_file_path=processed_data_file_path,
                                 session_index_path=index_path,
                                 vocabulary_output_file_path=vocabulary_output_file_path,

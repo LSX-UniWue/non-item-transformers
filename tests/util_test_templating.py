@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 
 from asme.init.config import Config
 from asme.init.context import Context
-from asme.init.factories.data_sources.data_sources import DataSourcesFactory
+from asme.init.factories.data_sources.template_datasources import TemplateDatasourceFactory
 from asme.init.templating.template_engine import TemplateEngine
 from data.datasets import SAMPLE_IDS, ITEM_SEQ_ENTRY_NAME, TARGET_ENTRY_NAME
 from util_test import assert_list_equal
@@ -80,7 +80,7 @@ def load_dataset(template: Dict[str, Any]
     context.set('features', [item_seq_feature_info])
 
     config = Config(modified_template.get('data_sources'))
-    return DataSourcesFactory().build(config, context)
+    return TemplateDatasourceFactory().build(config, context)
 
 
 def get_all_data(data_loader: DataLoader

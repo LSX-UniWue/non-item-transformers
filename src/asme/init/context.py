@@ -15,10 +15,10 @@ class Context:
     def _str_to_path(self, path: str) -> List[str]:
         return path.split(".")
 
-    def set(self, path: Union[str, List[str]], value: Any):
+    def set(self, path: Union[str, List[str]], value: Any, overwrite: bool = False):
         if isinstance(path, list):
             path = self._path_to_str(path)
-        if path in self.context:
+        if path in self.context and not overwrite:
             raise Exception(f"{path} already exists in {self.context}")
         self.context[path] = value
 

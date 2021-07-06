@@ -33,6 +33,7 @@ class SlidingWindowDataSourceTemplateProcessor(DataSourceTemplateProcessor):
         window_size = config[self.WINDOW_CONFIG_KEY]
         number_target_interactions = config.get(self.TARGET_INTERACTION_CONFIG_KEY, 1)
         sequence_length = window_size + number_target_interactions
+        config[self.WINDOW_CONFIG_KEY] = window_size
 
         fixed_sequence_length_processor = _build_fixed_sequence_length_processor_config(sequence_length)
 
@@ -41,8 +42,8 @@ class SlidingWindowDataSourceTemplateProcessor(DataSourceTemplateProcessor):
             't': number_target_interactions
         }
 
-        builders = [NextPositionWindowDatasetBuilder(sequence_length),
-                    LeaveOneOutSequenceWindowDatasetBuilder(sequence_length)]
+        builders = [NextPositionWindowDatasetBuilder(),
+                    LeaveOneOutSequenceWindowDatasetBuilder()]
 
         processors = [fixed_sequence_length_processor, par_pos_neg_sampler_processor]
 

@@ -5,12 +5,14 @@ from tqdm import tqdm
 
 from data.base.reader import CsvDatasetIndex, CsvDatasetReader
 from data.datasets import ITEM_SEQ_ENTRY_NAME
-from data.datasets.sequence import PlainSequenceDataset, ItemSessionParser
+from data.datasets.sequence import PlainSequenceDataset, ItemSessionParser, MetaInformation
 from data.utils.csv import create_indexed_header, read_csv_header
 from asme.tokenization.vocabulary import VocabularyBuilder, CSVVocabularyReaderWriter
 
 
-def create_session_data_set(item_header_name: str, data_file_path: Path, index_file_path: Path,
+def create_session_data_set(column: MetaInformation,
+                            data_file_path: Path,
+                            index_file_path: Path,
                             delimiter: str) -> PlainSequenceDataset:
     """
     Helper method wich returns a PlainSessionDataset for a given data and index file
@@ -24,14 +26,15 @@ def create_session_data_set(item_header_name: str, data_file_path: Path, index_f
     reader_index = CsvDatasetIndex(index_file_path)
     reader = CsvDatasetReader(data_file_path, reader_index)
     parser = ItemSessionParser(create_indexed_header(read_csv_header(data_file_path, delimiter=delimiter)),
-                               item_header_name=item_header_name,
+                               [column],
                                delimiter=delimiter)
 
     session_data_set = PlainSequenceDataset(reader, parser)
     return session_data_set
 
 
-def create_token_vocabulary(item_header_name: str, data_file_path: Path,
+def create_token_vocabulary(column: MetaInformation,
+                            data_file_path: Path,
                             session_index_path: Path,
                             vocabulary_output_file_path: Path,
                             custom_tokens: List[str],
@@ -43,7 +46,7 @@ def create_token_vocabulary(item_header_name: str, data_file_path: Path,
     :param data_file_path: Path to CSV file containing original data
     :param session_index_path: Path to index file belonging to the data file
     :param vocabulary_output_file_path: output path for vocabulary file
-    :param item_header_name: Name of the item key in the data set, e.g, "ItemId"
+    :param column: Name of the item key in the data set, e.g, "ItemId" TODO
     :param custom_tokens: FixMe I need documentation
     :param delimiter: delimiter used in data file
     :param strategy_function: function selecting which items of a session are used in the vocabulary
@@ -53,7 +56,9 @@ def create_token_vocabulary(item_header_name: str, data_file_path: Path,
     for token in custom_tokens:
         vocab_builder.add_token(token)
 
-    data_set = create_session_data_set(item_header_name=item_header_name,
+    sub_delimiter = column.get_config("delimiter")
+
+    data_set = create_session_data_set(column=column,
                                        data_file_path=data_file_path,
                                        index_file_path=session_index_path,
                                        delimiter=delimiter)
@@ -61,12 +66,21 @@ def create_token_vocabulary(item_header_name: str, data_file_path: Path,
         def strategy_function(x: List[Any]) -> List[Any]:
             return x
 
+    feature_name = column.feature_name if column.feature_name else column.column_name
+
     for idx in tqdm(range(len(data_set)), desc=f"Tokenizing items from: {data_file_path}"):
         session = data_set[idx]
-        session_tokens = strategy_function(session[ITEM_SEQ_ENTRY_NAME])
+        session_tokens = strategy_function(session[feature_name])
 
         for token in session_tokens:
-            vocab_builder.add_token(token)
+            if sub_delimiter is not None:
+                token = token.split(sub_delimiter)
+                for word in token:
+                    vocab_builder.add_token(word)
+                    print(f"Add Word: {word}")
+            else:
+                vocab_builder.add_token(token)
+                print(f"Add Token: {token}")
 
     vocabulary = vocab_builder.build()
 

@@ -63,7 +63,7 @@ class SequenceElementsEmbeddingLayer(nn.Module):
         if embedding_pooling_type:
             self.pooling = PooledSequenceElementsLayer(embedding_pooling_type)
         else:
-            self.pooling = nn.Identity()
+            self.pooling = None
 
         if self.dropout and self.dropout > 0.0:
             self.dropout_layer = nn.Dropout2d(p=self.dropout)
@@ -83,7 +83,7 @@ class SequenceElementsEmbeddingLayer(nn.Module):
         embedding = self.embedding(items)
 
         # this is a quick hack, if a module needs the embeddings of a single item
-        if flatten:
+        if self.pooling:
             embedding = self.pooling(embedding)
 
         return self.dropout_layer(embedding)  # is set to Identity if no dropout is specified
