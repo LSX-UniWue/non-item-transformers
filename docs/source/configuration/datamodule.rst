@@ -3,10 +3,9 @@ Datamodule
 ======================================
 
 Two Options:
-template for fast standard options
-data_sources for complicated, unique datasets
+:ref:`Template <datamodule template>` for fast standard options
+:ref:`datamodule datasources` for complicated, unique datasets
 
-Both have in common:
 .. code:: json
     datamodule: {
         dataset: dataset,
@@ -19,6 +18,13 @@ Both have in common:
     },
 
 dataset: the name of the dataset (e.g. ml-1m) - REQUIRED
+    ml-1m
+    ml-20m
+    steam
+    yoochoose-buys
+    yoochoose-clicks
+    amazon-beauty
+    amazon-games
 
 preprocessing: - OPTIONAL AND ONLY AVAILABLE FOR OUR DATASETS
     output_directory: path where the dataset will be saved
@@ -26,6 +32,8 @@ preprocessing: - OPTIONAL AND ONLY AVAILABLE FOR OUR DATASETS
     min_sequence_length: minimum length of a sequence
     extraction_directory: (optional) TODO
 
+
+.. _datamodule template:
 Template
 ~~~~~~~~~
 .. code:: json
@@ -44,11 +52,11 @@ Template
 template:
     name: masked, next, par_positive_negative, positive_negative, sliding_window
     split: leave_one_out or ratio
-    path: path where the dataset is saved (similar to the output_directory below)
+    path: path where the dataset is saved (similar to the output_directory from above)
     file_prefix: prefix of the generated files, we recommend using the name of the dataset
     num_workers: number of workers
 
-
+.. _datamodule datasources:
 Data Sources
 ~~~~~~~~~~~~~~
 .. code:: json

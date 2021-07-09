@@ -34,7 +34,7 @@ To download and pre-process the MovieLens data set use the following commands:
 
 This downloads the MovieLens data set and prepares the data split for next item recommendation.
 
-Yoochoose Data Set
+YooChoose Data Set
 ~~~~~~~~~~~~~~~~~~
 
 Pre-Requisites:
@@ -43,6 +43,13 @@ Pre-Requisites:
 Training Implemented Models
 ---------------------------
 
+Config file
+run src/asme/main.py with --train --config_file=...
+
+--resume
+
 Executing Trained Models
 ------------------------
-
+--search for Optuna hyperparameter
+--predict
+--evaluate

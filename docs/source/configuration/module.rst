@@ -19,6 +19,10 @@ For each metric you can provide one or more different ``k``\ s to
 evaluate the Metric@k value. The metrics can be access (e.g. in the
 checkpoint), via ``KEY@k``.
 
+- MRR full (``mrr_full``)
+- Rank (``rank``)
+
+
 Metric Evaluation
 -----------------
 
@@ -118,4 +122,22 @@ The ``fixed`` metrics config, requires the following parameters:
    subset to evaluate (item id line by line).
 -  ``metrics`` you can define all metrics you can also define using all
    items of the dataset.
+
+
+Models
+--------
+kebert4rec
+bert4rec
+caser
+narm
+sasrec
+rnn
+cosrec
+hgn
+dream
+nnrec
+pop
+session_pop
+markov
+bpr
 

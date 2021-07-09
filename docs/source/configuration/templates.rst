@@ -2,7 +2,17 @@
 Templates
 ======================================
 
+.. code:: json
+    templates: {
+        unified_output: {
+            path: output_path
+        }
+    },
 
+
+
+
+TODO: Everything below was moved to datamodule
 
 Parser Config
 -------------

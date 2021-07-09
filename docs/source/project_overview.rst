@@ -1,7 +1,8 @@
 .. _project_overview:
 
-The-Jane-Doe-Framework (Name subject to change)
-===============================================
+The-Jane-Doe-Framework
+=======================
+(Name subject to change)
 
 The Jane-Doe-Framework is a project which aims at alleviating the lack
 of comparison in research literature concerning recommendation systems.
@@ -64,7 +65,7 @@ using `Poetry <https://python-poetry.org/docs/#installation>`__.
     pip install poetry
     poetry install
 
-If you are interested in how to use the framework continue to the `User Guide <./user_guide.html>`__. :ref:`User Guide`
+If you are interested in how to use the framework continue to the `User Guide <./user_guide.html>`__.
 
 If you are interested in the development of the framework continue to
 the `Developer Guide <./developer_guide.html>`__.

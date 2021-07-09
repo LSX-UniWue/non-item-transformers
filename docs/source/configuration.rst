@@ -11,7 +11,7 @@ The configuration for a training contains 5 main config sections:
 
 
 Example
--------------
+"""""""""
 
 .. code:: json
 

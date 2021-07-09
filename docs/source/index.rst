@@ -10,8 +10,8 @@ Welcome to The-Jane-Doe-Framework's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   user_guide
    project_overview
+   user_guide
    hyperparameter_search
    developer_guide
    configuration
