@@ -21,7 +21,7 @@ from asme.utils.hyperparameter_utils import save_hyperparameters
 class SequenceNextItemPredictionTrainingModule(MetricsTrait, pl.LightningModule):
 
     """
-    the module for training a model using a sequence and positve and negative items based on the sequence
+    the module for training a model using a sequence and positive and negative items based on the sequence
 
     models that can be trained with this module are:
     - SASRec
