@@ -1,13 +1,14 @@
+.. _Configuration
 Training Configuration
 ======================================
 
-The configuration for a training contains 5 main config sections:
+The configuration for a training contains 5 main sections:
 
--  :ref:`Datamodule <config datamodule>`:
--  :ref:`Templates <config templates>`:
--  :ref:`Module <config module>`:
--  :ref:`Features <config features>`:
--  :ref:`Trainer <config trainer>`:
+-  :ref:`Datamodule <config datamodule>`: contains information about the dataset
+-  :ref:`Templates <config templates>`: contains the output directory
+-  :ref:`Module <config module>`: contains the model, hyperparameter and metrics
+-  :ref:`Features <config features>`: contains information about the feature(s) and the tokenization process
+-  :ref:`Trainer <config trainer>`: contains information about the training itself
 
 
 Example
