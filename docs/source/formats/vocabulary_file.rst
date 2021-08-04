@@ -1,7 +1,7 @@
 Format of the Vocabulary File
 =============================
 
-Vocabulary files assign ids to certain attributes. We use standard text files to represent them.
+Vocabulary files assign ids to certain attributes values. We use standard text files to represent them.
 
 Files are named in the following way:  
 
@@ -19,7 +19,7 @@ The file content is displayed in tabular format:
 
 Example:
 
-``ml-1m-vocabulary.title.txt``::
+``ml-1m.vocabulary.title.txt``::
 
     <PAD>	0
     <MASK>	1
