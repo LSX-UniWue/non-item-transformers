@@ -1,7 +1,7 @@
 Format of the Vocabulary File
 =============================
 
-Vocabulary files assign ids to certain attributes values. We use standard text files to represent them.
+Vocabulary files assign ids to certain attribute values. We use standard text files to represent them.
 
 Files are named in the following way:  
 
@@ -15,7 +15,7 @@ The file content is displayed in tabular format:
  - Columns are seperated by tab.
  - The first column contains the attribute values and the second one has the associated ids.
  - Rows are sorted in ascending order by the second column.
- - The first three rows - and thus the first three ids - are always used for padding, mask and unknown. 
+ - The first few rows - and thus the first few ids - are always used for special tokens like padding, mask and unknown. 
 
 Example:
 

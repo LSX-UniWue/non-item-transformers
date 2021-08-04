@@ -11,8 +11,9 @@ Examples:
 
 ``ml-1m.popularity.title.txt, ml-1m.popularity.userId.txt,...``
 
-The file content is displayed in one column. The popularity value corresponds to the attribute value in 
-the same row of the respective vocabulary file. Therefore, the first three rows are zero-valued (PAD, MAS, UNK).
+- The file content is displayed in one column. 
+- The popularity value corresponds to the attribute value in the same row of the respective vocabulary file. 
+- The first rows are zero-valued since they belong to special tokens (like PAD, MAS, UNK).
  
 
 Example:
