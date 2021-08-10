@@ -33,6 +33,13 @@ preprocessing: - OPTIONAL AND ONLY AVAILABLE FOR OUR DATASETS
     extraction_directory: (optional) TODO
 
 
+
+YooChoose Data Set
+~~~~~~~~~~~~~~~~~~
+Pre-Requisites:
+- Downloaded the `yoochoose data set <https://www.kaggle.com/chadgostopp/recsys-challenge-2015/download>`__
+
+
 .. _datamodule template:
 Template
 ~~~~~~~~~

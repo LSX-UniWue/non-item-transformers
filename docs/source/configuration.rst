@@ -1,4 +1,5 @@
-.. _Configuration
+.. _main_configuration:
+
 Training Configuration
 ======================================
 
@@ -13,6 +14,7 @@ The configuration for a training contains 5 main sections:
 
 Example
 """""""""
+The example below contains configurations for training Bert4Rec on the Movielens-1M data set.
 
 .. code:: json
 

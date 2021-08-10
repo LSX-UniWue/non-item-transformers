@@ -18,8 +18,8 @@
 # -- Project information -----------------------------------------------------
 
 project = 'The-Jane-Doe-Framework'
-copyright = '2021, Author'
-author = 'Author'
+copyright = '2021, DMIR Group'
+author = 'DMIR Group'
 
 
 # -- General configuration ---------------------------------------------------

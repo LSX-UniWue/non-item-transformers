@@ -1,3 +1,5 @@
+.. _hyperparameter_search:
+
 Hyperparameter Search
 =====================
 
