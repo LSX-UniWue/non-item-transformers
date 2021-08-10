@@ -14,8 +14,6 @@ First of all you need to activate your virtual environment. This is accomplished
     # or
     source recommender/venv/recommender/bin/activate
 
-The components of this framework can be executed using the `Runner <../asme/runner>`__.
-
 In the virtual environment, you can now run your calculations by executing the `main<./../src/asme/main.py>`__ method.
 
 .. code:: bash
@@ -33,49 +31,59 @@ Further information about these commands are listed below.
 
 Training Implemented Models
 ---------------------------
+
+Run Training
+""""""""""""""
 .. code:: bash
-    python main.py train <path_to_config_file> [ARGS]
+    python main.py train <config_file> [OPTIONAL ARGS]
 
+with
+- config_file (Path): path to the config file
+Optional arguments:
+- do_resume (bool, default=False): if you want to resume training from a checkpoint
+- print_train_val_examples (bool, default=True): print examples of training and evaluation dataset before starting the training
 
-Arguments:
-- config_file (Path, must exist): path to the config file
-- do_resume (bool False): if you want to resume training
-- print_train_val_examples (bool True): print examples of training and evaluation dataset before starting the training
 Further information about the structure of the config file are listed at `Configurations<./configuration.html`__.
 
-Alternatively to resuming training by flagging do_resume, there's a resume option:
+Resume Training
+""""""""""""""""
+As an alternative to resuming training by flagging do_resume, you can run resume directly:
 .. code:: bash 
-    python main.py resume <log_dir> [checkpoint_file]
+    python main.py resume <log_dir> <checkpoint_file>
 
-Arguments:
-- log_dir (str, must exist): path to logging directory
+with
+- log_dir (str): path to logging directory
+Optional arguments:
 - checkpoint_file (str): path to checkpoint file to resume from
 
 Executing Trained Models
 ------------------------
+
+Hyperparameter Search
+"""""""""""""""""""""
 Searching for hyperparameter with Optuna
 
 .. code:: bash 
     python main.py search <template_file> <study_name> <study_storage> <objective_metric> [ARGS]
 
-Arguments:
+with
 - template_file: path to config file
-- study_name: study name of an existing optuna study
+- study_name: study name of an existing Optuna study
 - study_storage: connection string for the study storage
 - objective_metric: the name of the metric to watch during the study (e.g. recall@5)
 - study_direction: minimize or maximize, default = maximize
 - num_trails: number of trails to execute (defaut = 20)
-           
 
-
-Predicting
+Prediction
+""""""""""
 
 .. code:: bash
     python main.py predict <output_file> [ARGS]
 
-Arguments:
+with
 - output_file: path where output is written
-- num_predictions: number of predictions to export, default=20
+Optional arguments:
+- num_predictions: number of predictions to export, default = 20
 - gpu: number of gpus to use, default=0
 - selected_items_file: only use these item ids for prediction
 - checkpoint_file: path to the checkpoint file
@@ -89,43 +97,18 @@ Arguments:
 
 
 Evaluation
+""""""""""
 
 .. code:: bash  
-    python main.py evaluate 
+    python main.py evaluate <config_file> <checkpoint_file> <study_name> <study_storage> [OPTIONAL ARGS]
 
+with
 - config_file: path to the config file
 - checkpoint_file: path to the checkpoint file
 - study_name: study name of an existing study
 - study_storage: connection string for the study storage
+Optional arguments:
 - output_file: path where output is written
 - gpu: number of gpus to use
 - overwrite: overwrite output file (if it exists), default = False
 - seed: seed used e.g. for the sampled evaluation
-             
-
-
-Below are (old) instructions for pre-processing a dataset:
-
-Pre-Processing Data Sets
-------------------------
-
-For all data sets a CLI is provided via `Typer <https://typer.tiangolo.com/>`__.
-
-MovieLens Data Set
-~~~~~~~~~~~~~~~~~~
-To download and pre-process the MovieLens data set use the following commands:
-
-.. code:: bash
-
-    python -m dataset.movielens ml-1m
-    python -m runner.dataset.create_reader_index ./dataset/ml-1m_5/ml-1m.csv ./dataset/ml-1m_5/index.csv --session_key userId
-    python -m runner.dataset.create_csv_dataset_splits ./dataset/ml-1m_5/ml-1m.csv ./dataset/ml-1m_5/index.csv ./dataset/ml-1m_5/splits/ "train;0.9" "valid;0.05" "test;0.05"
-    python -m runner.dataset.create_next_item_index ./dataset/ml-1m_5/splits/test.csv ./dataset/ml-1m_5/index.csv ./dataset/ml-1m_5/splits/test.nip.csv movieId
-
-This downloads the MovieLens data set and prepares the data split for next item recommendation.
-
-YooChoose Data Set
-~~~~~~~~~~~~~~~~~~
-
-Pre-Requisites:
-- Downloaded the `yoochoose data set <https://www.kaggle.com/chadgostopp/recsys-challenge-2015/download>`__

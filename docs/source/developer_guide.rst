@@ -11,19 +11,18 @@ The project is structured into 14 folders:
 - `k8s <./../k8s>`__: Contains a dockerfile which defines a docker container which runs a model when started, an example for a kubernetes job and pod configuration for said dockerfile
 - `src <./../src>`__: Contains the source code
     - `asme <./../src/asme>`__: ??
+        - `callbacks <./../src/asme/callbacks>`__: Contains code for tracking the best model
+        - `init <./../src/asme/init>`__: Contains code regarding the model initialization
         - `losses <./../src/asme/losses>`__: Contains code regarding custom loss functions which can be integrated into pytorch training
         - `metrics <./../src/asme/metrics>`__: Contains code regarding the implementation of recommendation metrics which are integrated using pytorch
         - `models <./../src/asme/models>`__: Contains pytorch implementations of the models provided by this framework
         - `modules <./../src/asme/modules>`__: Contains pytorch-lightning wrappers for the pytorch models defined in `models <./../src/asme/models>`__
         - `tokenization <./../src/asme/tokenization>`__: Contains code concerning the tokenization of session items and the building of a vocabulary for data sets
+        - `utils <./../src/asme/utils>`__
+        - `writer <./../src/asme/writer>`__: Contains the writer interfaces for prediction and results
     - `data <./../src/data>`__: Contains code regarding the indexing of data sets and reading of stored indices
     - `dataset <./../src/datasets>`__: Contains code regarding the integration of data sets into the framework
 - `tests <./../tests>`__: Contains unit tests for the project. Also contains an example data set as well as the respective vocabulary and index file
-
-
-- `dm <./../dm>`__: Contains code for the use of the dota data set as a pytorch lightning data module
-- `logger <./../logger>`__: Contains code for the logging of pytorch training loss and pytorch training metrics
-- `runner <../asme/runner>`__: Also contains Typer-CLI implementation for indexing data sets, but also the Typer-CLI implementation for training a model and performing predictions with it, as well as necessary support-code
 
 Adding a new Metric
 -------------------
