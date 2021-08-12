@@ -16,6 +16,8 @@ Welcome to The-Jane-Doe-Framework's documentation!
    developer_guide
    configuration
    formats/vocabulary_file
+   formats/popularity_file
+   formats/train_file
    dataset/dataset_cli
    dataset/indices
    dataset/refactoring_notes_dataset_cli
