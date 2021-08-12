@@ -3,14 +3,24 @@ import torch
 import torch.nn.functional as F
 
 from asme.losses.losses import SequenceRecommenderContrastiveItemLoss
+from asme.tokenization.tokenizer import Tokenizer
 
 
 class DreamContrastiveLoss(SequenceRecommenderContrastiveItemLoss):
 
+    """
+    a loss for basket recommendation using a bpr like loss function
+    """
+
+    def __init__(self,
+                 item_tokenizer: Tokenizer):
+        super().__init__()
+        self.item_tokenizer = item_tokenizer
+
     def forward(self,
                 logit: torch.Tensor,
                 positive_items: torch.Tensor,
-                negative_items: torch.Tensor
+                negative_items: torch.Tensor,
                 ) -> torch.Tensor:
         # bpr FIXME: check
         # we only use the last position as target, because the rnn only encodes the complete sequence

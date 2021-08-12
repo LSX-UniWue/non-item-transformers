@@ -95,7 +95,7 @@ class SequenceNextItemPredictionTrainingModule(MetricsTrait, pl.LightningModule)
         pos = batch[POSITIVE_SAMPLES_ENTRY_NAME]
         neg = batch[NEGATIVE_SAMPLES_ENTRY_NAME]
 
-        # add users and other meta data (XXX: currently only users)
+        # add users and other meta data
         additional_meta_data = get_additional_meta_data(self.model, batch)
 
         additional_meta_data["positive_samples"] = pos
@@ -104,7 +104,9 @@ class SequenceNextItemPredictionTrainingModule(MetricsTrait, pl.LightningModule)
         input_sequence = InputSequence(input_seq, padding_mask, additional_meta_data)
         pos_logits, neg_logits = self.model(input_sequence)
 
-        loss = self._calc_loss(pos_logits, neg_logits, padding_mask)
+        # calculate the item mask (same as the padding mask in the non basket-recommendation setting)
+        item_mask = input_seq.ne(self.item_tokenizer.pad_token_id)
+        loss = self._calc_loss(pos_logits, neg_logits, item_mask)
         self.log(LOG_KEY_TRAINING_LOSS, loss)
         return {
             "loss": loss
@@ -156,7 +158,7 @@ class SequenceNextItemPredictionTrainingModule(MetricsTrait, pl.LightningModule)
                 ) -> torch.Tensor:
         input_seq = batch[ITEM_SEQ_ENTRY_NAME]
 
-        # add users and other meta data (XXX: currently only users)
+        # add users and other meta data
         additional_meta_data = get_additional_meta_data(self.model, batch)
 
         # calc the padding mask

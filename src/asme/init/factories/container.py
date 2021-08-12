@@ -63,7 +63,7 @@ class ContainerFactory(ObjectFactory):
                                                                         HGNLoss(),
                                                                         HGNModel),
                                             'dream': GenericModuleFactory(NextItemPredictionWithNegativeSampleTrainingModule,
-                                                                          DreamContrastiveLoss(),
+                                                                          DreamContrastiveLoss,
                                                                           RNNModel),
                                             'nnrec': GenericModuleFactory(module_cls=NextItemPredictionTrainingModule,
                                                                           model_cls=NNRecModel),

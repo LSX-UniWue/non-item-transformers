@@ -1,8 +1,10 @@
 from abc import abstractmethod
 
 import torch
-from asme.modules.util.module_util import convert_target_to_multi_hot
 from torch import nn
+
+from asme.tokenization.tokenizer import Tokenizer
+from asme.modules.util.module_util import convert_target_to_multi_hot
 
 
 DEFAULT_REDUCTION = 'elementwise_mean'
@@ -32,6 +34,16 @@ class SequenceRecommenderLoss(nn.Module):
 
 
 class CrossEntropyLoss(SequenceRecommenderLoss):
+
+    """
+    XXX: discuss: currently we need the item tokenizer to generate the correct targets for the
+    basket recommendation setting
+    """
+
+    def __init__(self,
+                 item_tokenizer: Tokenizer):
+        super().__init__()
+        self.item_tokenizer = item_tokenizer
 
     def forward(self,
                 target: torch.Tensor,

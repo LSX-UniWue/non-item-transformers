@@ -1,7 +1,3 @@
-#  Copyright (c) 2021 Data Science Chair, University of Würzburg, Germany
-#
-#  https://www.informatik.uni-wuerzburg.de/datascience/home/
-#
 from asme.models.common.layers.data.sequence import SequenceRepresentation, ModifiedSequenceRepresentation
 from asme.models.common.layers.layers import SequenceRepresentationModifierLayer
 from torch import nn

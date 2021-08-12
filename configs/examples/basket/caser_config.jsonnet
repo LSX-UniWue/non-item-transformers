@@ -72,7 +72,7 @@ local metrics =  {
             tensorboard: {}
         },
         checkpoint: {
-            monitor: "f1@5",
+            monitor: "recall@5",
             save_top_k: 3,
             mode: 'max'
         }

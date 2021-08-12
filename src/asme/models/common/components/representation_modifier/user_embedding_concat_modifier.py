@@ -17,10 +17,9 @@ class UserEmbeddingConcatModifier(SequenceRepresentationModifierLayer):
         super().__init__()
         self.user_embedding = nn.Embedding(user_vocab_size, embedding_dim=embedding_size)
 
-        # init weights
-        self.user_embedding.weight.data.normal_(0, 1.0 / self.user_embedding.embedding_dim)
-
-    def forward(self, sequence_representation: SequenceRepresentation) -> ModifiedSequenceRepresentation:
+    def forward(self,
+                sequence_representation: SequenceRepresentation
+                ) -> ModifiedSequenceRepresentation:
         user = sequence_representation.embedded_elements_sequence.input_sequence.get_attribute(USER_ENTRY_NAME)
         user_emb = self.user_embedding(user).squeeze(1)
 

@@ -22,10 +22,6 @@ class SparseProjectionComponent(ProjectionLayer):
         self.W2 = nn.Embedding(item_vocab_size, embedding_size)
         self.b2 = nn.Embedding(item_vocab_size, 1)
 
-        # init weights
-        self.W2.weight.data.normal_(0, 1.0 / self.W2.embedding_dim)
-        self.b2.weight.data.zero_()
-
     def forward(self,
                 modified_sequence_representation: ModifiedSequenceRepresentation
                 ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
@@ -39,7 +35,6 @@ class SparseProjectionComponent(ProjectionLayer):
         negative_samples = input_sequence.get_attribute("negative_samples")
 
         sequence_representation = modified_sequence_representation.modified_encoded_sequence
-        sequence_representation = sequence_representation.unsqueeze(2)
         res_pos = self._calc_scores(positive_samples, sequence_representation)
         if negative_samples is None:
             return res_pos
@@ -53,7 +48,9 @@ class SparseProjectionComponent(ProjectionLayer):
                      sequence_representation: torch.Tensor
                      ) -> torch.Tensor:
         w2 = self.W2(item)  # (N, I, F_D)
-        b2 = self.b2(item)  # (N, I, 1)
+        b2 = self.b2(item).squeeze()  # (N, I)
+        if len(item.size()) > 2:
+            b2 = b2.squeeze()
+            return torch.einsum('nd,nscd -> nsc', sequence_representation, w2) + b2
 
-        # TODO: use torch.einsum('nif,nf -> ni', w2, x) + b2.squeeze()
-        return torch.baddbmm(b2, w2, sequence_representation).squeeze()
+        return torch.einsum('nd,nsd -> ns', sequence_representation, w2) + b2

@@ -204,6 +204,14 @@ class CaserModel(SequenceRecommenderModel):
         projection_layer = CaserProjectionLayer(item_vocab_size, 2 * embedding_size if user_present else embedding_size)
         super().__init__(item_embedding, seq_rep_layer, mod_layer, projection_layer)
 
+        # init layers
+        if user_present:
+            mod_layer.user_embedding.weight.data.normal_(0, 1.0 / embedding_size)
+
+        item_embedding.elements_embedding.embedding.weight.data.normal_(0, 1.0 / embedding_size)
+        projection_layer.W2.weight.data.normal_(0, 1.0 / embedding_size)
+        projection_layer.b2.weight.data.zero_()
+
     def optional_metadata_keys(self) -> List[str]:
         return [USER_ENTRY_NAME]
 

@@ -5,7 +5,7 @@ from typing import Dict, Any, Iterable, Callable, Optional, List
 from data.datasets import ITEM_SEQ_ENTRY_NAME
 from data.base.reader import CsvDatasetIndex, CsvDatasetReader
 from data.datasets.index_builder import SequencePositionIndexBuilder
-from data.datasets.sequence import ItemSequenceDataset, ItemSessionParser, PlainSequenceDataset
+from data.datasets.sequence import ItemSequenceDataset, ItemSessionParser, PlainSequenceDataset, MetaInformation
 from data.utils.csv import create_indexed_header, read_csv_header
 from datasets.data_structures.dataset_metadata import DatasetMetadata
 
@@ -101,11 +101,16 @@ def create_conditional_index_using_extractor(dataset_metadata: DatasetMetadata,
 def _build_item_sequence_dataset(dataset_metadata: DatasetMetadata,
                                  additional_features: Optional[Dict[str, Any]] = None
                                  ) -> ItemSequenceDataset:
+    features = [MetaInformation('item', 'str', column_name=dataset_metadata.item_header_name)]
+    if additional_features is not None:
+        for feature_name, info in additional_features.items():
+            feature_meta_data = MetaInformation(feature_name, 'bool')
+            features.append(feature_meta_data)
+
     session_parser = ItemSessionParser(
         create_indexed_header(read_csv_header(dataset_metadata.data_file_path, dataset_metadata.delimiter)),
-        item_header_name=dataset_metadata.item_header_name,
-        delimiter=dataset_metadata.delimiter,
-        additional_features=additional_features
+        features,
+        delimiter=dataset_metadata.delimiter
     )
 
     session_index = CsvDatasetIndex(dataset_metadata.session_index_path)
