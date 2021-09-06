@@ -7,28 +7,34 @@ local metrics =  {
     ndcg: [1, 5, 10]
 };
 
-local file_prefix = 'ml-1m';
+local dataset = 'ml-1m';
 
 local additional_attributes_list = ['genres'];
 
 {
-    templates: {
-        unified_output: {
-            path: output_path
-        },
-        mask_data_sources: {
-            loader: {
-                batch_size: 4,
-                num_workers: 0
-            },
+    datamodule: {
+        dataset: dataset,
+        template: {
+            name: "masked",
+            split: "leave_one_out",
             path: base_path,
-            train_file_prefix: file_prefix,
-            validation_file_prefix: file_prefix,
-            test_file_prefix: file_prefix,
-            split_type: 'leave_one_out',
+            file_prefix: dataset,
+            num_workers: 0,
+            batch_size: 4,
             mask_probability: 0.2,
             mask_seed: 42,
             mask_additional_attributes: additional_attributes_list
+        },
+        preprocessing: {
+            extraction_directory: "/tmp/ml-1m/",
+            output_directory: base_path,
+            min_item_feedback: 4,
+            min_sequence_length: 4,
+        }
+    },
+    templates: {
+        unified_output: {
+            path: output_path
         }
     },
     module: {
@@ -39,7 +45,7 @@ local additional_attributes_list = ['genres'];
                 metrics: metrics
             },
             sampled: {
-                sample_probability_file: base_path + "loo/" + file_prefix + ".popularity.title.txt",
+                sample_probability_file: "ml-1m.popularity.title.txt",
                 num_negative_samples: 100,
                 metrics: metrics
             }
@@ -71,7 +77,7 @@ local additional_attributes_list = ['genres'];
                     unk_token: "<UNK>"
                 },
                 vocabulary: {
-                    file: base_path + "loo/" + file_prefix + ".vocabulary.title.txt"
+                    # Inferred by the datamodule
                 }
             }
         },
@@ -87,7 +93,7 @@ local additional_attributes_list = ['genres'];
                     unk_token: "<UNK>"
                 },
                 vocabulary: {
-                    file: base_path + "loo/" + file_prefix + ".vocabulary.genres.txt"
+                    # Inferred by the datamodule
                 }
             }
         },

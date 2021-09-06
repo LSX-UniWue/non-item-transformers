@@ -9,6 +9,7 @@ from asme.init.object_factory import ObjectFactory, CanBuildResult, CanBuildResu
 from asme.init.templating.datasources.datasources import Stage, DatasetSplit, NextPositionDatasetBuilder, \
     SequenceDatasetRatioSplitBuilder, NextPositionWindowDatasetBuilder, LeaveOneOutSessionDatasetBuilder, \
     LeaveOneOutSequenceWindowDatasetBuilder, LeaveOneOutNextPositionDatasetBuilder, TARGET_EXTRACTOR_PROCESSOR_CONFIG
+from data import BASE_DATASET_PATH_CONTEXT_KEY, CURRENT_SPLIT_PATH_CONTEXT_KEY
 
 
 class UserDefinedDataSourcesFactory(ObjectFactory):
@@ -38,6 +39,10 @@ class UserDefinedDataSourcesFactory(ObjectFactory):
         return CanBuildResult(CanBuildResultType.CAN_BUILD)
 
     def build(self, config: Config, context: Context) -> Dict[str, Any]:
+
+        # If no dataset path was specified, try to the use the one provided by the datamodule
+        config.set_if_absent("path", context.get(CURRENT_SPLIT_PATH_CONTEXT_KEY))
+
         objects = {}
         split = DatasetSplit[config.get("split").upper()]
         for stage in Stage:

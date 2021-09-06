@@ -9,11 +9,13 @@ from asme.init.factories.common.conditional_based_factory import ConditionalFact
 from asme.init.factories.data_sources.common import build_default_loader_config
 from asme.init.factories.data_sources.datasets.processor.processors import FIXED_SEQUENCE_LENGTH_PROCESSOR_KEY
 from asme.init.factories.data_sources.loader import LoaderFactory
+from asme.init.factories.util import infer_whole_path
 from asme.init.object_factory import ObjectFactory, CanBuildResult, CanBuildResultType
 from asme.init.templating.datasources.datasources import Stage, SequenceDatasetRatioSplitBuilder, LeaveOneOutSessionDatasetBuilder, \
     NextPositionDatasetBuilder, TARGET_EXTRACTOR_PROCESSOR_CONFIG, LeaveOneOutNextPositionDatasetBuilder, \
     ConditionalSequenceOrSequencePositionDatasetBuilder, POS_NEG_PROCESSOR_CONFIG, NextPositionWindowDatasetBuilder, \
     LeaveOneOutSequenceWindowDatasetBuilder
+from data import CURRENT_SPLIT_PATH_CONTEXT_KEY
 
 
 class TemplateDataSourcesFactory(ObjectFactory):
@@ -34,6 +36,8 @@ class TemplateDataSourcesFactory(ObjectFactory):
         return self._factory.can_build(config, context)
 
     def build(self, config: Config, context: Context) -> Union[Any, Dict[str, Any], List[Any]]:
+        # If no dataset path was specified, try to the use the one provided by the datamodule
+        config.set_if_absent("path", context.get(CURRENT_SPLIT_PATH_CONTEXT_KEY))
         return self._factory.build(config, context)
 
     def is_required(self, context: Context) -> bool:
@@ -118,7 +122,7 @@ class MaskTemplateDataSourcesFactory(BaseTemplateDataSourcesFactory):
         mask_last_item_processor = {
             'type': 'last_item_mask'
         }
-        loader_config = build_default_loader_config(config, Stage.VALIDATION, self.TEST_VALID_DATASET_BUILDERS,
+        loader_config = build_default_loader_config(config, Stage.TEST, self.TEST_VALID_DATASET_BUILDERS,
                                                     [TARGET_EXTRACTOR_PROCESSOR_CONFIG, mask_last_item_processor])
         return self._build_datasource(loader_config, context)
 
@@ -142,7 +146,7 @@ class NextSequenceStepTemplateDataSourcesFactory(BaseTemplateDataSourcesFactory)
         return self._build_datasource(loader_config, context)
 
     def _build_test_datasource(self, config: Config, context: Context) -> DataLoader:
-        loader_config = build_default_loader_config(config, Stage.VALIDATION, self.TEST_VALID_DATASET_BUILDERS,
+        loader_config = build_default_loader_config(config, Stage.TEST, self.TEST_VALID_DATASET_BUILDERS,
                                                     [TARGET_EXTRACTOR_PROCESSOR_CONFIG])
         return self._build_datasource(loader_config, context)
 

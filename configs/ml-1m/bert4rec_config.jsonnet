@@ -1,6 +1,5 @@
 local base_path = "/ssd/ml-1m/";
 local output_path = "/scratch/jane-doe-framework/experiments/ml-1m/bert4rec_d05/";
-local loo_path = base_path + "loo/";
 local hidden_size = 128;
 local max_seq_length = 200;
 local metrics =  {
@@ -9,27 +8,32 @@ local metrics =  {
     ndcg: [1, 5, 10]
 };
 
-local file_prefix = 'ml-1m';
+local dataset = 'ml-1m';
 
 {
+    datamodule: {
+        dataset: dataset,
+        template: {
+            name: "masked",
+            split: "leave_one_out",
+            path: base_path,
+            file_prefix: dataset,
+            num_workers: 4,
+            batch_size: 64
+            max_seq_length: max_seq_length,
+            mask_probability: 0.2,
+            mask_seed: 42
+        },
+        preprocessing: {
+            extraction_directory: "/tmp/ml-1m/",
+            output_directory: base_path,
+            min_item_feedback: 4,
+            min_sequence_length: 4,
+        }
+    },
     templates: {
         unified_output: {
             path: output_path
-        },
-        mask_data_sources: {
-            parser: {
-                item_column_name: "title"
-            },
-            loader: {
-                batch_size: 64,
-                max_seq_length: max_seq_length,
-                num_workers: 8
-            },
-            path: base_path,
-            file_prefix: file_prefix,
-            split_type: 'leave_one_out',
-            mask_probability: 0.2,
-            mask_seed: 42
         }
     },
     module: {
@@ -39,7 +43,7 @@ local file_prefix = 'ml-1m';
                 metrics: metrics
             },
             sampled: {
-              sample_probability_file: loo_path + file_prefix + ".popularity.title.txt",
+                sample_probability_file: "ml-1m.popularity.title.txt",
                 num_negative_samples: 100,
                 metrics: metrics
             }
@@ -63,7 +67,7 @@ local file_prefix = 'ml-1m';
                     unk_token: "<UNK>"
                 },
                 vocabulary: {
-                    file: loo_path + file_prefix + ".vocabulary.title.txt"
+                    # Inferred by the datamodule
                 }
             }
         }

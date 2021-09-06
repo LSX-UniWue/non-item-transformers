@@ -74,13 +74,13 @@ class OutputDirectoryProcessor(TemplateProcessor):
             if len(loggers_config) > 0:
                 # TODO refactor logic logger-type wise
                 for logger_type in loggers_config.keys():
-                    if logger_type == "tensorboard" or "mlflow" or "csv":
+                    if logger_type == "tensorboard" or logger_type == "mlflow" or logger_type == "csv":
                         set_config_value(config, LOGGER_PATH + [logger_type, "save_dir"], output_base_dir)
                     else:
                         print(f"Unknown logger {logger_type} I did not set the output directory!!")
 
                     # for tensorboard set version & name to empty string ("") to avoid subdirectories
-                    if logger_type == "tensorboard" or "csv":
+                    if logger_type == "tensorboard" or logger_type == "csv":
                         logger_name_path = LOGGER_PATH + [logger_type, "name"]
                         if not config_entry_exists(config, logger_name_path):
                             set_config_value(config, logger_name_path, "")

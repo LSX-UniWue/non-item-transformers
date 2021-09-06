@@ -1,5 +1,4 @@
 local base_path = "/ssd/games/";
-local loo_path = base_path + "loo/";
 local output_path = "/scratch/jane-doe-framework/experiments/amazon/games/sasrec";
 local max_seq_length = 50;
 local metrics =  {
@@ -8,21 +7,27 @@ local metrics =  {
     ndcg: [1, 5, 10]
 };
 
-local file_prefix = 'preprocessed-games';
+local dataset = 'games';
 
 {
+     datamodule: {
+        dataset: dataset,
+        template: {
+            name: "pos_neg",
+            split: "leave_one_out",
+            path: base_path,
+            file_prefix: dataset,
+            num_workers: 4,
+            batch_size: 64
+        },
+        preprocessing: {
+            input_directory: base_path,
+            output_directory: base_path,
+        }
+    },
     templates: {
         unified_output: {
             path: output_path
-        },
-        pos_neg_data_sources: {
-            loader: {
-                batch_size: 64,
-                num_workers: 4
-            },
-            path: base_path,
-            file_prefix: file_prefix,
-            split_type: "leave_one_out", // leave one out split for evaluation
         }
     },
     module: {
@@ -32,7 +37,7 @@ local file_prefix = 'preprocessed-games';
                 metrics: metrics
             },
             sampled: {
-                sample_probability_file: loo_path + file_prefix + ".popularity.product_id.txt",
+                sample_probability_file: "games.popularity.product_id.txt",
                 num_negative_samples: 100,
                 metrics: metrics
             }
@@ -56,7 +61,7 @@ local file_prefix = 'preprocessed-games';
                     unk_token: "<UNK>"
                 },
                 vocabulary: {
-                    file: loo_path + file_prefix + ".vocabulary.product_id.txt"
+                    # Inferred by the datamodule
                 }
             }
         }

@@ -1,5 +1,4 @@
 local raw_dataset_path = "../tests/example_dataset/";
-local cached_dataset_path = raw_dataset_path;
 local dataset_path = "/tmp/example/";
 local max_seq_length = 7;
 local prefix = 'example';
@@ -13,28 +12,52 @@ local metrics =  {
 };
 {
     datamodule: {
+        cache_path: "/tmp/cache",
         dataset: dataset,
-        template: {
+        /*template: {
             name: "masked",
             split: "leave_one_out",
             path: dataset_path,
             file_prefix: dataset,
             num_workers: 0
-        },
-        /*data_sources: {
-            split: "leave_one_out",
-            path: raw_dataset_path,
+        },*/
+        data_sources: {
+            split: "ratio_split",
+            #path: dataset_path,
             file_prefix: dataset,
             train: {
-                type: "session"
+                type: "session",
+                processors: [
+                    {
+                        "type": "cloze",
+                        "mask_probability": 0.2,
+                        "only_last_item_mask_prob": 0.1
+                    }
+                ]
             },
             validation: {
-                type: "session"
+                type: "session",
+                processors: [
+                    {
+                        "type": "target_extractor"
+                    },
+                    {
+                        "type": "last_item_mask"
+                    }
+                ]
             },
             test: {
-                type: "session"
+             type: "session",
+                processors: [
+                    {
+                        "type": "target_extractor"
+                    },
+                    {
+                        "type": "last_item_mask"
+                    }
+                ]
             }
-        },*/
+        },
         preprocessing: {
             output_directory: dataset_path,
             min_sequence_length: 2
@@ -43,21 +66,7 @@ local metrics =  {
     templates: {
         unified_output: {
             path: output_path
-        },
-        /*mask_data_sources: {
-            parser: {
-                item_column_name: "title"
-            },
-            loader: {
-                batch_size: 4,
-                max_seq_length: max_seq_length
-            },
-            path: cached_dataset_path,
-            file_prefix: file_prefix,
-            split_type: 'leave_one_out',
-            mask_probability: 0.2,
-            mask_seed: 42
-        } */
+        }
     },
     module: {
         type: "bert4rec",
@@ -66,7 +75,7 @@ local metrics =  {
                 metrics: metrics
             },
             sampled: {
-                sample_probability_file: dataset_path + "loo/example.popularity.item_id.txt",
+                sample_probability_file: "example.popularity.item_id.txt",
                 num_negative_samples: 2,
                 metrics: metrics
             },
@@ -98,7 +107,7 @@ local metrics =  {
                     unk_token: "<UNK>"
                 },
                 vocabulary: {
-                    file: dataset_path + "loo/example.vocabulary.item_id.txt"
+                    #file: "example.vocabulary.item_id.txt"
                 }
             }
         }

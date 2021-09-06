@@ -1,4 +1,4 @@
-from asme.models.common.components.sequence_embedding import SequenceElementsEmbeddingComponent
+from asme.models.common.components.representations.sequence_embedding import SequenceElementsEmbeddingComponent
 from asme.models.common.layers.layers import PROJECT_TYPE_LINEAR
 from asme.models.rnn.components import RNNSequenceRepresentationComponent, RNNProjectionComponent, RNNPoolingComponent
 from asme.models.sequence_recommendation_model import SequenceRecommenderModel
@@ -43,5 +43,3 @@ class RNNModel(SequenceRecommenderModel):
                          sequence_representation_layer=sequence_representation_component,
                          sequence_representation_modifier_layer=pooling_component,
                          projection_layer=projection_component)
-
-

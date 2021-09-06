@@ -1,4 +1,4 @@
-local raw_dataset_path = "../datasets/dataset/ml-1m/";
+local raw_dataset_path = "datasets/dataset/ml-1m/";
 local cached_dataset_path = raw_dataset_path;
 local loo_path = cached_dataset_path + "loo/";
 local output_path = "../dataset/ml-1m/exp/";
@@ -59,31 +59,18 @@ local dataset = 'ml-1m';
                 ]
             }
         },
+        force_regeneration: "False",
         preprocessing: {
             extraction_directory: "/tmp/ml-1m/",
             output_directory: raw_dataset_path,
-            min_item_feedback: 0,
-            min_sequence_length: 2
+            min_item_feedback: 4,
+            min_sequence_length: 4,
         }
     },
     templates: {
         unified_output: {
             path: output_path
         },
-        /*mask_data_sources: {
-            parser: {
-                item_column_name: "title"
-            },
-            loader: {
-                batch_size: 4,
-                max_seq_length: max_seq_length
-            },
-            path: cached_dataset_path,
-            file_prefix: file_prefix,
-            split_type: 'leave_one_out',
-            mask_probability: 0.2,
-            mask_seed: 42
-        } */
     },
 
     module: {
@@ -93,7 +80,7 @@ local dataset = 'ml-1m';
                 metrics: metrics
             },
             sampled: {
-                sample_probability_file: loo_path + "ml-1m.popularity.title.txt",
+                sample_probability_file: "ml-1m.popularity.title.txt",
                 num_negative_samples: 2,
                 metrics: metrics
             },
@@ -106,8 +93,9 @@ local dataset = 'ml-1m';
             max_seq_length: max_seq_length,
             num_transformer_heads: 1,
             num_transformer_layers: 1,
-            transformer_hidden_size: 2,
-            transformer_dropout: 0.1
+            transformer_hidden_size: 32,
+            transformer_dropout: 0.1,
+            project_layer_type: 'linear'
         }
     },
     features: {
@@ -121,7 +109,7 @@ local dataset = 'ml-1m';
                     unk_token: "<UNK>"
                 },
                 vocabulary: {
-                    file: loo_path + "ml-1m.vocabulary.title.txt"
+                    #file: loo_path + file_prefix + "vocabulary.title.txt"
                 }
             }
         }
@@ -132,12 +120,12 @@ local dataset = 'ml-1m';
             tensorboard: {}
         },
         checkpoint: {
-            monitor: "recall@10_sampled(100)",
+            monitor: "recall@10",
             save_top_k: 3,
             mode: 'max'
         },
         gpus: 0,
         max_epochs: 10,
-        check_val_every_n_epoch: 50
+        check_val_every_n_epoch: 1
     }
 }

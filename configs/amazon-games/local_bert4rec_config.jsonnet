@@ -1,62 +1,65 @@
-local base_path = "/scratch/jane-doe-framework/students/ml-1m/ml-1m/";
-local output_path = "/scratch/jane-doe-framework/experiments/ml-1m/cosrec/";
+local raw_dataset_path = "datasets/dataset/amazon-games/";
+local cached_dataset_path = raw_dataset_path;
+local loo_path = cached_dataset_path + "loo/";
+local output_path = "../dataset/amazon-games/exp/";
 local max_seq_length = 200;
 local metrics =  {
     mrr: [1, 5, 10],
     recall: [1, 5, 10],
     ndcg: [1, 5, 10]
 };
-local dataset = 'ml-1m';
-{
 
+local dataset = 'games';
+
+{
     datamodule: {
         dataset: dataset,
         template: {
-            name: "par_pos_neg",
+            name: "masked",
             split: "leave_one_out",
-            path: base_path,
+            path: raw_dataset_path,
             file_prefix: dataset,
-            num_workers: 4,
-            batch_size: 64
-            seed: 123456,
-            t: 1
+            num_workers: 4
         },
         preprocessing: {
-            extraction_directory: "/tmp/ml-1m/",
-            output_directory: base_path,
-            min_item_feedback: 4,
-            min_sequence_length: 4,
+            input_directory: raw_dataset_path,
+            output_directory: raw_dataset_path,
         }
     },
     templates: {
         unified_output: {
             path: output_path
-        }
+        },
     },
+
     module: {
-        type: "cosrec",
-        learning_rate: 0.001,
-        weight_decay: 0.01,
+        type: "bert4rec",
         metrics: {
             full: {
                 metrics: metrics
             },
-
+            sampled: {
+                sample_probability_file: "games.popularity.product_id.txt",
+                num_negative_samples: 2,
+                metrics: metrics
+            },
+            random_negative_sampled: {
+                num_negative_samples: 2,
+                metrics: metrics
+            },
         },
         model: {
-            user_vocab_size: 0,
             max_seq_length: max_seq_length,
-            embed_dim: 50,
-            block_num: 2,
-            block_dim: [128, 256],
-            fc_dim: 150,
-            activation_function: 'relu',
-            dropout: 0.5
+            num_transformer_heads: 1,
+            num_transformer_layers: 1,
+            transformer_hidden_size: 32,
+            transformer_dropout: 0.1,
+            project_layer_type: 'linear'
         }
     },
     features: {
         item: {
-            column_name: "title",
+            column_name: "product_id",
             sequence_length: max_seq_length,
             tokenizer: {
                 special_tokens: {
@@ -65,11 +68,11 @@ local dataset = 'ml-1m';
                     unk_token: "<UNK>"
                 },
                 vocabulary: {
-                    # Inferred by the datamodule
                 }
             }
         }
     },
+
     trainer: {
         loggers: {
             tensorboard: {}
@@ -79,7 +82,8 @@ local dataset = 'ml-1m';
             save_top_k: 3,
             mode: 'max'
         },
-        max_epochs: 800,
-        check_val_every_n_epoch: 100
+        gpus: 0,
+        max_epochs: 10,
+        check_val_every_n_epoch: 1
     }
 }

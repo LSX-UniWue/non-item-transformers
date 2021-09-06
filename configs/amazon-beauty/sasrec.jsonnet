@@ -8,21 +8,27 @@ local metrics =  {
     ndcg: [1, 5, 10]
 };
 
-local file_prefix = 'preprocessed-beauty';
+local dataset = 'beauty';
 
 {
+    datamodule: {
+        dataset: dataset,
+        template: {
+            name: "pos_neg",
+            split: "leave_one_out",
+            path: base_path,
+            file_prefix: dataset,
+            num_workers: 4,
+            batch_size: 64,
+        },
+        preprocessing: {
+            input_directory: base_path,
+            output_directory: base_path,
+        }
+    }
     templates: {
         unified_output: {
             path: output_path
-        },
-        pos_neg_data_sources: {
-            loader: {
-                batch_size: 64,
-                num_workers: 4
-            },
-            path: base_path,
-            file_prefix: file_prefix,
-            split_type: "leave_one_out", // leave one out split for evaluation
         }
     },
     module: {
@@ -32,7 +38,7 @@ local file_prefix = 'preprocessed-beauty';
                 metrics: metrics
             },
             sampled: {
-                sample_probability_file: loo_path + file_prefix + ".popularity.product_id.txt",
+                sample_probability_file: "beauty.popularity.product_id.txt",
                 num_negative_samples: 100,
                 metrics: metrics
             }
@@ -56,7 +62,7 @@ local file_prefix = 'preprocessed-beauty';
                     unk_token: "<UNK>"
                 },
                 vocabulary: {
-                    file: loo_path + file_prefix + ".vocabulary.product_id.txt"
+                    #inferred by the datamodule
                 }
             }
         }

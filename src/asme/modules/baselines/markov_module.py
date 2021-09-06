@@ -1,9 +1,11 @@
-from typing import Dict
+from typing import Dict, Any, Optional
 
 import numpy as np
 import pytorch_lightning.core as pl
 import torch
+import torch.nn.functional as F
 from pytorch_lightning.utilities import rank_zero_warn
+from pytorch_lightning.utilities.types import EPOCH_OUTPUT
 from torch.nn.parameter import Parameter
 
 from data.datasets import ITEM_SEQ_ENTRY_NAME, TARGET_ENTRY_NAME
@@ -32,12 +34,12 @@ def last_item_in_sequence(input_sequence: torch.tensor) -> torch.Tensor:
 class MarkovModule(MetricsTrait, pl.LightningModule):
 
     def __init__(self,
-                 tokenizer: Tokenizer,
+                 item_tokenizer: Tokenizer,
                  metrics: MetricsContainer):
 
         super().__init__()
-        self.tokenizer = tokenizer
-        self.item_vocab_size = len(tokenizer)
+        self.tokenizer = item_tokenizer
+        self.item_vocab_size = len(item_tokenizer)
         self.metrics = metrics
 
         # Transition matrix of dimension item_vocab_size x item_vocab_size. The entry at index (i,j) denotes the
@@ -47,7 +49,7 @@ class MarkovModule(MetricsTrait, pl.LightningModule):
                                                       1 / self.item_vocab_size,
                                                       device=self.device), requires_grad=False)
 
-    def on_train_start(self) -> None:
+    def on_train_epoch_start(self) -> None:
         if self.trainer.max_epochs > 1:
             rank_zero_warn(
                 f"When training the Markov baseline, "
@@ -55,28 +57,18 @@ class MarkovModule(MetricsTrait, pl.LightningModule):
 
         self.transition_matrix.fill_(0)
 
-    def on_train_end(self) -> None:
+    # FIXME With PL 1.4.2 the correct hook: on_train_epoch_end was not called for some godforsaken reason
+    def on_validation_epoch_start(self) -> None:
         # Normalize the sum of each row to 1 so we can interpret it as a probability distribution
-        row_sums = self.transition_matrix.sum(dim=1)
-        row_sums[row_sums == 0] = 1
-        self.transition_matrix /= row_sums.unsqueeze(dim=1)
+        F.normalize(self.transition_matrix, p=1, dim=1, out=self.transition_matrix)
 
     def get_metrics(self) -> MetricsContainer:
         return self.metrics
 
     def forward(self, input_seq: torch.tensor):
-        batch_size = input_seq.shape[0]
         last_items = last_item_in_sequence(input_seq)
-        # Sadly PyTorch does not have a "choice" implementation, so we cant do this in a fast way
-        transition_probabilities = self.transition_matrix[last_items].numpy()
-        # We simply predict 0's for all but the chosen item
-        predictions = torch.zeros((batch_size, self.item_vocab_size), device=self.device)
-        for i in range(batch_size):
-            # if we did not see the last item during training, we can't predict it and raise an Exception
-            if transition_probabilities[i].sum() == 0:
-                raise Exception("Trying to predict an item never seen during training.")
-            index = np.random.choice(self.item_vocab_size, size=1, p=transition_probabilities[i])
-            predictions[i, index] = 1
+        # We simply predict the observed transition probabilities for each item
+        predictions = torch.index_select(self.transition_matrix, index=last_items, dim=0)
 
         return predictions
 

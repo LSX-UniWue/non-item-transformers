@@ -77,10 +77,8 @@ def create_token_vocabulary(column: MetaInformation,
                 token = token.split(sub_delimiter)
                 for word in token:
                     vocab_builder.add_token(word)
-                    print(f"Add Word: {word}")
             else:
                 vocab_builder.add_token(token)
-                print(f"Add Token: {token}")
 
     vocabulary = vocab_builder.build()
 

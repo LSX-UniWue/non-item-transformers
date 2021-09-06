@@ -53,3 +53,16 @@ class RemainingSessionPositionExtractor(TargetPositionExtractor):
 
     def apply(self, session: Dict[str, Any]) -> Iterable[int]:
         return range(self.min_session_length, len(session[ITEM_SEQ_ENTRY_NAME]))
+
+
+class SlidingWindowPositionExtractor(TargetPositionExtractor):
+    """
+    This TargetPositionExtractor returns all indices between [window_size - 1; len(sequence) - session_end_offset].
+    """
+    def __init__(self, window_size: int, session_end_offset: int):
+        self.window_size = window_size
+        self.session_end_offset = session_end_offset
+
+    def apply(self, session: Dict[str, Any]) -> Iterable[int]:
+        sequence = session[ITEM_SEQ_ENTRY_NAME]
+        return range(self.window_size - 1, len(sequence)- self.session_end_offset)

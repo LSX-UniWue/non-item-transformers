@@ -11,20 +11,25 @@ local metrics =  {
 local file_prefix = 'ml-1m';
 
 {
+    datamodule: {
+        dataset: dataset,
+        template: {
+            name: "pos_neg",
+            split: "leave_one_out",
+            path: base_path,
+            file_prefix: dataset,
+            num_workers: 10,
+            batch_size: 64
+        },
+        preprocessing: {
+            input_directory: base_path,
+            output_directory: base_path,
+        }
+    },
     templates: {
         unified_output: {
             path: output_path
         },
-        pos_neg_data_sources: {
-            loader: {
-                batch_size: 64,
-                num_workers: 10
-            },
-            path: base_path,
-            file_prefix: file_prefix,
-            split_type: "leave_one_out", // leave one out split for evaluation
-            seed: 42 // not used
-        }
     },
     module: {
         type: "sasrec",
@@ -33,7 +38,7 @@ local file_prefix = 'ml-1m';
                 metrics: metrics
             },
             sampled: {
-                sample_probability_file: loo_path + file_prefix + ".popularity.title.txt",
+                sample_probability_file: "ml-1m.popularity.title.txt",
                 num_negative_samples: 100,
                 metrics: metrics
             }
@@ -57,7 +62,7 @@ local file_prefix = 'ml-1m';
                     unk_token: "<UNK>"
                 },
                 vocabulary: {
-                    file: loo_path + file_prefix + ".vocabulary.title.txt"
+                    # Inferred by the datamodule
                 }
             }
         }

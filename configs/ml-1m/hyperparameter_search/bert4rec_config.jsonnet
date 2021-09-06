@@ -1,31 +1,33 @@
-local base_path = "/scratch/jane-doe-framework/students/ml-1m/ml-1m/";
-local output_path = "/scratch/jane-doe-framework/experiments/ml-1m/cosrec/";
+#local raw_dataset_path = "datasets/dataset/ml-1m/";
+local raw_dataset_path = "/tmp/datasets/ml-1m/";
+local cached_dataset_path = raw_dataset_path;
+local loo_path = cached_dataset_path + "loo/";
+#local output_path = "../dataset/ml-1m/exp/";
+local output_path = "/tmp/ml-1m/bert4rec/";
 local max_seq_length = 200;
 local metrics =  {
     mrr: [1, 5, 10],
     recall: [1, 5, 10],
     ndcg: [1, 5, 10]
 };
-local dataset = 'ml-1m';
+local dataset = "ml-1m";
 {
-
     datamodule: {
         dataset: dataset,
         template: {
-            name: "par_pos_neg",
+            name: "masked",
             split: "leave_one_out",
-            path: base_path,
+            path: raw_dataset_path,
             file_prefix: dataset,
             num_workers: 4,
             batch_size: 64
-            seed: 123456,
-            t: 1
         },
+        force_regeneration: "False",
         preprocessing: {
-            extraction_directory: "/tmp/ml-1m/",
-            output_directory: base_path,
-            min_item_feedback: 4,
-            min_sequence_length: 4,
+            extraction_directory: raw_dataset_path + "raw/",
+            output_directory: raw_dataset_path,
+            min_item_feedback: 5,
+            min_sequence_length: 2,
         }
     },
     templates: {
@@ -34,27 +36,22 @@ local dataset = 'ml-1m';
         }
     },
     module: {
-        type: "cosrec",
-        learning_rate: 0.001,
-        weight_decay: 0.01,
+        type: "bert4rec",
         metrics: {
             full: {
                 metrics: metrics
-            },
-
+            }
         },
         model: {
-            user_vocab_size: 0,
             max_seq_length: max_seq_length,
-            embed_dim: 50,
-            block_num: 2,
-            block_dim: [128, 256],
-            fc_dim: 150,
-            activation_function: 'relu',
-            dropout: 0.5
+            num_transformer_heads: 2,
+            num_transformer_layers: 2,
+            transformer_hidden_size: 8,
+            transformer_dropout: 0.1,
+            nonlinearity: "relu"
         }
     },
-    features: {
+     features: {
         item: {
             column_name: "title",
             sequence_length: max_seq_length,
@@ -63,9 +60,6 @@ local dataset = 'ml-1m';
                     pad_token: "<PAD>",
                     mask_token: "<MASK>",
                     unk_token: "<UNK>"
-                },
-                vocabulary: {
-                    # Inferred by the datamodule
                 }
             }
         }
@@ -79,7 +73,9 @@ local dataset = 'ml-1m';
             save_top_k: 3,
             mode: 'max'
         },
-        max_epochs: 800,
-        check_val_every_n_epoch: 100
+        gpus: 1,
+        max_epochs: 10,
+        check_val_every_n_epoch: 1,
+        limit_train_batches: 512
     }
 }

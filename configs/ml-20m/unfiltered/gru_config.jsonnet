@@ -10,6 +10,24 @@ local metrics =  {
 local file_prefix = 'ml-1m';
 
 {
+    datamodule: {
+        dataset: dataset,
+        template: {
+            name: "next_sequence_step",
+            next_step_type: "loo",
+            split: "leave_one_out",
+            path: base_path,
+            file_prefix: dataset,
+            num_workers: 4,
+            batch_size: 128
+        },
+        preprocessing: {
+            extraction_directory: "/tmp/ml-1m/",
+            output_directory: base_path,
+            min_item_feedback: 4,
+            min_sequence_length: 4,
+        }
+    },
     templates: {
         unified_output: {
             path: output_path
@@ -31,7 +49,7 @@ local file_prefix = 'ml-1m';
                 metrics: metrics
             },
             sampled: {
-                sample_probability_file: base_path + "popularity.txt",
+                sample_probability_file: "ml-1m.popularity.title.txt",
                 num_negative_samples: 100,
                 metrics: metrics
             }
@@ -55,8 +73,7 @@ local file_prefix = 'ml-1m';
                     unk_token: "<UNK>"
                 },
                 vocabulary: {
-                    delimiter: "\t",
-                    file: base_path + "vocab_title.txt"
+                    # Inferred by the datamodule
                 }
             }
         }

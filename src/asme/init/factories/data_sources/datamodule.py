@@ -1,3 +1,4 @@
+import distutils
 from typing import List, Union, Any, Dict
 
 from asme.init.config import Config
@@ -27,8 +28,11 @@ class DataModuleFactory(ObjectFactory):
         return CanBuildResult(CanBuildResultType.CAN_BUILD)
 
     def build(self, config: Config, context: Context) -> AsmeDataModule:
+        # DO NOT TOUCH THIS
         import data.datasets.config
+
         dataset_name = config.get("dataset")
+        force_regeneration = bool(distutils.util.strtobool(config.get_or_default("force_regeneration", "False")))
         dataset_preprocessing_config_provider = get_preprocessing_config_provider(dataset_name)
         if dataset_preprocessing_config_provider is None:
             print(f"No dataset registered for key '{dataset_name}'. No preprocessing will be applied.")
@@ -40,10 +44,12 @@ class DataModuleFactory(ObjectFactory):
         if config.has_path("template") and config.has_path("data_sources"):
             raise KeyError("Found both keys 'template' and 'data_sources'. Please specify exactly one.")
 
+        cache_path = config.get("cache_path")
         data_sources_config = config.get_config(["data_sources"]) if config.has_path("data_sources") else None
         template_config = config.get_config(["template"]) if config.has_path("template") else None
 
-        datamodule_config = AsmeDataModuleConfig(dataset_name, template_config, data_sources_config, dataset_preprocessing_config)
+        datamodule_config = AsmeDataModuleConfig(dataset_name, cache_path, template_config, data_sources_config,
+                                                 dataset_preprocessing_config, force_regeneration)
         return AsmeDataModule(datamodule_config, context)
 
     def is_required(self, context: Context) -> bool:

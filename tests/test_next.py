@@ -8,29 +8,24 @@ from util_test_tokenizer import TEST_DATASET_BASE_PATH
 
 
 LEAVE_ONE_OUT_TEMPLATE = {
-    "templates": {
-        'next_sequence_step_data_sources': {
-            'loader': {
-                'batch_size': 2,
-                'num_workers': 0
-            },
-            'path': TEST_DATASET_BASE_PATH,
-            'file_prefix': 'example',
-            'split_type': 'leave_one_out'
-        }
+    "template": {
+        'name': 'next_sequence_step',
+        'batch_size': 2,
+        'num_workers': 0,
+        'path': TEST_DATASET_BASE_PATH,
+        'file_prefix': 'example',
+        'split': 'leave_one_out'
     }
 }
 
 RATIO_TEMPLATE = {
-    "templates": {
-        'next_sequence_step_data_sources': {
-            'loader': {
-                'batch_size': 2,
-                'num_workers': 0
-            },
-            'path': TEST_DATASET_BASE_PATH / 'ratio-0.8_0.1_0.1',
-            'file_prefix': 'example'
-        }
+    "template": {
+        'name': 'next_sequence_step',
+        'batch_size': 2,
+        'num_workers': 0,
+        'path': TEST_DATASET_BASE_PATH / 'ratio-0.8_0.1_0.1',
+        'file_prefix': 'example',
+        'split': 'ratio_split'
     }
 }
 

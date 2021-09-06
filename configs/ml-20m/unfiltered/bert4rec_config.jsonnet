@@ -7,22 +7,32 @@ local metrics =  {
     ndcg: [1, 5, 10]
 };
 
-local file_prefix = 'ml-20m';
+local dataset = 'ml-20m';
 
 {
+
+    datamodule: {
+        dataset: dataset,
+        template: {
+            name: "masked",
+            split: "leave_one_out",
+            path: base_path,
+            file_prefix: dataset,
+            batch_size: 64
+            max_seq_length: max_seq_length,
+            mask_probability: 0.2,
+            mask_seed: 42
+        },
+        preprocessing: {
+            extraction_directory: "/tmp/ml-1m/",
+            output_directory: base_path,
+            min_item_feedback: 4,
+            min_sequence_length: 4,
+        }
+    },
     templates: {
         unified_output: {
             path: output_path
-        },
-        mask_data_sources: {
-            loader: {
-                batch_size: 64
-            },
-            path: base_path,
-            file_prefix: file_prefix,
-            split_type: "leave_one_out", // leave one out split
-            mask_probability: 0.2,
-            mask_seed: 42
         }
     },
     module: {
@@ -32,7 +42,7 @@ local file_prefix = 'ml-20m';
                 metrics: metrics
             },
             sampled: {
-                sample_probability_file: base_path + "loo/ml-20m.popularity.title.txt",
+                sample_probability_file: "ml-20m.popularity.title.txt",
                 num_negative_samples: 100,
                 metrics: metrics
             }
@@ -56,7 +66,7 @@ local file_prefix = 'ml-20m';
                     unk_token: "<UNK>"
                 },
                 vocabulary: {
-                    file: base_path + "loo/ml-20m.vocabulary.title.txt"
+                    # Inferred by the datamodule
                 }
             }
         }

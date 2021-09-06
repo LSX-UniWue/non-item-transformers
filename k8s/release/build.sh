@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export TAG="0.5.0"
+export TAG="1.0.0"
 
 BUILD_COMMAND="podman"
 ALTERNATE_BUILD_COMMAND="docker"

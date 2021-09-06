@@ -1,6 +1,7 @@
 import datetime
 import functools
 import io
+import random
 from typing import Dict, List, Any, Callable, Optional
 import csv
 
@@ -12,6 +13,7 @@ from torch.utils.data import Dataset
 from data.base.reader import CsvDatasetReader
 from data.datasets import SAMPLE_IDS
 from data.datasets.processors.processor import Processor
+from data.example_logging import ExampleLogger, Example
 from data.multi_processing import MultiProcessSupport
 
 
@@ -44,12 +46,14 @@ class MetaInformation:
     tokenizer: Optional[Tokenizer] = None
     is_sequence: bool = True
     sequence_length: Optional[int] = None
+    run_tokenization: bool = True  #TODO (AD) maybe think about finding a more user friendly default?
     is_generated: bool = False  # True iff the feature will be generated based on other features
     column_name: Optional[str] = None
     configs: Dict[str, Any] = field(default_factory=dict)
 
     def get_config(self, config_key: str) -> Optional[Any]:
         return self.configs.get(config_key, None)
+
 
 
 # TODO: move to provider utils?
@@ -154,7 +158,7 @@ class PlainSequenceDataset(Dataset, MultiProcessSupport):
         pass
 
 
-class ItemSequenceDataset(Dataset, MultiProcessSupport):
+class ItemSequenceDataset(Dataset, MultiProcessSupport, ExampleLogger):
 
     def __init__(self,
                  plain_sequence_dataset: PlainSequenceDataset,
@@ -170,13 +174,31 @@ class ItemSequenceDataset(Dataset, MultiProcessSupport):
         return len(self._plain_sequence_dataset)
 
     def __getitem__(self, idx):
-        parsed_sequence = self._plain_sequence_dataset[idx]
+        example = self._get_example(idx)
+        return example.processed_data
 
+    def _init_class_for_worker(self, worker_id: int, num_worker: int, seed: int):
+        # nothing to do here
+        pass
+
+    def _get_raw_sequence(self, idx: int) -> Dict[str, Any]:
+        return self._plain_sequence_dataset[idx]
+
+    def _process_sequence(self,
+                          parsed_sequence: Dict[str, Any]
+                          ) -> Dict[str, Any]:
         for processor in self._processors:
             parsed_sequence = processor.process(parsed_sequence)
 
         return parsed_sequence
 
-    def _init_class_for_worker(self, worker_id: int, num_worker: int, seed: int):
-        # nothing to do here
-        pass
+    def _get_example(self, idx: int) -> Example:
+        sequence_data = self._get_raw_sequence(idx)
+        processed_data = self._process_sequence(sequence_data.copy())
+
+        return Example(sequence_data, processed_data)
+
+    def get_data_examples(self, num_examples: int = 1) -> List[Example]:
+        return [
+            self._get_example(example_id) for example_id in random.sample(range(0, len(self)), num_examples)
+        ]

@@ -6,21 +6,27 @@ local metrics =  {
     ndcg: [1, 5, 10]
 };
 
-local file_prefix = 'ml-20m';
+local dataset = 'ml-20m';
 
 {
+     datamodule: {
+        dataset: dataset,
+        template: {
+            name: "pos_neg",
+            split: "leave_one_out",
+            path: base_path,
+            file_prefix: dataset,
+            num_workers: 10,
+            batch_size: 64
+        },
+        preprocessing: {
+            input_directory: base_path,
+            output_directory: base_path,
+        }
+    },
     templates: {
         unified_output: {
             path: "/scratch/jane-doe-framework/experiments/ml-20m/sasrec_new256_8"
-        },
-        pos_neg_data_sources: {
-            loader: {
-                batch_size: 64,
-                num_workers: 10
-            },
-            path: base_path,
-            file_prefix: file_prefix,
-            split_type: "leave_one_out" // leave one out split for evaluation
         }
     },
     module: {
@@ -30,7 +36,7 @@ local file_prefix = 'ml-20m';
                 metrics: metrics
             },
             sampled: {
-                sample_probability_file: base_path + "loo/ml-20m.popularity.title.txt",
+                sample_probability_file: "ml-20m.popularity.title.txt",
                 num_negative_samples: 100,
                 metrics: metrics
             }
@@ -54,7 +60,7 @@ local file_prefix = 'ml-20m';
                     unk_token: "<UNK>"
                 },
                 vocabulary: {
-                    file: base_path + "loo/ml-20m.vocabulary.title.txt"
+                    # Inferred by the datamodule
                 }
             }
         }

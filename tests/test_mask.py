@@ -6,33 +6,28 @@ from util_test_templating import load_dataset, get_all_data, NUM_EXAMPLES_SEQUEN
 from util_test_tokenizer import TEST_DATASET_BASE_PATH
 
 LEAVE_ONE_OUT_TEMPLATE = {
-    "templates": {
-        'mask_data_sources': {
-            'loader': {
-                'batch_size': 2,
-                'num_workers': 0
-            },
-            'path': TEST_DATASET_BASE_PATH,
-            'file_prefix': 'example',
-            'mask_probability': 0.1,
-            'mask_seed': 123456,
-            'split_type': 'leave_one_out'
-        }
+    "template": {
+        'name': 'masked',
+        'batch_size': 2,
+        'num_workers': 0,
+        'path': TEST_DATASET_BASE_PATH,
+        'file_prefix': 'example',
+        'mask_probability': 0.1,
+        'mask_seed': 123456,
+        'split': 'leave_one_out'
     }
 }
 
 RATIO_TEMPLATE = {
-    "templates": {
-        'mask_data_sources': {
-            'loader': {
-                'batch_size': 2,
-                'num_workers': 0
-            },
-            'path': TEST_DATASET_BASE_PATH / 'ratio-0.8_0.1_0.1',
-            'file_prefix': 'example',
-            'mask_probability': 0.1,
-            'mask_seed': 123456
-        }
+    "template": {
+        'name': 'masked',
+        'batch_size': 2,
+        'num_workers': 0,
+        'path': TEST_DATASET_BASE_PATH / 'ratio-0.8_0.1_0.1',
+        'file_prefix': 'example',
+        'mask_probability': 0.1,
+        'mask_seed': 123456,
+        'split': 'ratio_split'
     }
 }
 

@@ -9,24 +9,30 @@ local metrics =  {
     ndcg: [1, 5, 10]
 };
 
-local file_prefix = 'preprocessed-beauty';
+local dataset = 'beauty';
 
 {
+    datamodule: {
+        dataset: dataset,
+        template: {
+            name: "masked",
+            split: "leave_one_out",
+            path: base_path,
+            file_prefix: dataset,
+            num_workers: 4,
+            batch_size: 64,
+            mask_probability: 0.2,
+            mask_seed: 42
+        },
+        preprocessing: {
+            input_directory: base_path,
+            output_directory: base_path,
+        }
+    },
     templates: {
         unified_output: {
             path: output_path
         },
-        mask_data_sources: {
-            loader: {
-                batch_size: 64,
-                num_workers: 4
-            },
-            path: base_path,
-            file_prefix: file_prefix,
-            split_type: 'leave_one_out',
-            mask_probability: 0.2,
-            mask_seed: 42
-        }
     },
     module: {
         type: "bert4rec",
@@ -35,7 +41,7 @@ local file_prefix = 'preprocessed-beauty';
                 metrics: metrics
             },
             sampled: {
-              sample_probability_file: loo_path + file_prefix + ".popularity.product_id.txt",
+              sample_probability_file: "beauty.popularity.product_id.txt",
                 num_negative_samples: 100,
                 metrics: metrics
             }
@@ -59,7 +65,7 @@ local file_prefix = 'preprocessed-beauty';
                     unk_token: "<UNK>"
                 },
                 vocabulary: {
-                    file: loo_path + file_prefix + ".vocabulary.product_id.txt"
+                    #inferred by the datamodule
                 }
             }
         }

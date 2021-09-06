@@ -27,7 +27,7 @@ logger = logging.get_logger(__name__)
 """ key to retrieve the object metric used in hyperparameter study """
 OBJECTIVE_METRIC_KEY = 'objective_metric'
 """ key for retrieving the output path of the trail """
-TRAIL_BASE_PATH = 'base_output_path'
+TRIAL_BASE_PATH = 'base_output_path'
 """ the checkpoint file extension """
 CHECKPOINT_FILE_EXTENSION = '.ckpt'
 
@@ -53,6 +53,17 @@ def load_config(config_file: Path,
 
     config_to_use = template_engine.modify(loaded_config)
     return Config(config_to_use)
+
+
+def load_hyperopt_config(hyperopt_config_file: Path, processors: List[TemplateProcessor]) -> Config:
+    if not hyperopt_config_file.exists():
+        print(f"the hyperopt config file is missing. Please check that {hyperopt_config_file} exists.")
+
+    config_json = json.loads(_jsonnet.evaluate_file(str(hyperopt_config_file)))
+
+    template_engine = TemplateEngine(tail_processors=processors)
+
+    return Config(template_engine.modify(config_json))
 
 
 def create_container(config: Config) -> Container:
@@ -110,7 +121,7 @@ def get_config_of_best_run_from_study(study: Study
         print('more than one best trail, using the first one')
 
     best_trail = best_trails[0]
-    base_path = Path(best_trail.user_attrs.get(TRAIL_BASE_PATH))
+    base_path = Path(best_trail.user_attrs.get(TRIAL_BASE_PATH))
     return base_path / PROCESSED_CONFIG_NAME
 
 

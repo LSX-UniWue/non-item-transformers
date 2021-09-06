@@ -1,6 +1,7 @@
-local base_path = "../tests/example_dataset/";
-local max_seq_length = 7;
-local dataset = 'example';
+local raw_dataset_path = "datasets/dataset/ml-1m/";
+local max_seq_length = 200;
+local dataset = 'ml-1m';
+
 local metrics =  {
     mrr: [1, 3, 5],
     recall: [1, 3, 5],
@@ -17,7 +18,7 @@ local metrics =  {
         data_sources: {
             split: "ratio_split",
             file_prefix: dataset,
-            num_workers: 0,
+            num_workers: 4,
             train: {
                 type: "session",
                 processors: []
@@ -41,7 +42,10 @@ local metrics =  {
         },
 
         preprocessing: {
-
+            extraction_directory: "/tmp/ml-1m/",
+            output_directory: raw_dataset_path,
+            min_item_feedback: 4,
+            min_sequence_length: 4,
         }
     },
     module: {
@@ -51,7 +55,7 @@ local metrics =  {
                 metrics: metrics
             },
             sampled: {
-                sample_probability_file: "example.popularity.item_id.txt",
+                sample_probability_file: "ml-1m.popularity.title.txt",
                 num_negative_samples: 2,
                 metrics: metrics
             }
@@ -59,7 +63,7 @@ local metrics =  {
     },
     features: {
         item: {
-            column_name: "item_id",
+            column_name: "title",
             sequence_length: max_seq_length,
              tokenizer: {
                 special_tokens: {

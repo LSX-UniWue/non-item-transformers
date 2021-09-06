@@ -4,7 +4,7 @@ from typing import Union, Optional, Dict, Any
 
 import torch
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
-from pytorch_lightning import LightningModule
+from pytorch_lightning import LightningModule, Trainer
 
 
 class BestModelWritingModelCheckpoint(ModelCheckpoint):
@@ -59,55 +59,53 @@ class BestModelWritingModelCheckpoint(ModelCheckpoint):
     def on_save_checkpoint(self, trainer, pl_module, checkpoint: Dict[str, Any]) -> Dict[str, Any]:
         return self.target_object.on_save_checkpoint(trainer, pl_module, checkpoint)
 
-    def on_load_checkpoint(self, checkpointed_state: Dict[str, Any]):
-        self.target_object.on_load_checkpoint(checkpointed_state)
+    def on_load_checkpoint(self, checkpointed_state: Dict[str, Any], **kwargs):
+        self.target_object.on_load_checkpoint(checkpointed_state, kwargs)
 
-    def save_checkpoint(self, trainer, pl_module):
-        self.target_object.save_checkpoint(trainer, pl_module)
+    def save_checkpoint(self, trainer: Trainer, unused: Optional[LightningModule] = None):
+        self.target_object.save_checkpoint(trainer, unused)
 
-    def _del_model(self, filepath: str):
-        return self.target_object._del_model(filepath)
+    def _del_model(self, trainer: Trainer, filepath: str):
+        return self.target_object._del_model(trainer, filepath)
 
-    def _save_model(self, filepath: str, trainer, pl_module):
-        return self.target_object._save_model(filepath, trainer, pl_module)
+    def _save_model(self, trainer: Trainer, filepath: str):
+        return self.target_object._save_model(trainer, filepath)
 
     def check_monitor_top_k(self, trainer, current: Optional[torch.Tensor] = None) -> bool:
         return self.target_object.check_monitor_top_k(current)
 
     @classmethod
-    def _format_checkpoint_name(cls, filename: Optional[str], epoch: int, step: int, metrics: Dict[str, Any],
-                                prefix: str = "") -> str:
-        return super()._format_checkpoint_name(filename, epoch, step, metrics, prefix)
+    def _format_checkpoint_name(cls,
+                                filename: Optional[str],
+                                metrics: Dict,
+                                prefix: str = "",
+                                auto_insert_metric_name: bool = True,
+                                ) -> str:
+        return super()._format_checkpoint_name(filename, metrics, prefix, auto_insert_metric_name)
 
-    def format_checkpoint_name(self, epoch: int, step: int, metrics: Dict[str, Any], ver: Optional[int] = None) -> str:
-        return self.target_object.format_checkpoint_name(epoch, step, metrics, ver)
-
-    def _add_backward_monitor_support(self, trainer):
-        self.target_object._add_backward_monitor_support(trainer)
+    def format_checkpoint_name(self, metrics: Dict, ver: Optional[int] = None) -> str:
+        return self.target_object.format_checkpoint_name(metrics, ver)
 
     def _validate_monitor_key(self, trainer):
         return self.target_object._validate_monitor_key(trainer)
 
-    def _get_metric_interpolated_filepath_name(self, ckpt_name_metrics: Dict[str, Any], epoch: int, step: int, trainer,
-                                               del_filepath: Optional[str] = None) -> str:
-        return self.target_object._get_metric_interpolated_filepath_name(ckpt_name_metrics, epoch, step, trainer,
-                                                                         del_filepath)
+    def _get_metric_interpolated_filepath_name(self, monitor_candidates: Dict, trainer: "pl.Trainer", del_filepath: Optional[str] = None) -> str:
+        return self.target_object._get_metric_interpolated_filepath_name(monitor_candidates, trainer, del_filepath)
 
-    def _monitor_candidates(self, trainer):
+    def _monitor_candidates(self, trainer: "pl.Trainer", epoch: int, step: int):
         return self.target_object._monitor_candidates(trainer)
 
-    def _save_last_checkpoint(self, trainer, pl_module, ckpt_name_metrics):
-        self.target_object._save_last_checkpoint(trainer, pl_module, ckpt_name_metrics)
+    def _save_last_checkpoint(self, trainer: "pl.Trainer", monitor_candidates: Dict):
+        self.target_object._save_last_checkpoint(trainer, monitor_candidates)
 
-    def _save_top_k_checkpoints(self, trainer, pl_module, metrics):
-        self.target_object._save_top_k_checkpoints(trainer, pl_module, metrics)
+    def _save_top_k_checkpoint(self, trainer: "pl.Trainer", monitor_candidates: Dict):
+        self.target_object._save_top_k_checkpoint(trainer, monitor_candidates)
 
     def _is_valid_monitor_key(self, metrics):
         return self.target_object._is_valid_monitor_key(metrics)
 
-    def _update_best_and_save(self, current: torch.Tensor, epoch: int, step: int, trainer, pl_module,
-                              ckpt_name_metrics):
-        self.target_object._update_best_and_save(current, epoch, step, trainer, pl_module, ckpt_name_metrics)
+    def _update_best_and_save(self, current: torch.Tensor, trainer: "pl.Trainer", monitor_candidates: Dict):
+        self.target_object._update_best_and_save(current, trainer, monitor_candidates)
 
     def to_yaml(self, filepath: Optional[Union[str, Path]] = None):
         self.target_object.to_yaml(filepath)

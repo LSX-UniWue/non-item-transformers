@@ -11,35 +11,24 @@ from data.datasets import SAMPLE_IDS, ITEM_SEQ_ENTRY_NAME, POSITIVE_SAMPLES_ENTR
 
 
 LEAVE_ONE_OUT_TEMPLATE = {
-    "templates": {
-        'pos_neg_data_sources': {
-            'parser': {
-                'item_column_name': "item_id"
-            },
-            'loader': {
-                'batch_size': 2,
-                'num_workers': 0
-            },
-            'path': TEST_DATASET_BASE_PATH,
-            'file_prefix': 'example',
-            'split_type': 'leave_one_out'
-        }
+    "template": {
+        'name': 'pos_neg',
+        'batch_size': 2,
+        'num_workers': 0,
+        'path': TEST_DATASET_BASE_PATH,
+        'file_prefix': 'example',
+        'split': 'leave_one_out'
     }
 }
 
 RATIO_TEMPLATE = {
-    "templates": {
-        'pos_neg_data_sources': {
-            'parser': {
-                'item_column_name': "item_id"
-            },
-            'loader': {
-                'batch_size': 2,
-                'num_workers': 0
-            },
-            'path': TEST_DATASET_BASE_PATH / 'ratio-0.8_0.1_0.1',
-            'file_prefix': 'example'
-        }
+    "template": {
+        'name': 'pos_neg',
+        'batch_size': 2,
+        'num_workers': 0,
+        'path': TEST_DATASET_BASE_PATH / 'ratio-0.8_0.1_0.1',
+        'file_prefix': 'example',
+        'split': 'ratio_split'
     }
 }
 

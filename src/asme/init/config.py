@@ -1,3 +1,4 @@
+import flatten_dict
 from typing import Dict, Any, List, Optional, Union
 
 
@@ -44,7 +45,7 @@ class Config:
                 return None
             if key not in current_section and make_parents:
                 current_section[key] = dict()
-            else:
+            elif key not in current_section and not make_parents:
                 return None
 
             current_section = current_section[key]
@@ -106,7 +107,6 @@ class Config:
             return default
 
         return value
-
 
     def has_path(self, path: Union[str, List[str]]) -> bool:
         """
@@ -185,3 +185,21 @@ class Config:
         :return: a list with keys.
         """
         return [key for key in self.config.keys()]
+
+    def patch(self, patch: 'Config') -> 'Config':
+        """
+        Creates a new configuration by copying this instance and overwriting/adding all parameters defined in `config`.
+
+        :param patch: a config.
+        :return: a new config.
+        """
+
+        patched_config = Config(self.config, self.base_path)
+        patches = flatten_dict.flatten(patch.config)
+
+        for path, value in patches.items():
+            patched_config.set(path, value, make_parents=True)
+
+        return patched_config
+
+

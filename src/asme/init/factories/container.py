@@ -114,7 +114,6 @@ class ContainerFactory(ObjectFactory):
             if info.tokenizer is not None:
                 context.set([TOKENIZERS_PREFIX, info.feature_name], info.tokenizer)
 
-
         all_dependencies = self.dependencies.build(config, context)
 
         for key, object in all_dependencies.items():

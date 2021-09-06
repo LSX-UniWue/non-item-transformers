@@ -89,7 +89,9 @@ def preprocess_movielens_data(dataset_dir: Path,
 
     movielens_1m = name == 'ml-1m'
     if movielens_1m:
-        ratings_df.columns = [RATING_USER_COLUMN_NAME, RATING_MOVIE_COLUMN_NAME, 'rating', RATING_TIMESTAMP_COLUMN_NAME]
+        ratings_df.columns = [RATING_USER_COLUMN_NAME,
+                              RATING_MOVIE_COLUMN_NAME, 'rating',
+                              RATING_TIMESTAMP_COLUMN_NAME]
 
     ratings_df = filter_ratings(ratings_df,
                                 min_user_feedback=min_user_feedback,

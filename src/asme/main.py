@@ -1,4 +1,5 @@
 import os
+import shutil
 from contextlib import contextmanager, redirect_stdout
 
 import numpy as np
@@ -6,13 +7,20 @@ import torch
 import typer
 import optuna
 import json
-import logging as python_logging
-from tempfile import NamedTemporaryFile
 from pathlib import Path
 from typing import Optional, Callable, List, Iterator, Tuple
 
+from pytorch_lightning.loggers import LoggerCollection, MLFlowLogger
+
+from asme.init.templating.search.resolver import OptunaParameterResolver
+
+from asme.init.templating.search.processor import SearchTemplateProcessor
+
+from asme.init.config import Config
+
+from asme.init.config_keys import TRAINER_CONFIG_KEY, CHECKPOINT_CONFIG_KEY, CHECKPOINT_CONFIG_DIR_PATH
 from optuna.study import StudyDirection
-from pytorch_lightning import seed_everything, Callback
+from pytorch_lightning import seed_everything, Callback, Trainer
 from torch.utils.data import Sampler, DataLoader
 from torch.utils.data.dataset import T_co, Dataset
 from tqdm import tqdm
@@ -24,11 +32,9 @@ from asme.metrics.metric import MetricStorageMode
 from asme.init.context import Context
 from asme.init.factories.metrics.metrics_container import MetricsContainerFactory
 from asme.init.templating.search.configuration import SearchConfigurationTemplateProcessor
-from asme.init.templating.search.processor import SearchTemplateProcessor
-from asme.init.templating.search.resolver import OptunaParameterResolver
 from asme.tokenization.utils.tokenization import remove_special_tokens
-from asme.utils.run_utils import load_config, create_container, OBJECTIVE_METRIC_KEY, TRAIL_BASE_PATH, \
-    load_and_restore_from_file_or_study, log_dataloader_example
+from asme.utils.run_utils import load_config, create_container, OBJECTIVE_METRIC_KEY, TRIAL_BASE_PATH, \
+    load_and_restore_from_file_or_study, log_dataloader_example, load_hyperopt_config
 from asme.utils import ioutils, logging
 from asme.utils.ioutils import load_file_with_item_ids, determine_log_dir, save_config, save_finished_flag, \
     finished_flag_exists
@@ -80,101 +86,142 @@ def train(config_file: Path = typer.Argument(..., help='the path to the config f
 
 @app.command()
 def search(template_file: Path = typer.Argument(..., help='the path to the config file'),
+           optimization_config_file: Path = typer.Argument(..., help='path to a file containing optimization specs.'),
            study_name: str = typer.Argument(..., help='the study name of an existing optuna study'),
            study_storage: str = typer.Argument(..., help='the connection string for the study storage'),
 
            objective_metric: str = typer.Argument(..., help='the name of the metric to watch during the study'
                                                             '(e.g. recall@5).'),
            study_direction: str = typer.Option(default="maximize", help="minimize / maximize"),
-           num_trails: int = typer.Option(default=20, help='the number of trails to execute')
+           num_trials: int = typer.Option(default=20, help='the number of trials to execute')
            ) -> None:
     # check if objective_metric is defined
     test_config = load_config(template_file)
     test_metrics_config = test_config.get_config(['module', 'metrics'])
 
-    metrics_factors = MetricsContainerFactory()
-    test_metrics_container = metrics_factors.build(test_metrics_config, Context())
+    metrics_factory = MetricsContainerFactory()
+    test_metrics_container = metrics_factory.build(test_metrics_config, Context())
     if objective_metric not in test_metrics_container.get_metric_names():
         raise ValueError(f'{objective_metric} not configured. '
                          f'Can not optimize hyperparameters using the specified objective')
 
     def config_from_template(template_file: Path,
-                             config_file_handle: NamedTemporaryFile,
-                             trial: optuna.Trial):
+                             hyperopt_config_file: Path,
+                             trial: optuna.Trial) -> Config:
         """
-        Loads the template file and applies all template processors (including the SearchTemplateProcessor). The result
-        is written to the temporary `config_file_handle`.
+        Loads the model template and hyperopt config files. Fully resolves the model configuration and patches the model
+        configuration with the resolved hyper parameters from the study.
+        Both the final hyper optimization and model config are written into the output directory for later reference.
 
         :param template_file: a config file template path.
-        :param config_file_handle: a file handle for the temporary config file.
+        :param hyperopt_config_file: a config file with hyper parameter optimiziation configs.
         :param trial: a trial object.
-        :return: nothing.
+        :return: the final configuration with resolved hyperparameters according to the hyperopt config file.
         """
-        config = load_config(template_file, [SearchTemplateProcessor(OptunaParameterResolver(trial))],
-                             [SearchConfigurationTemplateProcessor(trial)])
-        json.dump(config.config, config_file_handle)
-        config_file_handle.flush()
+        config = load_config(template_file,
+                             additional_tail_processors=[SearchConfigurationTemplateProcessor(trial)])
+        hyperopt_config = load_hyperopt_config(hyperopt_config_file, [SearchTemplateProcessor(OptunaParameterResolver(trial))])
 
-    # FIXME (AD) don't rely on capturing of arguments in internal function scope -> make it into a callable object
-    def objective(trial: optuna.Trial):
-        # get the direction to get if we must extract the max or the min value of the metric
-        trail_study_direction = trial.study.direction
+
+        # infer model train directory from checkpoint output path set via `SearchConfigurationTemplateProcessor`.
+        output_path = Path(config.get([TRAINER_CONFIG_KEY, CHECKPOINT_CONFIG_KEY, CHECKPOINT_CONFIG_DIR_PATH])).parent
+
+        if not output_path.exists():
+            output_path.mkdir(parents=True)
+
+        shutil.copy2(hyperopt_config_file, output_path / "hyperopt_study.jsonnet")
+        with (output_path / "hyperopt_trial.jsonnet").open("w") as hyperopt_config_file:
+            json.dump(hyperopt_config.config, hyperopt_config_file, indent=2)
+
+        patched_config = config.patch(hyperopt_config)
+
+        #FIXME: adhoc fix to make output_path available in the configuration, remove when this is common in a configuration.
+        patched_config.set_if_absent(["output_path"], str(output_path))
+        return patched_config
+
+    study = optuna.create_study(study_name=study_name,
+                                storage=study_storage,
+                                load_if_exists=True,
+                                direction=study_direction)
+    study.set_user_attr(OBJECTIVE_METRIC_KEY, objective_metric)
+
+    for trial_run in range(1, num_trials+1):
+        print(f"Running trial {trial_run} / {num_trials}")
+        trial = study.ask()
+
+        trial_study_direction = trial.study.direction
         objective_best = {
             StudyDirection.MINIMIZE: min,
             StudyDirection.MAXIMIZE: max
-        }[trail_study_direction]
+        }[trial_study_direction]
 
-        with NamedTemporaryFile(mode='wt') as tmp_config_file:
-            # load config template, apply processors and write to `tmp_config_file`
-            config_from_template(template_file, tmp_config_file, trial)
+        # load config template, apply processors and write to `tmp_config_file`
+        model_config = config_from_template(template_file, optimization_config_file, trial)
 
-            class MetricsHistoryCallback(Callback):
-                """
-                Captures the reported metrics after every validation epoch.
-                """
+        class MetricsHistoryCallback(Callback):
+            """
+            Captures the reported metrics after every validation epoch.
+            """
 
-                def __init__(self):
-                    super().__init__()
+            def __init__(self):
+                super().__init__()
 
-                    self.metric_history = []
+                self.metric_history = []
 
-                def on_validation_end(self, pl_trainer, pl_module):
-                    self.metric_history.append(pl_trainer.callback_metrics)
+            def on_validation_end(self, pl_trainer, pl_module):
+                self.metric_history.append(pl_trainer.callback_metrics)
 
-            metrics_tracker = MetricsHistoryCallback()
+        metrics_tracker = MetricsHistoryCallback()
 
-            config = load_config(Path(tmp_config_file.name))
-            container = create_container(config)
+        container = create_container(model_config)
 
-            module = container.module()
-            trainer_builder = container.trainer()
-            trainer_builder.add_callback(metrics_tracker)
+        module = container.module()
+        trainer_builder = container.trainer()
+        trainer_builder.add_callback(metrics_tracker)
 
-            trainer = trainer_builder.build()
-            log_dir = determine_log_dir(trainer)
-            trial.set_user_attr(TRAIL_BASE_PATH, str(log_dir))
+        trainer = trainer_builder.build()
+        log_dir = determine_log_dir(trainer)
+        trial.set_user_attr(TRIAL_BASE_PATH, str(log_dir))
 
-            # save config of current run to its log dir
-            save_config(config, log_dir)
+        # store mlflow run id
+        def save_mlflow_id(trainer: Trainer, log_dir: Path):
+            if trainer.logger is None:
+                return
 
-            trainer.fit(
-                module,
-                train_dataloader=container.train_dataloader(),
-                val_dataloaders=container.validation_dataloader()
-            )
+            if type(trainer.logger) is MLFlowLogger:
+                id_file_path = log_dir / "mlflow_run_id.txt"
+                with id_file_path.open("w") as id_file:
+                    version = trainer.logger.version
+                    experiment = trainer.logger.name
 
-            save_finished_flag(log_dir)
+                    id_file.write(f"experiment:{experiment}\nversion:{version}")
 
-            def _find_best_value(key: str, best: Callable[[List[float]], float] = min) -> float:
-                values = [history_entry[key] for history_entry in metrics_tracker.metric_history]
-                return best(values)
+            if type(trainer.logger) is LoggerCollection:
+                for l in trainer.logger._logger_iterable:
+                    if type(l) is MLFlowLogger:
+                        id_file_path = log_dir / "mlflow_run_id.txt"
+                        with id_file_path.open("w") as id_file:
+                            version = trainer.logger.version
+                            experiment = trainer.logger.name
 
-            return _find_best_value(objective_metric, objective_best)
+                            id_file.write(f"experiment:{experiment}\nversion:{version}")
 
-    study = optuna.create_study(study_name=study_name, storage=study_storage, load_if_exists=True,
-                                direction=study_direction)
-    study.set_user_attr(OBJECTIVE_METRIC_KEY, objective_metric)
-    study.optimize(objective, n_trials=num_trails)
+        # save config of current run to its log dir
+        save_config(model_config, log_dir)
+        save_mlflow_id(trainer, log_dir)
+
+        trainer.fit(
+            module,
+            train_dataloader=container.train_dataloader(),
+            val_dataloaders=container.validation_dataloader()
+        )
+        save_finished_flag(log_dir)
+
+        def _find_best_value(key: str, best: Callable[[List[float]], float] = min) -> float:
+            values = [history_entry[key] for history_entry in metrics_tracker.metric_history]
+            return best(values)
+
+        study.tell(trial, _find_best_value(objective_metric, objective_best))
 
 
 @app.command()

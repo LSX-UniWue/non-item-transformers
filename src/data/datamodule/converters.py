@@ -8,6 +8,9 @@ import numpy as np
 import pandas as pd
 
 from datasets.dataset_pre_processing.utils import read_csv
+import json
+import csv
+import gzip
 
 
 class CsvConverter:
@@ -30,11 +33,14 @@ class CsvConverter:
 
 
 class YooChooseConverter(CsvConverter):
-    def apply(self, input_dir: Path, output_file: Path):
-        YOOCHOOSE_SESSION_ID_KEY = "SessionId"
-        YOOCHOOSE_ITEM_ID_KEY = "ItemId"
+    YOOCHOOSE_SESSION_ID_KEY = "SessionId"
 
-        data = pd.read_csv(input_dir.joinpath('clicks.dat'),
+    def __init__(self, delimiter="\t"):
+        self.delimiter = delimiter
+
+    def apply(self, input_dir: Path, output_file: Path):
+
+        data = pd.read_csv(input_dir.joinpath('yoochoose-clicks.dat'),
                            sep=',',
                            header=None,
                            usecols=[0, 1, 2],
@@ -42,17 +48,44 @@ class YooChooseConverter(CsvConverter):
                            names=['SessionId', 'TimeStr', 'ItemId'])
 
         data['Time'] = data.TimeStr.apply(lambda x: datetime.strptime(x, '%Y-%m-%dT%H:%M:%S.%fZ').timestamp())
-        session_lengths = data.groupby(YOOCHOOSE_SESSION_ID_KEY).size()
-        data = data[np.in1d(data.SessionId, session_lengths[session_lengths > 1].index)]
-        item_supports = data.groupby(YOOCHOOSE_ITEM_ID_KEY).size()
-        data = data[np.in1d(data.ItemId, item_supports[item_supports >= 5].index)]
-        session_lengths = data.groupby(YOOCHOOSE_SESSION_ID_KEY).size()
-        data = data[np.in1d(data.SessionId, session_lengths[session_lengths >= 2].index)]
+        data = data.drop("TimeStr", axis=1)
 
         if not os.path.exists(output_file):
             output_file.parent.mkdir(parents=True, exist_ok=True)
-        data = data.sort_values(YOOCHOOSE_SESSION_ID_KEY)
-        data.to_csv(path_or_buf=output_file)
+        data = data.sort_values(self.YOOCHOOSE_SESSION_ID_KEY)
+        data.to_csv(path_or_buf=output_file, sep=self.delimiter, index=False)
+
+
+class Movielens20MConverter(CsvConverter):
+    RATING_USER_COLUMN_NAME = 'userId'
+    RATING_MOVIE_COLUMN_NAME = 'movieId'
+    RATING_TIMESTAMP_COLUMN_NAME = 'timestamp'
+
+    def __init__(self, delimiter="\t"):
+        self.delimiter = delimiter
+
+    def apply(self, input_dir: Path, output_file: Path):
+        file_type = ".csv"
+        header = 0
+        sep = ","
+        name = "ml-20m"
+        location = input_dir / name
+        ratings_df = read_csv(location, "ratings", file_type, sep, header)
+
+        movies_df = read_csv(location, "movies", file_type, sep, header)
+
+        links_df = read_csv(location, "links", file_type, sep, header)
+        ratings_df = pd.merge(ratings_df, links_df)
+
+        merged_df = pd.merge(ratings_df, movies_df).sort_values(
+            by=[Movielens20MConverter.RATING_USER_COLUMN_NAME, Movielens20MConverter.RATING_TIMESTAMP_COLUMN_NAME])
+
+        # Remove unnecessary columns, we keep movieId here so that we can filter later.
+        merged_df = merged_df.drop('imdbId', axis=1).drop('tmdbId', axis=1)
+
+        os.makedirs(output_file.parent, exist_ok=True)
+
+        merged_df.to_csv(output_file, sep=self.delimiter, index=False)
 
 
 class Movielens1MConverter(CsvConverter):
@@ -90,6 +123,60 @@ class Movielens1MConverter(CsvConverter):
         merged_df.to_csv(output_file, sep=self.delimiter, index=False)
 
 
+class AmazonConverter(CsvConverter):
+    AMAZON_SESSION_ID = "reviewer_id"
+    AMAZON_ITEM_ID = "product_id"
+    AMAZON_REVIEW_TIMESTAMP_ID = "timestamp"
+
+    def __init__(self, delimiter="\t"):
+        self.delimiter = delimiter
+
+    def apply(self, input_dir: Path, output_file: Path):
+        os.makedirs(output_file.parent, exist_ok=True)
+        with gzip.open(input_dir) as file, output_file.open("w") as output_file:
+            rows = []
+            for line in file:
+                parsed = json.loads(line)
+                rows.append([parsed["reviewerID"], parsed["asin"], parsed["unixReviewTime"]])
+
+            df = pd.DataFrame(rows, columns=[self.AMAZON_SESSION_ID,
+                                             self.AMAZON_ITEM_ID,
+                                             self.AMAZON_REVIEW_TIMESTAMP_ID])
+            df = df.sort_values(by=[self.AMAZON_SESSION_ID, self.AMAZON_REVIEW_TIMESTAMP_ID])
+            df.to_csv(output_file, sep=self.delimiter, index=False)
+
+
+class SteamConverter(CsvConverter):
+    STEAM_SESSION_ID = "username"
+    STEAM_ITEM_ID = "product_id"
+    STEAM_TIMESTAMP = "date"
+
+    def __init__(self, delimiter="\t"):
+        self.delimiter = delimiter
+
+    def apply(self, input_dir: Path, output_file: Path):
+
+        if not output_file.parent.exists():
+            os.makedirs(output_file.parent, exist_ok=True)
+
+        with gzip.open(input_dir, mode="rt") as input_file:
+            rows = []
+            for record in input_file:
+                parsed_record = eval(record)
+                username = parsed_record[self.STEAM_SESSION_ID]
+                product_id = int(parsed_record[self.STEAM_ITEM_ID])
+                timestamp = parsed_record[self.STEAM_TIMESTAMP]
+
+                row = [username, product_id, timestamp]
+                rows.append(row)
+
+        df = pd.DataFrame(rows, columns=[self.STEAM_SESSION_ID,
+                                         self.STEAM_ITEM_ID,
+                                         self.STEAM_TIMESTAMP])
+        df = df.sort_values(by=[self.STEAM_SESSION_ID, self.STEAM_TIMESTAMP])
+        df.to_csv(output_file, sep=self.delimiter, index=False)
+
+
 class DotaShopConverter(CsvConverter):
 
     def __init__(self):
@@ -108,4 +195,3 @@ class ExampleConverter(CsvConverter):
     def apply(self, input_dir: Path, output_file: Path):
         # We assume `input_dir` to be the path to the raw csv file.
         shutil.copy(input_dir, output_file)
-

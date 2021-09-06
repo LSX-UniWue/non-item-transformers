@@ -2,7 +2,7 @@ import copy
 import inspect
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional, List, Dict, Any, Callable
+from typing import Optional, List, Callable
 
 from asme.init.config import Config
 from asme.init.context import Context
@@ -31,9 +31,11 @@ class AsmeDataModuleConfig:
     a dataset.
     """
     dataset: str
+    cache_path: Optional[str]
     template: Optional[Config]
     data_sources: Optional[Config]
     dataset_preprocessing_config: Optional[DatasetPreprocessingConfig]
+    force_regeneration: bool = False
 
 
 class PreprocessingConfigProvider:

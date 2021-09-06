@@ -7,7 +7,4 @@ if [ "$PREPARE_SCRIPT" ]; then
   $PREPARE_SCRIPT
 fi
 
-# now run the configuration using poetry
-
-export PYTHONPATH=/jdf
-/bin/bash -c "asme $*"
+/bin/bash -c "$*"

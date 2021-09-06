@@ -1,11 +1,11 @@
 from typing import Dict, Any
 
+from asme.init.factories.data_sources.template_datasources import TemplateDataSourcesFactory
 from data.datasets.sequence import MetaInformation
 from torch.utils.data import DataLoader
 
 from asme.init.config import Config
 from asme.init.context import Context
-from asme.init.factories.data_sources.template_datasources import TemplateDatasourceFactory
 from asme.init.templating.template_engine import TemplateEngine
 from data.datasets import SAMPLE_IDS, ITEM_SEQ_ENTRY_NAME, TARGET_ENTRY_NAME
 from util_test import assert_list_equal
@@ -69,8 +69,6 @@ def assert_next_item_test_validation(data_sources: Dict[str, DataLoader]):
 
 def load_dataset(template: Dict[str, Any]
                  ) -> Dict[str, DataLoader]:
-    modified_template = TemplateEngine().modify(template)
-    print(modified_template)
     context = Context()
 
     item_seq_feature_info = MetaInformation('item', type='str', column_name="item_id", is_sequence=True,
@@ -79,8 +77,8 @@ def load_dataset(template: Dict[str, Any]
     context.set('tokenizers.item', create_tokenizer())
     context.set('features', [item_seq_feature_info])
 
-    config = Config(modified_template.get('data_sources'))
-    return TemplateDatasourceFactory().build(config, context)
+    config = Config(template.get('template'))
+    return TemplateDataSourcesFactory("name").build(config, context)
 
 
 def get_all_data(data_loader: DataLoader

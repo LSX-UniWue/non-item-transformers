@@ -12,8 +12,8 @@ AMAZON_DOWNLOAD_URL_MAP = {
 }
 
 AMAZON_ZIPPED_FILE_NAMES = {
-    "games": "reviews_Video_Games.json.gz",
-    "beauty": "reviews_Beauty.json.gz"
+"games": "reviews_Video_Games.json.gz",
+"beauty": "reviews_Beauty.json.gz"
 }
 
 AMAZON_DELIMITER = "\t"
