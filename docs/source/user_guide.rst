@@ -76,7 +76,7 @@ Executing Trained Models
 
 Hyperparameter Search
 """""""""""""""""""""
-Searching for hyperparameter with Optuna
+Searching for hyperparameter with Optuna.
 Further information can be found `here <./hyperparameter_search.html>`__
 
 .. code:: bash
