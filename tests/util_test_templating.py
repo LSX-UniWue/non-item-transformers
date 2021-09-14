@@ -1,13 +1,12 @@
 from typing import Dict, Any
 
-from asme.init.factories.data_sources.template_datasources import TemplateDataSourcesFactory
-from data.datasets.sequence import MetaInformation
+from asme.core.init.factories.data_sources.template_datasources import TemplateDataSourcesFactory
+from asme.data.datasets.sequence import MetaInformation
 from torch.utils.data import DataLoader
 
-from asme.init.config import Config
-from asme.init.context import Context
-from asme.init.templating.template_engine import TemplateEngine
-from data.datasets import SAMPLE_IDS, ITEM_SEQ_ENTRY_NAME, TARGET_ENTRY_NAME
+from asme.core.init.config import Config
+from asme.core.init.context import Context
+from asme.data.datasets import SAMPLE_IDS, ITEM_SEQ_ENTRY_NAME, TARGET_ENTRY_NAME
 from util_test import assert_list_equal
 from util_test_tokenizer import create_tokenizer
 

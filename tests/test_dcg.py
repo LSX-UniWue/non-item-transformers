@@ -3,7 +3,7 @@ from typing import Tuple
 import pytest
 import torch
 
-from asme.metrics.dcg import DiscountedCumulativeGainMetric
+from asme.core.metrics.dcg import DiscountedCumulativeGainMetric
 from util_test_metric import EPSILON, build_sample
 
 

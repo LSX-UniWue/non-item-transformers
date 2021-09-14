@@ -1,9 +1,9 @@
 from pytorch_lightning import seed_everything
 
+from asme.data.datasets.processors.cloze_mask import ClozeMaskProcessor
 from util_test import assert_list_equal
 from util_test_tokenizer import create_tokenizer
-from data.datasets import ITEM_SEQ_ENTRY_NAME, TARGET_ENTRY_NAME
-from data.datasets.processors.cloze_mask import ClozeMaskProcessor
+from asme.data.datasets import ITEM_SEQ_ENTRY_NAME, TARGET_ENTRY_NAME
 
 
 def test_cloze_mask_processor_last_item():

@@ -1,8 +1,8 @@
 from collections import OrderedDict
 
-from asme.tokenization.tokenizer import Tokenizer
-from asme.tokenization.utils.tokenization import remove_special_tokens
-from asme.tokenization.vocabulary import Vocabulary
+from asme.core.tokenization.tokenizer import Tokenizer
+from asme.core.tokenization.utils.tokenization import remove_special_tokens
+from asme.core.tokenization.vocabulary import Vocabulary
 
 from util_test import assert_list_equal
 

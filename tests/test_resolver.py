@@ -2,7 +2,7 @@ import optuna
 import pytest
 from optuna import Trial
 
-from asme.init.templating.search.resolver import OptunaParameterResolver, parse_parameter_dependency_info
+from asme.core.init.templating.search.resolver import OptunaParameterResolver, parse_parameter_dependency_info
 
 
 @pytest.fixture

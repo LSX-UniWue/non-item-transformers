@@ -4,7 +4,7 @@ import pytest
 import torch
 from util_test_metric import build_sample, EPSILON
 
-from asme.metrics.f1 import F1Metric
+from asme.core.metrics.f1 import F1Metric
 
 
 def get_multiple_item_recommendation_samples():

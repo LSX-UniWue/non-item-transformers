@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from asme.tokenization.tokenizer import Tokenizer
-from asme.tokenization.vocabulary import CSVVocabularyReaderWriter
+from asme.core.tokenization.tokenizer import Tokenizer
+from asme.core.tokenization.vocabulary import CSVVocabularyReaderWriter
 
 # TODO: move somewhere else
 TEST_DATASET_BASE_PATH = Path('tests/example_dataset/')

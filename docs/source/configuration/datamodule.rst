@@ -51,7 +51,8 @@ Template
             split: "leave_one_out",
             path: dataset_path,
             file_prefix: dataset,
-            num_workers: 0
+            num_workers: 0,
+            ...
         },
         ...
     },

@@ -1,7 +1,7 @@
 from typing import Any, Dict
 
-from data.datasets import ITEM_SEQ_ENTRY_NAME
-from data.datasets.processors.cut_to_fixed_sequence_length import CutToFixedSequenceLengthProcessor
+from asme.data.datasets import ITEM_SEQ_ENTRY_NAME
+from asme.data.datasets.processors.cut_to_fixed_sequence_length import CutToFixedSequenceLengthProcessor
 from pytorch_lightning import seed_everything
 
 from util_test import assert_list_equal

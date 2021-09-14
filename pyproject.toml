@@ -7,8 +7,6 @@ license = "LGPLv3"
 
 packages = [
     { include = "asme", from = "src"},
-    { include = "data", from = "src"},
-    { include = "datasets", from = "src"}
 ]
 
 [tool.poetry.dependencies]
@@ -40,5 +38,4 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-asme = 'asme.main:app'
-asme-datasets = 'datasets.main:app'
+asme = 'asme.core.main:app'

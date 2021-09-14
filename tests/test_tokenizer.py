@@ -2,8 +2,8 @@ import pytest
 
 from collections import OrderedDict
 
-from asme.tokenization.tokenizer import Tokenizer
-from asme.tokenization.vocabulary import Vocabulary
+from asme.core.tokenization.tokenizer import Tokenizer
+from asme.core.tokenization.vocabulary import Vocabulary
 
 
 @pytest.fixture

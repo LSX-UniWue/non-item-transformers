@@ -1,7 +1,7 @@
 from pytorch_lightning import seed_everything
 
-from data.datasets import ITEM_SEQ_ENTRY_NAME, POSITIVE_SAMPLES_ENTRY_NAME, NEGATIVE_SAMPLES_ENTRY_NAME
-from data.datasets.processors.pos_neg_sampler import PositiveNegativeSamplerProcessor
+from asme.data.datasets import ITEM_SEQ_ENTRY_NAME, POSITIVE_SAMPLES_ENTRY_NAME, NEGATIVE_SAMPLES_ENTRY_NAME
+from asme.data.datasets.processors.pos_neg_sampler import PositiveNegativeSamplerProcessor
 from util_test import assert_list_equal
 from util_test_tokenizer import create_tokenizer
 

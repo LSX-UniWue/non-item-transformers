@@ -1,5 +1,5 @@
-from data.datasets import ITEM_SEQ_ENTRY_NAME, TARGET_ENTRY_NAME
-from data.datasets.processors.target_extractor import TargetExtractorProcessor
+from asme.data.datasets import ITEM_SEQ_ENTRY_NAME, TARGET_ENTRY_NAME
+from asme.data.datasets.processors.target_extractor import TargetExtractorProcessor
 from util_test import assert_list_equal
 
 

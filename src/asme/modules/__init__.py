@@ -1,7 +1,0 @@
-from asme.modules.constants import LOG_KEY_TEST_LOSS, LOG_KEY_TRAINING_LOSS, LOG_KEY_VALIDATION_LOSS
-
-__all__ = [
-    "LOG_KEY_VALIDATION_LOSS",
-    "LOG_KEY_TEST_LOSS",
-    "LOG_KEY_TRAINING_LOSS"
-]

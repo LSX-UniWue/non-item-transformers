@@ -7,7 +7,7 @@ from util_test import assert_list_equal
 from util_test_templating import load_dataset, NUM_EXAMPLES_SEQUENCES, assert_loo_test_and_validation, \
     assert_next_item_test_validation
 from util_test_tokenizer import TEST_DATASET_BASE_PATH
-from data.datasets import SAMPLE_IDS, ITEM_SEQ_ENTRY_NAME, POSITIVE_SAMPLES_ENTRY_NAME, NEGATIVE_SAMPLES_ENTRY_NAME
+from asme.data.datasets import SAMPLE_IDS, ITEM_SEQ_ENTRY_NAME, POSITIVE_SAMPLES_ENTRY_NAME, NEGATIVE_SAMPLES_ENTRY_NAME
 
 
 LEAVE_ONE_OUT_TEMPLATE = {

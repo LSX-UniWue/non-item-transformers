@@ -1,6 +1,5 @@
 local raw_dataset_path = "datasets/dataset/ml-1m/";
-local cached_dataset_path = raw_dataset_path;
-local loo_path = cached_dataset_path + "loo/";
+local cached_dataset_path = "/tmp/cache/ml-1m";
 local output_path = "../dataset/ml-1m/exp/";
 local max_seq_length = 200;
 local metrics =  {
@@ -14,18 +13,17 @@ local dataset = 'ml-1m';
 {
     datamodule: {
         dataset: dataset,
+        cache_path: cached_dataset_path,
         // This template is equivalent to the explicit definition given in "data_sources"
-        /*template: {
+        template: {
             name: "masked",
             split: "leave_one_out",
-            path: raw_dataset_path,
-            file_prefix: dataset,
+            file_prefix: dataset, // Optional
             num_workers: 4
-        },*/
-        data_sources: {
+        },
+       /* data_sources: {
             split: "leave_one_out",
-            path: raw_dataset_path,
-            file_prefix: dataset,
+            file_prefix: dataset, // Optional
             train: {
                 type: "session",
                 processors: [
@@ -58,7 +56,7 @@ local dataset = 'ml-1m';
                     }
                 ]
             }
-        },
+        },*/
         force_regeneration: "False",
         preprocessing: {
             extraction_directory: "/tmp/ml-1m/",
@@ -109,7 +107,6 @@ local dataset = 'ml-1m';
                     unk_token: "<UNK>"
                 },
                 vocabulary: {
-                    #file: loo_path + file_prefix + "vocabulary.title.txt"
                 }
             }
         }
