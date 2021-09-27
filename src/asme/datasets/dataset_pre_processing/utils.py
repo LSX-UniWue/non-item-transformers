@@ -130,7 +130,8 @@ def read_csv(dataset_dir: Path,
              file: str,
              file_type: str,
              sep: str,
-             header: bool = None
+             header: bool = None,
+             encoding: str = "utf-8"
              ) -> pd.DataFrame:
     file_path = dataset_dir / f"{file}{file_type}"
-    return pd.read_csv(file_path, sep=sep, header=header, engine="python")
+    return pd.read_csv(file_path, sep=sep, header=header, engine="python", encoding=encoding)

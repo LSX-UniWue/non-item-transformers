@@ -411,7 +411,7 @@ class CreateNextItemIndex(PreprocessingAction):
     def _get_next_item_index_path(context: Context) -> Path:
         output_dir = context.get(OUTPUT_DIR_KEY)
         prefix = format_prefix(context.get(PREFIXES_KEY))
-        return output_dir / f"{prefix}.nextitem.idx"
+        return output_dir / f"{prefix}.train.nextitem.idx"
 
 
 class CreateSlidingWindowIndex(PreprocessingAction):
@@ -595,7 +595,8 @@ class CreateVocabulary(PreprocessingAction):
         self.prefixes = prefixes
 
     def name(self) -> str:
-        return f"Creating Vocabulary for columns: {self.columns}."
+        columns = list(map(lambda col: col.column_name if col.column_name is not None else col.feature_name, self.columns))
+        return f"Creating Vocabulary for columns: {columns}."
 
     def _run(self, context: Context) -> None:
         main_file = context.get(MAIN_FILE_KEY)

@@ -456,6 +456,9 @@ def evaluate(config_file: Path = typer.Option(default=None, help='the path to th
         logger.error(f"'{output_file.suffix} is not a supported format to write predictions to a file.'")
         exit(-1)
 
+    if write_results_to_file:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+
     if seed is not None:
         seed_everything(seed)
 

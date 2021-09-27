@@ -106,16 +106,10 @@ class CheckpointFactory(ObjectFactory):
         config.config.pop('output_base_path', None)
         output_filename = config.get_or_default("output_filename", None)
         config.config.pop('output_filename', None)
-        model_checkpoint = ModelCheckpoint(**config.config)
-        if not config.has_path("save_on_train_epoch_end"):
-            print("""
-            !!! Caution !!!
-            You have not specified `save_on_train_epoch_end`. In case you have not set `Trainer.val_check_interval` or
-            set it to `Trainer.val_check_interval == 1.0`, no checkpoints will be saved after validation. To force
-            the expected behaviour (that is saving a checkpoint after validation), set `save_on_train_epoch_end == False`.
-            !!! Caution !!!
-            """)
-        wrapped_checkpoint = BestModelWritingModelCheckpoint(model_checkpoint, output_base_path, output_filename)
+        symlink_name = config.get_or_default("symlink_name", "best.ckpt")
+        config.config.pop('symlink_name', "best.ckpt")
+
+        wrapped_checkpoint = BestModelWritingModelCheckpoint(output_base_path, output_filename, symlink_name, **config.config)
         return wrapped_checkpoint
 
     def is_required(self, context: Context) -> bool:

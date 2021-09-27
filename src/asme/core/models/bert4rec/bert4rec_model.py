@@ -8,6 +8,7 @@ from torch import nn
 from asme.core.models.common.layers.layers import build_projection_layer
 from asme.core.models.common.layers.transformer_layers import TransformerEmbedding
 from asme.core.models.sequence_recommendation_model import SequenceRecommenderModel
+from asme.core.utils.hyperparameter_utils import save_hyperparameters
 
 
 class BERT4RecModel(SequenceRecommenderModel):
@@ -17,7 +18,7 @@ class BERT4RecModel(SequenceRecommenderModel):
         see https://doi.org/10.1145%2f3357384.3357895 for more details.
         Using own transformer implementation to be able to pass batch first tensors to the model
     """
-
+    @save_hyperparameters
     def __init__(self,
                  transformer_hidden_size: int,
                  num_transformer_heads: int,

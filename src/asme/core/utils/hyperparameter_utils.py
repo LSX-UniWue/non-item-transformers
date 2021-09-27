@@ -1,11 +1,14 @@
 import inspect
 from functools import wraps
+
 from torch import nn
 from asme.core.tokenization.tokenizer import Tokenizer
 import pytorch_lightning as pl
 
 from asme.core.metrics.container.metrics_container import MetricsContainer
+from asme.core.utils.logging import get_logger
 
+logger = get_logger(__name__)
 
 def _get_hyperparameters(args, kwargs, init_func):
 
@@ -23,9 +26,12 @@ def _get_hyperparameters(args, kwargs, init_func):
         if isinstance(value, (MetricsContainer, pl.metrics.Metric, Tokenizer)):  # excluding non-hyperparameters like Metrics and Tokenizer
             continue
         hyperparameters[arg] = value
-        if isinstance(value, nn.Module) and hasattr(value, 'hyperparameters'):                    # special handling of the model parameter
-            model_hyperparameters = value.hyperparameters
-            hyperparameters[arg] = model_hyperparameters
+        if isinstance(value, nn.Module):
+            if hasattr(value, 'hyperparameters'):                    # special handling of the model parameter
+                model_hyperparameters = value.hyperparameters
+                hyperparameters[arg] = model_hyperparameters
+            else:
+                logger.warning(f"Your module contains a submodule named <{arg}> that does not report its hyperparameters, consider adding @save_hyperparameters annotation.")
 
     return hyperparameters
 

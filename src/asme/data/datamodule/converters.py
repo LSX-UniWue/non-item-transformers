@@ -102,16 +102,17 @@ class Movielens1MConverter(CsvConverter):
         sep = "::"
         name = "ml-1m"
         location = input_dir / name
-        ratings_df = read_csv(location, "ratings", file_type, sep, header)
+        encoding = "latin-1"
+        ratings_df = read_csv(location, "ratings", file_type, sep, header, encoding=encoding)
 
         ratings_df.columns = [Movielens1MConverter.RATING_USER_COLUMN_NAME,
                               Movielens1MConverter.RATING_MOVIE_COLUMN_NAME, 'rating',
                               Movielens1MConverter.RATING_TIMESTAMP_COLUMN_NAME]
 
-        movies_df = read_csv(location, "movies", file_type, sep, header)
+        movies_df = read_csv(location, "movies", file_type, sep, header, encoding=encoding)
 
         movies_df.columns = ['movieId', 'title', 'genres']
-        users_df = read_csv(location, "users", file_type, sep, header)
+        users_df = read_csv(location, "users", file_type, sep, header, encoding=encoding)
         users_df.columns = [Movielens1MConverter.RATING_USER_COLUMN_NAME, 'gender', 'age', 'occupation', 'zip']
         ratings_df = pd.merge(ratings_df, users_df)
 
