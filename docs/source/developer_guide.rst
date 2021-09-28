@@ -37,6 +37,8 @@ implement a new metrics class.
 Adding a new Data set
 ---------------------
 
+TODO: Needs an update!
+
 All necessary files for the integration of data sets can be found under
 the `dataset folder <../datasets>`__.
 
@@ -60,15 +62,6 @@ In order to add a new model multiple things need to be implemented:
 2. A pytorch lightning module that wraps the torch implementation of your newly implemented model in `modules <../asme/modules>`__
 3. A configuration container in `runner/util/containers <../asme/runner/util/containers.py>`__ and the respective connection in `runner/run\_model <../asme/runner/run_model.py>`__
 
-Things that are not documented
-------------------------------
-
-This section lists areas of the project that are not documented/need
-code comments:
-
-- Contents of the "support-code" in `runner/util <../asme/runner/util>`__
-- Most methods, classes, and modules
-
 Refactor proposals
 ------------------
 
@@ -81,13 +74,6 @@ Refactor proposals
    be a directory)
 -  Every directory deserves its own little README.md describing its
    purpose, contents, and implementation hints in a few sentences
--  If this project aims to become a CLI one day the project structure
-   should represent that by:
-
-   -  Either: directories should be structured into commands
-   -  Or: An app directory should be created in which commands are
-      defined and registered at one central file
-
 -  If a class is defined in a file the file should have the same name as
    the class (e.g., `indexer.py <./../data/base/indexer.py>`__ defines
    the CsvSessionIndexer class)

@@ -37,12 +37,16 @@ The example below contains configurations for training Bert4Rec on the Movielens
                 split: "leave_one_out",
                 path: dataset_path,
                 file_prefix: dataset,
-                num_workers: 0
+                num_workers: 4,
+                batch_size: 64,
+                max_seq_length: max_seq_length,
+                mask_probability: 0.2,
+                mask_seed: 42
             },
             preprocessing: {
                 extraction_directory: "/tmp/ml-1m/",
                 output_directory: raw_dataset_path,
-                min_item_feedback: 0,
+                min_item_feedback: 2,
                 min_sequence_length: 2
             }
         },

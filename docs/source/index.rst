@@ -18,12 +18,7 @@ Welcome to The-Jane-Doe-Framework's documentation!
    formats/vocabulary_file
    formats/popularity_file
    formats/train_file
-   dataset/dataset_cli
    dataset/indices
-   dataset/refactoring_notes_dataset_cli
-
-
-
 
 Indices and tables
 ==================

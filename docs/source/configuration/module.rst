@@ -22,6 +22,8 @@ checkpoint), via ``KEY@k``.
 - MRR full (``mrr_full``)
 - Rank (``rank``)
 
+TODO: Metrics will be covered by TorchMetrics soon.
+
 
 Metric Evaluation
 -----------------
@@ -92,7 +94,7 @@ The ``sampled`` metrics config, requires the following parameters:
 -  ``metrics``: you can define all metrics you can also define using all
    items of the dataset.
 
-The probability file is generated automatically during the dataset generation process TODO: point to the help script to calculate the file
+The probability file is generated automatically during the dataset generation process.
 
 Fixed Subset
 ~~~~~~~~~~~~
@@ -126,18 +128,125 @@ The ``fixed`` metrics config, requires the following parameters:
 
 Models
 --------
-kebert4rec
-bert4rec
-caser
-narm
-sasrec
-rnn
-cosrec
-hgn
-dream
-nnrec
-pop
-session_pop
-markov
-bpr
+
+.. code::json
+
+    ...
+    module: {
+        type: MODEL_NAME,
+        model: {
+            max_seq_length: max_seq_length,
+            num_transformer_heads: 2,
+            num_transformer_layers: 2,
+            transformer_hidden_size: hidden_size,
+            transformer_dropout: 0.5
+        },
+        ...
+    },
+    ...
+
+
+The following models and corresponding parameters are implemented:
+
++--------------+--------------------------------------------+
+| Model Name   | Model Parameter                            |
++==============+============================================+
+| bert4rec     | transformer_hidden_size,                   |
+|              | num_transformer_heads,                     |
+|              | num_transformer_layers,                    |
+|              | item_vocab_size,                           |
+|              | max_seq_length,                            |
+|              | transformer_dropout,                       |
+|              | project_layer_type (optional),             |
+|              | embedding_pooling_type (optional),         |
+|              | initializer_range (optional),              |
+|              | transformer_intermediate_size (optional),  |
+|              | transformer_attention_dropout (optional)   |
++--------------+--------------------------------------------+
+| kebert4rec   | transformer_hidden_size,                   |
+|              | num_transformer_heads,                     |
+|              | num_transformer_layers,                    |
+|              | item_vocab_size,                           |
+|              | max_seq_length,                            |
+|              | transformer_dropout,                       |
+|              | additional_attributes,                     |
+|              | embedding_pooling_type (optional),         |
+|              | initializer_range (optional),              |
+|              | transformer_intermediate_size (optional),  |
+|              | transformer_attention_dropout (optional)   |
++--------------+--------------------------------------------+
+| caser        | embedding_size,                            |
+|              | item_vocab_size,                           |
+|              | user_vocab_size,                           |
+|              | max_seq_length,                            |
+|              | num_vertical_filters,                      |
+|              | num_horizontal_filters,                    |
+|              | conv_activation_fn,                        |
+|              | fc_activation_fn,                          |
+|              | dropout,                                   |
+|              | embedding_pooling_type (optional)          |
++--------------+--------------------------------------------+
+| narm         | item_vocab_size,                           |
+|              | item_embedding_size,                       |
+|              | global_encoder_size,                       |
+|              | global_encoder_num_layers,                 |
+|              | embedding_dropout,                         |
+|              | context_dropout,                           |
+|              | batch_first (optional),                    |
+|              | embedding_pooling_type (optional)          |
++--------------+--------------------------------------------+
+| sasrec       | transformer_hidden_size,                   |
+|              | num_transformer_heads,                     |
+|              | num_transformer_layers,                    |
+|              | item_vocab_size,                           |
+|              | max_seq_length,                            |
+|              | transformer_dropout,                       |
+|              | embedding_pooling_type (optional),         |
+|              | transformer_intermediate_size (optional),  |
+|              | transformer_attention_dropout (optional)   |
++--------------+--------------------------------------------+
+| rnn          | cell_type,                                 |
+|              | item_vocab_size,                           |
+|              | item_embedding_dim,                        |
+|              | hidden_size,                               |
+|              | num_layers,                                |
+|              | dropout,                                   |
+|              | bidirectional (optional),                  |
+|              | nonlinearity (optional),                   |
+|              | embedding_pooling_type (optional),         |
+|              | project_layer_type (optional)              |
++--------------+--------------------------------------------+
+| cosrec       | user_vocab_size,                           |
+|              | item_vocab_size,                           |
+|              | embed_dim,                                 |
+|              | block_num,                                 |
+|              | block_dim,                                 |
+|              | fc_dim,                                    |
+|              | activation_function,                       |
+|              | dropout,                                   |
+|              | embedding_pooling_type (optional)          |
++--------------+--------------------------------------------+
+| hgn          | user_vocab_size,                           |
+|              | item_vocab_size,                           |
+|              | num_successive_items,                      |
+|              | dims,                                      |
+|              | embedding_pooling_type (optional)          |
++--------------+--------------------------------------------+
+| nnrec        | item_vocab_size,                           |
+|              | user_vocab_size,                           |
+|              | item_embedding_size,                       |
+|              | user_embedding_size,                       |
+|              | hidden_size,                               |
+|              | max_sequence_length,                       |
+|              | embedding_pooling_type                     |
++--------------+--------------------------------------------+
+
+Additionally, the following baselines are implemented:
+
+    *  bpr
+    *  dream
+    *  pop
+    *  session_pop
+    *  markov
+
 

@@ -41,7 +41,7 @@ The index file can be used in the following scenarios:
 
       [1], [1, 2], [1, 2, 3], [1, 2, 3, 4] (maybe with targets 2, 3, 4, 5 respectively)
 
-  - Leave-one-out-evaluation/trainig: 
+  - Leave-one-out-evaluation/training:
     
     - One single sequence datafile can be used for training, validation, and test
       using different sequence position indices.
