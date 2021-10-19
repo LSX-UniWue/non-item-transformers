@@ -49,7 +49,7 @@ Environment Setup
 
     curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
 
-For detailed instructions go to its `documenation <https://python-poetry.org/docs/#installation>`__.
+For detailed instructions go to its `documentation <https://python-poetry.org/docs/#installation>`__.
 
 - Finally, build the `virtual environment <https://uoa-eresearch.github.io/eresearch-cookbook/recipe/2014/11/26/python-virtual-env/>`__ using `Poetry <https://python-poetry.org/docs/#installation>`__.
 

@@ -3,13 +3,17 @@ Datamodule
 ======================================
 
 Two Options:
-:ref:`Template <datamodule template>` for fast standard options
-:ref:`datamodule datasources` for complicated, unique datasets
+
 
 .. code:: json
     datamodule: {
         dataset: dataset,
+        <template OR data_sources>: {
+            ...
+        },
+        force_regeneration: "False",
         preprocessing: {
+            extraction_directory: "/tmp/ml-1m/",
             output_directory: dataset_path,
             min_item_feedback: 2,
             min_sequence_length: 2
@@ -26,11 +30,15 @@ dataset: the name of the dataset (e.g. ml-1m) - REQUIRED
     amazon-beauty
     amazon-games
 
+template / data_sources: you can use either the :ref:`template <datamodule template>` to preprocess standardized data sets quickly or :ref:`datamodule datasources` for unique datasets or preprocessing steps. Further explanation for both options are listed below.
+
+force_regeneration: TODO: describe whatever this is
+
 preprocessing: - OPTIONAL AND ONLY AVAILABLE FOR OUR DATASETS
     output_directory: path where the dataset will be saved
     min_item_feedback: minimum number of feedback an item should have
     min_sequence_length: minimum length of a sequence
-    extraction_directory: (optional) TODO
+    extraction_directory: (optional) path where the dataset will be extracted
 
 
 
@@ -43,6 +51,8 @@ Pre-Requisites:
 .. _datamodule template:
 Template
 ~~~~~~~~~
+The datamodule template offers a way to preprocess common data sets quickly.
+
 .. code:: json
     datamodule: {
         ...
@@ -64,9 +74,12 @@ template:
     file_prefix: prefix of the generated files, we recommend using the name of the dataset
     num_workers: number of workers
 
+
 .. _datamodule datasources:
 Data Sources
 ~~~~~~~~~~~~~~
+The data_sources config offers
+
 .. code:: json
     datamodule: {
         ...
