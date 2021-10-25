@@ -1,7 +1,7 @@
 .. _config imports:
 Dynamic Imports
 ======================================
-Since the frame work is supposed to be used as a run-platform via its own CLI interface, we provide a mechanism to load
+Since the framework is supposed to be used as a run-platform via its own CLI interface, we provide a mechanism to load
 foreign code dynamically. In particular, this allows you to load your own models and datasets such that you can use them
 with the standard CLI commands.
 
@@ -30,8 +30,8 @@ Defining your own Module
 --------------------------------------
 While loading your code via the dynamic import feature outlined above enables you to extend the framework with your own
 ideas, it is not aware of the modules or datasets you implemented. To be able to use your own module with the CLI
-commands you have to register it with the framework. This can be done by putting the following in any file that is run
-upon import (e.g. at top-level in any file or in a __init__.py):
+commands you have to register it with the framework. This can be done by adding the following to any file that is run
+upon import (e.g. at top-level in any file or in a `__init__.py`):
 
 .. code:: python
   register_module(
@@ -46,13 +46,13 @@ upon import (e.g. at top-level in any file or in a __init__.py):
     )
   )
 
-The fields described above have the following semantics:
+The fields listed above have the following semantics:
 
 * *<your-module-name>*: Unique identifier for your module. You will be able to refer to your module in the config file using this identifier.
 * *<module-factory>*: Specifies which factory the framework should use to build your module. You can eiter implement one yourself or use the GenericModuleFactory provided by the framework. The following explanation assumes you use the GenericModuleFactory. If you provide your own, the dictionary specified as the last parameter is just passed to it upon construction.
-* *<module-type>*: Specifies how the framework will supply your module with training data. Valid options include MaskedTrainingModule, NextItemPredictionModule, SequenceNextItemPredictionModule and NextItemPredictionWithNegativeSampleTrainingModule.
+* *<module-type>*: Specifies how the framework will supply your module with training data. Valid options include `MaskedTrainingModule`, `NextItemPredictionModule`, `SequenceNextItemPredictionModule` and `NextItemPredictionWithNegativeSampleTrainingModule`.
 * *<model-class>*: The class you implemented your model logic in.
-* *<loss-function>* (**optional**): If your module does not have a fixed loss function, you can specify an instance here. This instance will be passed to the module by the GenericModuleFactory.
+* *<loss-function>* (**optional**): If your module does not have a fixed loss function, you can specify an instance here. This instance will be passed to the module by the `GenericModuleFactory`.
 
 Defining your own Dataset
 --------------------------------------

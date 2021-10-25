@@ -43,6 +43,7 @@ The example below contains configurations for training Bert4Rec on the Movielens
                 mask_probability: 0.2,
                 mask_seed: 42
             },
+            force_regeneration: "False",
             preprocessing: {
                 extraction_directory: "/tmp/ml-1m/",
                 output_directory: raw_dataset_path,

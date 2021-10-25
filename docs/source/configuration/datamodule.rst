@@ -2,50 +2,38 @@
 Datamodule
 ======================================
 
-Two Options:
+This config part specifies the dataset parameters.
 
-
+Example
+~~~~~~~~
 .. code:: json
     datamodule: {
-        dataset: dataset,
+        dataset: <dataset>,
         <template OR data_sources>: {
             ...
         },
         force_regeneration: "False",
         preprocessing: {
-            extraction_directory: "/tmp/ml-1m/",
-            output_directory: dataset_path,
-            min_item_feedback: 2,
-            min_sequence_length: 2
+            output_directory: <dataset_path>,
+            min_sequence_length: <min_seq_length>,
+            ...
         },
         ...
     },
 
-dataset: the name of the dataset (e.g. ml-1m) - REQUIRED
-    ml-1m
-    ml-20m
-    steam
-    yoochoose-buys
-    yoochoose-clicks
-    amazon-beauty
-    amazon-games
+* *dataset*: the name of the dataset (e.g. `ml-1m`)
 
-template / data_sources: you can use either the :ref:`template <datamodule template>` to preprocess standardized data sets quickly or :ref:`datamodule datasources` for unique datasets or preprocessing steps. Further explanation for both options are listed below.
+* *template* / *data_sources*: you can use either the :ref:`template <datamodule template>` to preprocess standardized data sets quickly or :ref:`datamodule datasources` for unique datasets or preprocessing steps. Further explanation for both options are listed below.
 
-force_regeneration: TODO: describe whatever this is
+* *force_regeneration*: `True` or `False`, depending on whether the dataset should be generated if it already exists. This part is optional.
 
-preprocessing: - OPTIONAL AND ONLY AVAILABLE FOR OUR DATASETS
-    output_directory: path where the dataset will be saved
-    min_item_feedback: minimum number of feedback an item should have
-    min_sequence_length: minimum length of a sequence
-    extraction_directory: (optional) path where the dataset will be extracted
+* *preprocessing*: this part is optional and only available for some datasets already provided by us. The corresponding parameters differ depending on the dataset (which has to be stated above):
+    `ml-1m` and `ml-20m`: requires `output_directory`, `min_item_feedback`, `min_sequence_length`, and `extraction_directory` (optional).
+    `amazon`: requires `prefix` (either `beauty` or `games`), `output_directory`, `min_item_feedback`, `min_sequence_length`, and `input_directory`.
+    `dota`: requires `output_directory`, `raw_csv_file_path`, `split_directory`, `min_sequence_length`, `window_size` (optional), and `session_end_offset` (optional).
+    `steam` and `youchoose`: requires `output_directory`, `input_dir`, `min_item_feedback`, `min_sequence_length`.
 
-
-
-YooChoose Data Set
-~~~~~~~~~~~~~~~~~~
-Pre-Requisites:
-- Downloaded the `yoochoose data set <https://www.kaggle.com/chadgostopp/recsys-challenge-2015/download>`__
+Please note that some data sets have to be downloaded in advance. You can download the youchoose data set (`buys` or `clicks`) `here<https://www.kaggle.com/chadgostopp/recsys-challenge-2015/download>`__ .
 
 
 .. _datamodule template:
@@ -78,7 +66,7 @@ template:
 .. _datamodule datasources:
 Data Sources
 ~~~~~~~~~~~~~~
-The data_sources config offers
+The data_sources config offers a variety of options to preprocess a given data set.
 
 .. code:: json
     datamodule: {

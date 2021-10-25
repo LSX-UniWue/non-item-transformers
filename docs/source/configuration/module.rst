@@ -84,7 +84,7 @@ items from the item space to evaluate it with target item(s).
             ...
     }
 
-The ``sampled`` metrics config, requires the following parameters:
+The ``sampled`` metrics config requires the following parameters:
 
 -  ``sample_probability_file``: The configurable file contains in the
    i-th line the probability of the (i-1) item based on the vocabulary
@@ -118,7 +118,7 @@ This metric only evaluates a fixed set of items.
             ...
     }
 
-The ``fixed`` metrics config, requires the following parameters:
+The ``fixed`` metrics config requires the following parameters:
 
 -  ``item_file``: The configurable file contains the item ids of the
    subset to evaluate (item id line by line).
@@ -136,10 +136,9 @@ Models
         type: MODEL_NAME,
         model: {
             max_seq_length: max_seq_length,
-            num_transformer_heads: 2,
-            num_transformer_layers: 2,
-            transformer_hidden_size: hidden_size,
-            transformer_dropout: 0.5
+            <parameter 1>: <value>,
+            <parameter 2>: <value>,
+            ...
         },
         ...
     },
@@ -205,8 +204,8 @@ The following models and corresponding parameters are implemented:
 |              | transformer_intermediate_size (optional),  |
 |              | transformer_attention_dropout (optional)   |
 +--------------+--------------------------------------------+
-| rnn          | cell_type,                                 |
-|              | item_vocab_size,                           |
+| rnn /        | cell_type,                                 |
+| dream        | item_vocab_size,                           |
 |              | item_embedding_dim,                        |
 |              | hidden_size,                               |
 |              | num_layers,                                |
@@ -244,7 +243,6 @@ The following models and corresponding parameters are implemented:
 Additionally, the following baselines are implemented:
 
     *  bpr
-    *  dream
     *  pop
     *  session_pop
     *  markov
