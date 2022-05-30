@@ -1,9 +1,8 @@
 from typing import Any, List
 
+from asme.core.init.factories import BuildContext
 from asme.data.datasets.processors.processor import Processor
 from asme.data.datasets.sequence import ItemSessionParser, ItemSequenceDataset
-from asme.core.init.config import Config
-from asme.core.init.context import Context
 from asme.core.init.factories.data_sources.datasets.plain_session import PlainSessionDatasetFactory
 from asme.core.init.factories.util import require_config_field_equal
 from asme.core.init.object_factory import CanBuildResult, CanBuildResultType
@@ -16,18 +15,17 @@ class ItemSessionDatasetFactory(DatasetFactory):
         super(ItemSessionDatasetFactory, self).__init__()
         self.plain_session_factory = PlainSessionDatasetFactory()
 
-    def _can_build_dataset(self, config: Config, context: Context) -> CanBuildResult:
-        result = require_config_field_equal(config, 'type', 'session')
+    def _can_build_dataset(self, build_context: BuildContext) -> CanBuildResult:
+        result = require_config_field_equal(build_context.get_current_config_section(), 'type', 'session')
         if result.type != CanBuildResultType.CAN_BUILD:
             return result
 
-        return self.plain_session_factory.can_build(config, context)
+        return self.plain_session_factory.can_build(build_context)
 
     def _build_dataset(self,
-                       config: Config,
-                       context: Context,
+                       build_context: BuildContext,
                        session_parser: ItemSessionParser,
                        processors: List[Processor]) -> Any:
-        basic_dataset = self.plain_session_factory.build(config, context)
+        basic_dataset = self.plain_session_factory.build(build_context)
 
         return ItemSequenceDataset(basic_dataset, processors=processors)

@@ -1,3 +1,4 @@
+import copy
 import datetime
 import functools
 import io
@@ -28,9 +29,10 @@ def _parse_timestamp(text: str,
     return datetime.datetime.strptime(text, date_format)
 
 
-def _parse_strlist(text: str,
-                   delimiter: str) -> List[str]:
-    return text.split(sep=delimiter)
+def _parse_list(text: str,
+                converter: Callable[[str],Any],
+                delimiter: str) -> List[str]:
+    return list(map(converter, text.split(sep=delimiter)))
 
 
 def _identity(text: str
@@ -55,7 +57,6 @@ class MetaInformation:
         return self.configs.get(config_key, None)
 
 
-
 # TODO: move to provider utils?
 def _build_converter(info: MetaInformation
                      ) -> Callable[[str], Any]:
@@ -72,9 +73,13 @@ def _build_converter(info: MetaInformation
     if feature_type == 'timestamp':
         return functools.partial(_parse_timestamp, date_format=info.get_config('format'))
 
-    # FIXME: replace with a generic list convert that also converts the entries in the list
-    if feature_type == 'strlist':
-        return functools.partial(_parse_strlist, delimiter=info.get_config('delimiter'))
+    if feature_type == 'list':
+        element_type = info.get_config("element_type")
+        delimiter = info.get_config('delimiter')
+        element_info = copy.deepcopy(info)
+        element_info.type = element_type
+        converter = _build_converter(element_info)
+        return functools.partial(_parse_list, delimiter=delimiter, converter=converter)
 
     raise KeyError(f'{feature_type} not supported. Currently only bool, timestamp and int are supported. '
                    f'See documentation for more details')
@@ -194,7 +199,7 @@ class ItemSequenceDataset(Dataset, MultiProcessSupport, ExampleLogger):
 
     def _get_example(self, idx: int) -> Example:
         sequence_data = self._get_raw_sequence(idx)
-        processed_data = self._process_sequence(sequence_data.copy())
+        processed_data = self._process_sequence(copy.deepcopy(sequence_data))
 
         return Example(sequence_data, processed_data)
 

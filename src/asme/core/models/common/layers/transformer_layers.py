@@ -9,6 +9,7 @@ from asme.core.models.common.layers.data.sequence import InputSequence, Embedded
 from asme.core.models.common.layers.layers import SequenceElementsRepresentationLayer
 from asme.core.models.common.layers.sequence_embedding import SequenceElementsEmbeddingLayer
 from asme.core.models.common.layers.tensor_utils import generate_position_ids
+from asme.core.utils.hyperparameter_utils import save_hyperparameters
 
 
 class TransformerEmbedding(SequenceElementsRepresentationLayer):
@@ -16,7 +17,7 @@ class TransformerEmbedding(SequenceElementsRepresentationLayer):
     this transformer embedding combines the item embedding and positional embedding (incl. norm and dropout)
     into a single module
     """
-
+    @save_hyperparameters
     def __init__(self,
                  item_voc_size: int,
                  max_seq_len: int,
@@ -74,7 +75,7 @@ class TransformerEmbedding(SequenceElementsRepresentationLayer):
 
 
 class TransformerLayer(nn.Module):
-
+    @save_hyperparameters
     def __init__(self,
                  hidden_size: int,
                  num_heads: int,
@@ -104,7 +105,7 @@ class SublayerConnection(nn.Module):
     A residual connection followed by a layer norm.
     Note for code simplicity the norm is first as opposed to last.
     """
-
+    @save_hyperparameters
     def __init__(self, size, dropout):
         super().__init__()
         self.norm = nn.LayerNorm(size)
@@ -152,7 +153,7 @@ class MultiHeadedAttention(nn.Module):
     """
     Take in model size and number of heads.
     """
-
+    @save_hyperparameters
     def __init__(self,
                  heads: int,
                  d_model: int,
@@ -196,7 +197,7 @@ class PositionwiseFeedForward(nn.Module):
     """
     Implements FFN equation.
     """
-
+    @save_hyperparameters
     def __init__(self,
                  d_model: int,
                  d_ff: int,
@@ -218,7 +219,7 @@ class TransformerBlock(nn.Module):
     Bidirectional Encoder = Transformer (self-attention)
     Transformer = MultiHead_Attention + Feed_Forward with sublayer connection
     """
-
+    @save_hyperparameters
     def __init__(self,
                  hidden: int,
                  attn_heads: int,

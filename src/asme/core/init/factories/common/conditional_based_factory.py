@@ -2,9 +2,11 @@ from typing import List, Union, Any, Dict
 
 from asme.core.init.config import Config
 from asme.core.init.context import Context
+from asme.core.init.factories import BuildContext
+from asme.core.init.factories.util import can_build_with_subsection, build_with_subsection
 from asme.core.init.object_factory import ObjectFactory, CanBuildResult
 
-
+#TODO rename to something like SelectByKeyFactory
 class ConditionalFactory(ObjectFactory):
 
     """
@@ -30,18 +32,18 @@ class ConditionalFactory(ObjectFactory):
         self._config_key = config_key
 
     def can_build(self,
-                  config: Config,
-                  context: Context
+                  build_context: BuildContext
                   ) -> CanBuildResult:
+        config = build_context.get_current_config_section()
         factory = self._get_factory(config)
-        return factory.can_build(config, context)
+        return can_build_with_subsection(factory, build_context)
 
     def build(self,
-              config: Config,
-              context: Context
+              build_context: BuildContext
               ) -> Union[Any, Dict[str, Any], List[Any]]:
+        config = build_context.get_current_config_section()
         factory = self._get_factory(config)
-        result = factory.build(config, context)
+        result = build_with_subsection(factory, build_context)
         return result
 
     def _get_factory(self,
@@ -52,7 +54,7 @@ class ConditionalFactory(ObjectFactory):
             raise ValueError(f'no factory found for {config_value}')
         return self._factory_dict[config_value]
 
-    def is_required(self, context: Context) -> bool:
+    def is_required(self, build_context: BuildContext) -> bool:
         return self._is_required
 
     def config_path(self) -> List[str]:

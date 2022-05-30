@@ -1,23 +1,68 @@
 local base_path = "../tests/example_dataset/";
+local output_path = "/tmp/experiments/bert4rec_basket";
 local max_seq_length = 7;
+local dataset = 'example';
 local metrics =  {
     recall: [1, 3, 5],
     ndcg: [1, 3, 5],
     f1: [1, 3, 5]
 };
 {
+    datamodule: {
+        cache_path: "/tmp/cache",
+        dataset: dataset,
+        /*template: {
+            name: "masked",
+            split: "leave_one_out",
+            path: dataset_path,
+            file_prefix: dataset,
+            num_workers: 0
+        },*/
+        data_sources: {
+            split: "ratio_split",
+            #path: dataset_path,
+            file_prefix: dataset,
+            train: {
+                type: "session",
+                processors: [
+                    {
+                        "type": "cloze",
+                        "mask_probability": 0.2,
+                        "only_last_item_mask_prob": 0.1
+                    }
+                ]
+            },
+            validation: {
+                type: "session",
+                processors: [
+                    {
+                        "type": "target_extractor"
+                    },
+                    {
+                        "type": "last_item_mask"
+                    }
+                ]
+            },
+            test: {
+             type: "session",
+                processors: [
+                    {
+                        "type": "target_extractor"
+                    },
+                    {
+                        "type": "last_item_mask"
+                    }
+                ]
+            }
+        },
+        preprocessing: {
+            min_sequence_length: 2,
+        }
+    },
     templates: {
         unified_output: {
-            path: "/tmp/experiments/bert4rec_basket"
+            path: output_path
         },
-        mask_data_sources: {
-            loader: {
-                batch_size: 9
-            },
-            path: base_path + "ratio-0.8_0.1_0.1/",
-            file_prefix: "example",
-            mask_probability: 0.1
-        }
     },
     module: {
         type: "bert4rec",
@@ -26,12 +71,12 @@ local metrics =  {
                 metrics: metrics
             },
             sampled: {
-                sample_probability_file: base_path + "example.popularity.item_id.txt",
+                sample_probability_file: base_path + dataset + ".popularity.item_id.txt",
                 num_negative_samples: 2,
                 metrics: metrics
             },
             fixed: {
-                item_file: base_path + "example.relevant_items.item_id.txt",
+                item_file: base_path + dataset + ".relevant_items.item_id.txt",
                 metrics: metrics
             }
         },
@@ -58,7 +103,7 @@ local metrics =  {
                     unk_token: "<UNK>"
                 },
                 vocabulary: {
-                    file: base_path + "example.vocabulary.item_id.txt"
+
                 }
             }
         }

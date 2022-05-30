@@ -1,10 +1,11 @@
 from typing import List, Any
 
-from asme.core.init.config import Config
 from asme.core.init.context import Context
+from asme.core.init.factories import BuildContext
 from asme.core.init.factories.common.dependencies_factory import DependenciesFactory
 from asme.core.init.factories.metrics.topn_metric import TopNMetricFactory
 from asme.core.init.factories.metrics.metric import MetricFactory
+from asme.core.init.factories.util import can_build_with_subsection, build_with_subsection
 from asme.core.init.object_factory import ObjectFactory, CanBuildResult
 from asme.core.metrics.dcg import DiscountedCumulativeGainMetric
 from asme.core.metrics.f1 import F1Metric
@@ -37,14 +38,14 @@ class MetricsFactory(ObjectFactory):
                                             MetricFactory('rank', Rank)],
                                            optional_based_on_path=True)
 
-    def can_build(self, config: Config, context: Context) -> CanBuildResult:
-        return self.metrics.can_build(config, context)
+    def can_build(self,  build_context: BuildContext) -> CanBuildResult:
+        return can_build_with_subsection(self.metrics, build_context)
 
-    def build(self, config: Config, context: Context) -> List[RankingMetric]:
-        metrics = self.metrics.build(config, context)
+    def build(self,  build_context: BuildContext) -> List[RankingMetric]:
+        metrics = build_with_subsection(self.metrics, build_context)
         return _collect(metrics)
 
-    def is_required(self, context: Context) -> bool:
+    def is_required(self, build_context: BuildContext) -> bool:
         pass
 
     def config_path(self) -> List[str]:

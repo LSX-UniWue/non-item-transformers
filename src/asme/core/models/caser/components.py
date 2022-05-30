@@ -5,9 +5,12 @@ from asme.core.models.common.layers.layers import SequenceRepresentationLayer
 from asme.core.models.common.layers.util_layers import get_activation_layer
 from torch import nn
 
+from asme.core.utils.hyperparameter_utils import save_hyperparameters
+
 
 class CaserSequenceRepresentationComponent(SequenceRepresentationLayer):
 
+    @save_hyperparameters
     def __init__(self,
                  embedding_size: int,
                  max_sequence_length: int,

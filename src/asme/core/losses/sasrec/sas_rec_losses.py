@@ -1,6 +1,35 @@
 import torch
-from asme.core.losses.losses import SequenceRecommenderContrastiveLoss, DEFAULT_REDUCTION
-from pytorch_lightning.metrics.utils import reduce
+import torch.nn as nn
+from asme.core.losses.losses import SequenceRecommenderContrastiveLoss, DEFAULT_REDUCTION, SequenceRecommenderLoss
+from torchmetrics.utilities import reduce
+
+from asme.core.tokenization.tokenizer import Tokenizer
+
+
+class SASRecFullSequenceCrossEntropyLoss(SequenceRecommenderLoss):
+
+    def __init__(self, item_tokenizer: Tokenizer):
+        super().__init__()
+        self.item_tokenizer = item_tokenizer
+
+    def forward(self, target: torch.Tensor, logit: torch.Tensor) -> torch.Tensor:
+        loss_fn = nn.CrossEntropyLoss(ignore_index=self.item_tokenizer.pad_token_id)
+        logit_size = logit.size()
+        target_size = target.size()
+
+        # we need to accomodate both training with the full target sequence and validation with single targets
+        # TODO (AD) determine where to move this logic, that should not be decided by the loss
+        if isinstance(target_size, torch.Size) and len(target_size) > 1:
+            # we have a full target sequence
+            # logit has size: N, S, I needs to be: N*S,I
+            logit = torch.reshape(logit, [-1, logit_size[2]])
+
+            # target has size: N, S needs to be: N*S
+            target = torch.reshape(target, [-1])
+
+            return loss_fn(logit, target)
+        else:
+            return loss_fn(logit, target)
 
 
 class SASRecBinaryCrossEntropyLoss(SequenceRecommenderContrastiveLoss):

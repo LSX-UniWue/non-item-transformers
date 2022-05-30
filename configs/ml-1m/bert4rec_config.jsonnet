@@ -1,5 +1,5 @@
-local base_path = "/ssd/ml-1m/";
-local output_path = "/scratch/jane-doe-framework/experiments/ml-1m/bert4rec_d05/";
+local base_path = "../ml-1m/";
+local output_path = "../ml-1m/bert4rec_d05/";
 local hidden_size = 128;
 local max_seq_length = 200;
 local metrics =  {
@@ -19,16 +19,14 @@ local dataset = 'ml-1m';
             path: base_path,
             file_prefix: dataset,
             num_workers: 4,
-            batch_size: 64
+            batch_size: 64,
             max_seq_length: max_seq_length,
             mask_probability: 0.2,
             mask_seed: 42
         },
         preprocessing: {
-            extraction_directory: "/tmp/ml-1m/",
-            output_directory: base_path,
-            min_item_feedback: 4,
-            min_sequence_length: 4,
+            extraction_directory: "../ml-1m/",
+            output_directory: base_path
         }
     },
     templates: {

@@ -4,6 +4,7 @@ import torch
 from asme.core.models.common.layers.data.sequence import InputSequence, EmbeddedElementsSequence
 from asme.core.models.common.layers.layers import SequenceElementsRepresentationLayer
 from asme.core.models.common.layers.sequence_embedding import SequenceElementsEmbeddingLayer
+from asme.core.utils.hyperparameter_utils import save_hyperparameters
 from asme.data.datasets import USER_ENTRY_NAME
 from torch import nn as nn
 
@@ -23,6 +24,7 @@ class SequenceElementsEmbeddingWithUserEmbeddingComponent(SequenceElementsRepres
     in an EmbeddedElementsSequenceWithUserEmbedding object
     """
 
+    @save_hyperparameters
     def __init__(self,
                  user_vocab_size: int,
                  embedding_size: int,

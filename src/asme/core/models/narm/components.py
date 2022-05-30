@@ -8,10 +8,12 @@ from asme.core.models.common.layers.data.sequence import EmbeddedElementsSequenc
 from asme.core.models.common.layers.layers import SequenceRepresentationLayer, ProjectionLayer
 from asme.core.models.common.layers.sequence_embedding import SequenceElementsEmbeddingLayer
 from asme.core.models.narm.layers import LocalEncoderLayer, BilinearDecoderLayer
+from asme.core.utils.hyperparameter_utils import save_hyperparameters
 
 
 class NARMSequenceRepresentationComponent(SequenceRepresentationLayer):
 
+    @save_hyperparameters
     def __init__(self,
                  item_embedding_size: int,
                  global_encoder_size: int,
@@ -56,6 +58,7 @@ class NARMSequenceRepresentationComponent(SequenceRepresentationLayer):
 
 class BilinearProjectionComponent(ProjectionLayer):
 
+    @save_hyperparameters
     def __init__(self,
                  embedding_layer: SequenceElementsEmbeddingLayer,
                  encoded_representation_size: int,

@@ -1,10 +1,50 @@
 import os
-from typing import List, Union, Any
+from typing import List, Union, Any, Callable
 
 from asme.core.init.config import Config
 from asme.core.init.context import Context
-from asme.core.init.object_factory import CanBuildResult, CanBuildResultType
+from asme.core.init.factories import BuildContext
+from asme.core.init.object_factory import CanBuildResult, CanBuildResultType, ObjectFactory
 from asme.core.utils.logging import get_root_logger
+
+
+def build_with_subsection(factory: ObjectFactory,
+                          build_context: BuildContext,
+                          factory_func: Callable[[ObjectFactory, BuildContext], Any] =
+                            lambda factory, build_context: factory.build(build_context)) -> Any:
+    """
+    Builds an object using a factory. First sets the build_context to the needes subsection, as determined by
+    ObjectFactory.config_path(). Then the object is build and the build_context is reset afterwards.
+
+    :param factory: a factory.
+    :param build_context: the current build context.
+    :param factory_func: a function `f(factory, build_context) -> Any` that builds the actual object.
+    :return: the object produced by the factory.
+    """
+    sub_section = factory.config_path()
+    build_context.enter_sections(sub_section)
+    obj = factory_func(factory, build_context)
+    build_context.leave_sections(sub_section)
+    return obj
+
+def can_build_with_subsection(factory: ObjectFactory,
+                              build_context: BuildContext,
+                              factory_func: Callable[[ObjectFactory, BuildContext], Any] =
+                                lambda factory, build_context: factory.can_build(build_context)) -> CanBuildResult:
+    """
+    Builds an object using a factory. First sets the build_context to the needes subsection, as determined by
+    ObjectFactory.config_path(). Then the object is build and the build_context is reset afterwards.
+
+    :param factory: a factory.
+    :param build_context: the current build context.
+    :param factory_func: a function `f(factory, build_context) -> CanBuildResult` that evaluates whether the factory can build the object.
+    :return: the object produced by the factory.
+    """
+    sub_section = factory.config_path()
+    build_context.enter_sections(sub_section)
+    obj = factory_func(factory, build_context)
+    build_context.leave_sections(sub_section)
+    return obj
 
 
 def check_config_keys_exist(config: Config, keys: List[str]) -> bool:

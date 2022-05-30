@@ -1,8 +1,8 @@
 from typing import List
 
+from asme.core.init.factories import BuildContext
 from asme.data.datasets import ITEM_SEQ_ENTRY_NAME
 from asme.data.datasets.processors.tokenizer import TokenizerProcessor
-from asme.core.init.config import Config
 from asme.core.init.context import Context
 from asme.core.init.factories.features.tokenizer_factory import get_tokenizer_key_for_voc, TOKENIZERS_PREFIX,\
     ITEM_TOKENIZER_ID
@@ -16,20 +16,18 @@ class TokenizerProcessorFactory(ObjectFactory):
     """
 
     def can_build(self,
-                  config: Config,
-                  context: Context
+                  build_context: BuildContext
                   ) -> CanBuildResult:
-        if not context.has_path(get_tokenizer_key_for_voc(ITEM_TOKENIZER_ID)):
+        if not build_context.get_context().has_path(get_tokenizer_key_for_voc(ITEM_TOKENIZER_ID)):
             return CanBuildResult(CanBuildResultType.MISSING_DEPENDENCY, 'item tokenizer missing')
 
         return CanBuildResult(CanBuildResultType.CAN_BUILD)
 
     def build(self,
-              config: Config,
-              context: Context
+              build_context: BuildContext
               ) -> TokenizerProcessor:
 
-        tokenizers = context.as_dict()
+        tokenizers = build_context.get_context().as_dict()
 
         tokenizers_map = {}
         for name, tokenizer in tokenizers.items():
@@ -39,7 +37,7 @@ class TokenizerProcessorFactory(ObjectFactory):
 
         return TokenizerProcessor(tokenizers_map)
 
-    def is_required(self, context: Context) -> bool:
+    def is_required(self, build_context: BuildContext) -> bool:
         return False
 
     def config_path(self) -> List[str]:

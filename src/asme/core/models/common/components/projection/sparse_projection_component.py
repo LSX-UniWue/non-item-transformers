@@ -5,6 +5,8 @@ from asme.core.models.common.layers.data.sequence import ModifiedSequenceReprese
 from asme.core.models.common.layers.layers import ProjectionLayer
 from torch import nn
 
+from asme.core.utils.hyperparameter_utils import save_hyperparameters
+
 
 class SparseProjectionComponent(ProjectionLayer):
 
@@ -12,6 +14,7 @@ class SparseProjectionComponent(ProjectionLayer):
     a projection layer that uses embeddings to calculate the projection of a subset of the item set
     """
 
+    @save_hyperparameters
     def __init__(self,
                  item_vocab_size: int,
                  embedding_size: int,

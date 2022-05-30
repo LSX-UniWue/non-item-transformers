@@ -1,0 +1,6 @@
+MODEL_PARAM_NAME = 'model'
+METRICS_PARAM_NAME = 'metrics'
+LOSS_FUNCTION_PARAM_NAME = 'loss_function'
+TOKENIZER_SUFFIX = '_tokenizer'
+VOCAB_SIZE_SUFFIX = '_vocab_size'
+MODEL_SUFFIX = '_' + MODEL_PARAM_NAME

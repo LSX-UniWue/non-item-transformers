@@ -1,23 +1,25 @@
 import functools
 
-from asme.core.models.bert4rec.components import BidirectionalTransformerSequenceRepresentationComponent
-from asme.core.models.common.components.representation_modifier.ffn_modifier import \
-    FFNSequenceRepresentationModifierComponent
 from torch import nn
 
+from asme.core.utils.inject import InjectVocabularySize, inject, InjectTokenizers
+from asme.core.models.common.components.representation_modifier.ffn_modifier import \
+    FFNSequenceRepresentationModifierComponent
 from asme.core.models.common.layers.layers import build_projection_layer
 from asme.core.models.common.layers.transformer_layers import TransformerEmbedding
-from asme.core.models.sequence_recommendation_model import SequenceRecommenderModel
+from asme.core.models.transformer.transformer_encoder_model import TransformerEncoderModel
 from asme.core.utils.hyperparameter_utils import save_hyperparameters
 
 
-class BERT4RecModel(SequenceRecommenderModel):
+class BERT4RecModel(TransformerEncoderModel):
     """
         implementation of the paper "BERT4Rec: Sequential Recommendation with Bidirectional Encoder Representations
         from Transformer"
         see https://doi.org/10.1145%2f3357384.3357895 for more details.
         Using own transformer implementation to be able to pass batch first tensors to the model
     """
+
+    @inject(item_vocab_size=InjectVocabularySize("item"))
     @save_hyperparameters
     def __init__(self,
                  transformer_hidden_size: int,
@@ -30,24 +32,25 @@ class BERT4RecModel(SequenceRecommenderModel):
                  embedding_pooling_type: str = None,
                  initializer_range: float = 0.02,
                  transformer_intermediate_size: int = None,
-                 transformer_attention_dropout: float = None
+                 transformer_attention_dropout: float = None,
                  ):
+        modification_layer = FFNSequenceRepresentationModifierComponent(transformer_hidden_size)
         embedding_layer = TransformerEmbedding(item_vocab_size, max_seq_length, transformer_hidden_size,
                                                transformer_dropout, embedding_pooling_type)
-
-        representation_layer = BidirectionalTransformerSequenceRepresentationComponent(transformer_hidden_size,
-                                                                                       num_transformer_heads,
-                                                                                       num_transformer_layers,
-                                                                                       transformer_dropout,
-                                                                                       transformer_attention_dropout,
-                                                                                       transformer_intermediate_size)
-
-        transform_layer = FFNSequenceRepresentationModifierComponent(transformer_hidden_size)
-
         projection_layer = build_projection_layer(project_layer_type, transformer_hidden_size, item_vocab_size,
                                                   embedding_layer.item_embedding.embedding)
-
-        super().__init__(embedding_layer, representation_layer, transform_layer, projection_layer)
+        super().__init__(
+            transformer_hidden_size=transformer_hidden_size,
+            num_transformer_heads=num_transformer_heads,
+            num_transformer_layers=num_transformer_layers,
+            transformer_dropout=transformer_dropout,
+            bidirectional=True,
+            embedding_layer=embedding_layer,
+            projection_layer=projection_layer,
+            sequence_representation_modifier_layer=modification_layer,
+            transformer_intermediate_size=transformer_intermediate_size,
+            transformer_attention_dropout=transformer_attention_dropout
+        )
 
         # init the parameters
         self.apply(functools.partial(normal_initialize_weights, initializer_range=initializer_range))

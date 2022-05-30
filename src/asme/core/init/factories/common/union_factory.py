@@ -2,6 +2,8 @@ from typing import List, Union, Any, Dict
 
 from asme.core.init.config import Config
 from asme.core.init.context import Context
+from asme.core.init.factories import BuildContext
+from asme.core.init.factories.util import can_build_with_subsection, build_with_subsection
 from asme.core.init.object_factory import ObjectFactory, CanBuildResult, CanBuildResultType
 
 
@@ -18,25 +20,25 @@ class UnionFactory(ObjectFactory):
         self.required = required
         self.factories = factories
 
-    def can_build(self, config: Config, context: Context) -> CanBuildResult:
-        for result in map(lambda factory: factory.can_build(config, context), self.factories):
+    def can_build(self, build_context: BuildContext) -> CanBuildResult:
+        for result in map(lambda factory: can_build_with_subsection(factory, build_context), self.factories):
             if result.type == CanBuildResultType.CAN_BUILD:
                 return result
 
         return CanBuildResult(
             CanBuildResultType.INVALID_CONFIGURATION,
-            f"None of the configured factories can handle the configuration section {'.'.join(config.base_path)}."
+            f"None of the configured factories can handle the configuration section {'.'.join(build_context.get_current_config_section().base_path)}."
         )
 
-    def build(self, config: Config, context: Context) -> Union[Any, Dict[str, Any], List[Any]]:
+    def build(self, build_context: BuildContext) -> Union[Any, Dict[str, Any], List[Any]]:
         for factory in self.factories:
-            can_build_result = factory.can_build(config, context)
+            can_build_result = factory.can_build(build_context)
             if can_build_result.type == CanBuildResultType.CAN_BUILD:
-                return factory.build(config, context)
+                return factory.build(build_context)
 
-        raise Exception(f"No factory was able to build the configuration section {config.get_config([]).config}.")
+        raise Exception(f"No factory was able to build the configuration section {build_context.get_current_config_section().get_config([]).config}.")
 
-    def is_required(self, context: Context) -> bool:
+    def is_required(self, build_context: BuildContext) -> bool:
         return self.required
 
     def config_path(self) -> List[str]:

@@ -17,7 +17,7 @@ local dataset = 'ml-1m';
         // This template is equivalent to the explicit definition given in "data_sources"
         template: {
             name: "masked",
-            split: "leave_one_out",
+            split: "leave_percentage_out",
             file_prefix: dataset, // Optional
             num_workers: 4
         },
@@ -75,15 +75,6 @@ local dataset = 'ml-1m';
         type: "bert4rec",
         metrics: {
             full: {
-                metrics: metrics
-            },
-            sampled: {
-                sample_probability_file: "ml-1m.popularity.title.txt",
-                num_negative_samples: 2,
-                metrics: metrics
-            },
-            random_negative_sampled: {
-                num_negative_samples: 2,
                 metrics: metrics
             },
         },

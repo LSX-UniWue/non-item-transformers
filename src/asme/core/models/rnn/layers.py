@@ -5,12 +5,15 @@ import torch
 from torch import nn
 from torch.nn.utils.rnn import PackedSequence, pad_packed_sequence
 
+from asme.core.utils.hyperparameter_utils import save_hyperparameters
+
 
 class LSTMAdapter(nn.Module):
     """
     Changes the output of `torch.nn.LSTM` to comply with the API for `torch.nn.GRU` by omitting the internal
     context states `c_n`.
     """
+    @save_hyperparameters
     def __init__(self,
                  item_embedding_size: int,
                  hidden_size: int,
@@ -38,6 +41,7 @@ class LSTMAdapter(nn.Module):
 
 class RNNStatePooler(nn.Module):
 
+    @save_hyperparameters
     def __init__(self):
         super().__init__()
 
@@ -49,13 +53,26 @@ class RNNStatePooler(nn.Module):
 
 
 class RNNPooler(RNNStatePooler):
+    """
+    Pooling component that can be used to either return state for every step or only the state after the last element
+    of the sequence.
+    """
 
+    @save_hyperparameters
     def __init__(self,
                  bidirectional: bool = False,
+                 parallel: bool = False
                  ):
+        """
+        Initializes the pooler.
+
+        :param bidirectional: indicates whether the input to the pooler comes from a bidirectional RNN.
+        :param parallel: indicates whether states for every step in the sequence should be returned or not.
+        """
         super().__init__()
 
         self.directions = 2 if bidirectional else 1
+        self.parallel = parallel
 
     def forward(self,
                 outputs: PackedSequence
@@ -68,12 +85,16 @@ class RNNPooler(RNNStatePooler):
 
         sequence = sequence.view(batch_size, seq_len, self.directions, hidden_size)  # B, S, D, H
 
-        batch_index = torch.arange(0, batch_size)
-        seq_pos_index = lengths - 1
-
+        # concatenate states for each direction
         if self.directions == 1:
-            # we "pool" the model by simply taking the hidden state of the last layer
-            # of an unidirectional model
-            return sequence[batch_index, seq_pos_index, 0]
+            sequence = sequence.squeeze()
         else:
-            return sequence[batch_index, seq_pos_index].view(batch_size, self.directions * hidden_size)
+            sequence = sequence.view(batch_size, seq_len, self.directions * hidden_size)
+
+        # "pool" the model by either selecting the last state, or if requested returning states for every step.
+        if self.parallel:
+            return sequence
+        else:
+            seq_pos_index = lengths - 1
+            batch_index = torch.arange(0, batch_size)
+            return sequence[batch_index, seq_pos_index]

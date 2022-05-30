@@ -1,7 +1,7 @@
 from typing import List
 
-from asme.core.init.config import Config
 from asme.core.init.context import Context
+from asme.core.init.factories import BuildContext
 from asme.core.init.object_factory import ObjectFactory, CanBuildResult, CanBuildResultType
 from asme.core.metrics.metric import RankingMetric
 
@@ -17,14 +17,14 @@ class MetricFactory(ObjectFactory):
         self.key = key
         self.ranking_cls = ranking_cls
 
-    def can_build(self, config: Config, context: Context) -> CanBuildResult:
+    def can_build(self, build_context: BuildContext) -> CanBuildResult:
         return CanBuildResult(CanBuildResultType.CAN_BUILD)
 
-    def build(self, config: Config, context: Context) -> [RankingMetric]:
+    def build(self,  build_context: BuildContext) -> [RankingMetric]:
         # This returns a list instead of a single object due to compatibility issue with the MetricsFactory
         return [self.ranking_cls()]
 
-    def is_required(self, context: Context) -> bool:
+    def is_required(self, build_context: BuildContext) -> bool:
         return False
 
     def config_path(self) -> List[str]:

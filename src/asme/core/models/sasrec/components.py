@@ -2,42 +2,15 @@ from typing import Union, Tuple
 
 import torch
 
-from asme.core.models.common.layers.data.sequence import EmbeddedElementsSequence, SequenceRepresentation, \
-    ModifiedSequenceRepresentation
-from asme.core.models.common.layers.layers import SequenceRepresentationLayer, ProjectionLayer
-from asme.core.models.common.layers.transformer_layers import TransformerLayer, TransformerEmbedding
-
-
-class SASRecTransformerComponent(SequenceRepresentationLayer):
-
-    def __init__(self, transformer_layer: TransformerLayer):
-        super().__init__()
-        self.transformer_layer = transformer_layer
-
-    def forward(self, embedded_sequence: EmbeddedElementsSequence) -> SequenceRepresentation:
-        sequence = embedded_sequence.embedded_sequence
-
-        # pipe the embedded sequence to the transformer
-        # first build the attention mask
-        input_size = sequence.size()
-        batch_size = input_size[0]
-        sequence_length = input_size[1]
-
-        attention_mask = torch.triu(torch.ones([sequence_length, sequence_length], device=sequence.device)) \
-            .transpose(1, 0).unsqueeze(0).repeat(batch_size, 1, 1)
-
-        if embedded_sequence.input_sequence.has_attribute("padding_mask"):
-            padding_mask = embedded_sequence.input_sequence.get_attribute("padding_mask")
-            attention_mask = attention_mask * padding_mask.unsqueeze(1).repeat(1, sequence_length, 1)
-
-        attention_mask = attention_mask.unsqueeze(1).to(dtype=torch.bool)
-        representation = self.transformer_layer(sequence, attention_mask=attention_mask)
-
-        return SequenceRepresentation(representation)
+from asme.core.models.common.layers.data.sequence import ModifiedSequenceRepresentation
+from asme.core.models.common.layers.layers import ProjectionLayer
+from asme.core.models.common.layers.transformer_layers import TransformerEmbedding
+from asme.core.utils.hyperparameter_utils import save_hyperparameters
 
 
 class SASRecProjectionComponent(ProjectionLayer):
 
+    @save_hyperparameters
     def __init__(self, embedding: TransformerEmbedding):
         super().__init__()
         self.embedding = embedding

@@ -2,11 +2,15 @@ from asme.core.models.common.layers.data.sequence import SequenceRepresentation,
 from asme.core.models.common.layers.layers import SequenceRepresentationModifierLayer
 from torch import nn
 
+from asme.core.utils.hyperparameter_utils import save_hyperparameters
+
 
 class FFNSequenceRepresentationModifierComponent(SequenceRepresentationModifierLayer):
     """
     layer that applies a linear layer and a activation function
     """
+
+    @save_hyperparameters
     def __init__(self,
                  feature_size: int
                  ):

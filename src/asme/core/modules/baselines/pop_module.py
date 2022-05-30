@@ -4,6 +4,7 @@ import torch
 from pytorch_lightning.utilities import rank_zero_warn
 from torch.nn.parameter import Parameter
 
+from asme.core.utils.hyperparameter_utils import save_hyperparameters
 from asme.data.datasets import ITEM_SEQ_ENTRY_NAME, TARGET_ENTRY_NAME
 from asme.core.metrics.container.metrics_container import MetricsContainer
 from asme.core.modules.metrics_trait import MetricsTrait
@@ -20,6 +21,7 @@ class PopModule(MetricsTrait, pl.LightningModule):
     module that provides a baseline, that returns the most popular items in the dataset for recommendation
     """
 
+    @save_hyperparameters
     def __init__(self,
                  item_tokenizer: Tokenizer,
                  metrics: MetricsContainer
@@ -31,6 +33,8 @@ class PopModule(MetricsTrait, pl.LightningModule):
 
         # we artificially promote this Tensor to a parameter to make PL save it in the model checkpoints
         self.item_frequencies = Parameter(torch.zeros(self.item_vocab_size, device=self.device), requires_grad=False)
+
+        self.save_hyperparameters(self.hyperparameters)
 
     def on_train_start(self) -> None:
         if self.trainer.max_epochs > 1:

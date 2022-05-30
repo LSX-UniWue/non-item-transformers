@@ -1,8 +1,8 @@
-import os, errno
 from datetime import timedelta
 from pathlib import Path
 from typing import Optional, Dict, Union
 
+import pytorch_lightning as pl
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 
 
@@ -15,11 +15,7 @@ class BestModelWritingModelCheckpoint(ModelCheckpoint):
         If output_base_path can not be found in the configuration, the dirpath of model_checkpoint is used as the default.
         Same goes for output_filename where the default value is "best_k_models.yaml".
     """
-    # FIXME: I think we can remove the first three parameters, since they can be fixed or inferred
     def __init__(self,
-                 output_base_path: str,
-                 output_filename: str,
-                 symlink_name: str,
                  dirpath: Optional[Union[str, Path]] = None,
                  filename: Optional[str] = None,
                  monitor: Optional[str] = None,
@@ -32,9 +28,7 @@ class BestModelWritingModelCheckpoint(ModelCheckpoint):
                  every_n_train_steps: Optional[int] = None,
                  train_time_interval: Optional[timedelta] = None,
                  every_n_epochs: Optional[int] = None,
-                 save_on_train_epoch_end: Optional[bool] = None,
-                 period: Optional[int] = None,
-                 every_n_val_epochs: Optional[int] = None,
+                 save_on_train_epoch_end: Optional[bool] = None
                  ):
         super().__init__(dirpath,
                          filename,
@@ -48,38 +42,44 @@ class BestModelWritingModelCheckpoint(ModelCheckpoint):
                          every_n_train_steps,
                          train_time_interval,
                          every_n_epochs,
-                         save_on_train_epoch_end,
-                         period,
-                         every_n_val_epochs)
+                         save_on_train_epoch_end)
 
-        if output_base_path is not None:
-            self.output_base_path = Path(output_base_path)
-        else:
-            self.output_base_path = Path(self.dirpath)
+        self.last_best_model_path = ""
 
-        if not self.output_base_path.exists():
-            self.output_base_path.mkdir(parents=True)
+    def on_train_epoch_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
+        super().on_train_epoch_end(trainer, pl_module)
 
-        if output_filename is not None:
-            self.output_filename = output_filename
-        else:
-            self.output_filename = "best_k_models.yaml"
-
-        self.symlink_name = symlink_name
+        if not self._should_skip_saving_best_checkpoint(trainer) and self._save_on_train_epoch_end:
+            if self._every_n_epochs >= 1 and (trainer.current_epoch + 1) % self._every_n_epochs == 0:
+                self._save_best_model_checkpoint_symlink()
+                self.last_best_model_path = self.best_model_path
 
     def on_validation_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
-        super().on_validation_epoch_end(trainer, pl_module)
-        super().to_yaml(os.path.join(self.output_base_path, self.output_filename))
-        symlink_path = os.path.join(self.output_base_path, self.symlink_name)
+        super().on_validation_end(trainer, pl_module)
+
+        if not self._should_skip_saving_best_checkpoint(trainer) and not self._save_on_train_epoch_end:
+            if self._every_n_epochs >= 1 and (trainer.current_epoch + 1) % self._every_n_epochs == 0:
+                self._save_best_model_checkpoint_symlink()
+                self.last_best_model_path = self.best_model_path
+
+    def _should_skip_saving_best_checkpoint(self, trainer: "pl.Trainer") -> bool:
+        from pytorch_lightning.trainer.states import TrainerFn
+
+        return (
+                trainer.fast_dev_run  # disable checkpointing with fast_dev_run
+                or trainer.state.fn != TrainerFn.FITTING  # don't save anything during non-fit
+                or trainer.sanity_checking  # don't save anything during sanity check
+                or self.last_best_model_path == self.best_model_path
+        )
+
+    def _save_best_model_checkpoint_symlink(self):
+        symlink_path = Path(self.dirpath) / "best.ckpt"
         # here we only link relative paths, to prevent wrong links when
         # the result path is mounted into a VM, container …
         best_checkpoint_path = Path(self.best_model_path).name
-        try:
-            os.symlink(best_checkpoint_path, symlink_path)
-        except OSError as e:
-            if e.errno == errno.EEXIST:
-                os.remove(symlink_path)
-                os.symlink(best_checkpoint_path, symlink_path)
+
+        symlink_path.unlink(missing_ok=True)
+        symlink_path.symlink_to(best_checkpoint_path)
 
     @classmethod
     def _format_checkpoint_name(cls,

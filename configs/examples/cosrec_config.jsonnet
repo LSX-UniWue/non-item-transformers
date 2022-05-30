@@ -1,24 +1,31 @@
 local base_path = "../tests/example_dataset/";
+local output_path = '/tmp/experiments/cosrec';
 local max_seq_length = 10;
+local dataset = 'example';
 local metrics =  {
     mrr: [1, 3, 5],
     recall: [1, 3, 5],
     ndcg: [1, 3, 5]
 };
 {
+    datamodule: {
+        cache_path: "/tmp/ssd",
+        dataset: dataset,
+        template: {
+            name: "par_pos_neg",
+            split: "ratio_split",
+            file_prefix: dataset,
+            num_workers: 0,
+            batch_size: 9,
+            number_negative_items: 1,
+            number_positive_items: 1
+        },
+        preprocessing: {
+        }
+    },
     templates: {
         unified_output: {
-            path: "/tmp/experiments/cosrec"
-        },
-        par_pos_neg_data_sources: {
-            loader: {
-                batch_size: 9,
-                num_workers: 0
-            },
-            path: base_path + "ratio-0.8_0.1_0.1/",
-            file_prefix: "example",
-            seed: 123456,
-            t: 1
+            path: output_path
         }
     },
     module: {
@@ -30,12 +37,12 @@ local metrics =  {
                 metrics: metrics
             },
             sampled: {
-                sample_probability_file: base_path + "example.popularity.item_id.txt",
+                sample_probability_file: base_path + dataset + ".popularity.item_id.txt",
                 num_negative_samples: 2,
                 metrics: metrics
             },
             fixed: {
-                item_file: base_path + "example.relevant_items.item_id.txt",
+                item_file: base_path + dataset + ".relevant_items.item_id.txt",
                 metrics: metrics
             }
         },
@@ -61,7 +68,6 @@ local metrics =  {
                     unk_token: "<UNK>"
                 },
                 vocabulary: {
-                    file: base_path + "example.vocabulary.item_id.txt"
                 }
             }
         }

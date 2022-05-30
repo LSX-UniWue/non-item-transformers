@@ -3,6 +3,7 @@ from typing import Dict
 import torch
 from pytorch_lightning.utilities import rank_zero_warn
 
+from asme.core.utils.hyperparameter_utils import save_hyperparameters
 from asme.data.datasets import ITEM_SEQ_ENTRY_NAME, TARGET_ENTRY_NAME
 from asme.core.metrics.container.metrics_container import MetricsContainer
 from asme.core.modules.metrics_trait import MetricsTrait
@@ -15,6 +16,7 @@ from asme.core.tokenization.tokenizer import Tokenizer
 
 class SessionPopModule(MetricsTrait, pl.LightningModule):
 
+    @save_hyperparameters
     def __init__(self,
                  item_tokenizer: Tokenizer,
                  metrics: MetricsContainer
@@ -23,6 +25,8 @@ class SessionPopModule(MetricsTrait, pl.LightningModule):
         self.item_vocab_size = len(item_tokenizer)
         self.tokenizer = item_tokenizer
         self.metrics = metrics
+
+        self.save_hyperparameters(self.hyperparameters)
 
     def on_train_start(self) -> None:
         if self.trainer.max_epochs > 1:

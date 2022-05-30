@@ -8,6 +8,7 @@ from torch import nn
 
 from asme.core.models.common.layers.data.sequence import InputSequence, EmbeddedElementsSequence, SequenceRepresentation, \
     ModifiedSequenceRepresentation
+from asme.core.utils.hyperparameter_utils import save_hyperparameters
 
 
 class SequenceElementsRepresentationLayer(ABC, nn.Module):
@@ -76,7 +77,7 @@ class MatrixFactorizationLayer(nn.Linear, ABC):
     """
     a matrix factorization layer
     """
-
+    @save_hyperparameters
     def __init__(self,
                  _weight: torch.Tensor,
                  bias: bool = False
@@ -93,7 +94,7 @@ class LinearProjectionLayer(ProjectionLayer):
     """
     A projection layer that uses a linear layer to project the sequence representation into a score for each item
     """
-
+    @save_hyperparameters
     def __init__(self,
                  hidden_size: int,
                  item_vocab_size: int):
@@ -116,6 +117,7 @@ class ItemEmbeddingProjectionLayer(ProjectionLayer):
     TODO: currently the sequence representation size must be the same as the item space size
     """
 
+    @save_hyperparameters
     def __init__(self,
                  item_vocab_size: int,
                  embedding: nn.Embedding

@@ -66,11 +66,11 @@ def test_leave_one_out_positive_negative_template():
     sequence, pos, neg = train_data['0_1']
     assert_list_equal(sequence, [3])
     assert_list_equal(pos, [4])
-    assert_list_equal(neg, [9])
+    assert_list_equal(neg, [5])
     seq2, pos2, neg2 = train_data['4_1']
     assert_list_equal(seq2, [7])
     assert_list_equal(pos2, [8])
-    assert_list_equal(neg2, [10])
+    assert_list_equal(neg2, [12])
 
     assert_loo_test_and_validation(data_sources)
 
@@ -86,13 +86,13 @@ def test_ratio_positive_negative_template():
     assert len(train_data) == 8
 
     sequence, pos, neg = train_data['0_0']
-    assert_list_equal(sequence, [3, 10, 6, 0])
-    assert_list_equal(pos, [10, 6, 5, 0])
-    assert_list_equal(neg, [8, 7, 11, 0])
+    assert_list_equal(sequence, [3, 10, 6])
+    assert_list_equal(pos, [10, 6, 5])
+    assert_list_equal(neg, [4, 4, 9])
 
     seq2, pos2, neg2 = train_data['4_0']
-    assert_list_equal(seq2, [7, 8, 3])
-    assert_list_equal(pos2, [8, 3, 6])
-    assert_list_equal(neg2, [10, 4, 10])  # TODO: check and discuss
+    assert_list_equal(seq2, [7, 8, 3, 0])
+    assert_list_equal(pos2, [8, 3, 6, 0])
+    assert_list_equal(neg2, [9, 4, 11, 0])  # TODO: check and discuss
 
     assert_next_item_test_validation(data_sources)

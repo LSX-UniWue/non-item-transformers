@@ -41,7 +41,7 @@ local dataset = 'beauty';
                 metrics: metrics
             },
             sampled: {
-              sample_probability_file: "beauty.popularity.product_id.txt",
+                sample_probability_file: "beauty.popularity.product_id.txt",
                 num_negative_samples: 100,
                 metrics: metrics
             }

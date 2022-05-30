@@ -3,10 +3,12 @@ from asme.core.models.common.layers.layers import PROJECT_TYPE_LINEAR
 from asme.core.models.rnn.components import RNNSequenceRepresentationComponent, RNNProjectionComponent, RNNPoolingComponent
 from asme.core.models.sequence_recommendation_model import SequenceRecommenderModel
 from asme.core.utils.hyperparameter_utils import save_hyperparameters
+from asme.core.utils.inject import InjectVocabularySize, inject
 
 
 class RNNModel(SequenceRecommenderModel):
 
+    @inject(item_vocab_size=InjectVocabularySize("item"))
     @save_hyperparameters
     def __init__(self,
                  cell_type: str,
@@ -16,6 +18,7 @@ class RNNModel(SequenceRecommenderModel):
                  num_layers: int,
                  dropout: float,
                  bidirectional: bool = False,
+                 parallel: bool = False,
                  nonlinearity: str = None,  # for Elman RNN
                  embedding_pooling_type: str = None,
                  project_layer_type: str = PROJECT_TYPE_LINEAR):
@@ -31,7 +34,7 @@ class RNNModel(SequenceRecommenderModel):
                                                                                dropout,
                                                                                bidirectional,
                                                                                nonlinearity)
-        pooling_component = RNNPoolingComponent(bidirectional)
+        pooling_component = RNNPoolingComponent(bidirectional, parallel)
 
         projection_component = RNNProjectionComponent(sequence_embedding_component.elements_embedding.embedding,
                                                       item_vocab_size,

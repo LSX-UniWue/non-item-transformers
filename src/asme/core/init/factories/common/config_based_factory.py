@@ -2,6 +2,8 @@ from typing import List, Union, Any, Dict
 
 from asme.core.init.config import Config
 from asme.core.init.context import Context
+from asme.core.init.factories import BuildContext
+from asme.core.init.factories.util import can_build_with_subsection, build_with_subsection
 from asme.core.init.object_factory import ObjectFactory, CanBuildResult, CanBuildResultType
 
 
@@ -27,30 +29,35 @@ class ListFactory(ObjectFactory):
         self._config_key = config_key
 
     def can_build(self,
-                  config: Config,
-                  context: Context
+                  build_context: BuildContext
                   ) -> CanBuildResult:
-        config_list = config.get([])
+        config_list = build_context.get_current_config_section().get([])
 
         for config_dict in config_list:
-            config = Config(config_dict, base_path=config.base_path)
-            can_build = self._object_factory.can_build(config, context)
+            # FIXME (AD) this disables access to the full config file (might not matter)
+            element_config = Config(config_dict, base_path=build_context.get_current_config_section().base_path)
+            element_build_context = BuildContext(element_config, build_context.get_context())
+
+            can_build = can_build_with_subsection(self._object_factory, element_build_context)
+
             if can_build.type != CanBuildResultType.CAN_BUILD:
                 return can_build
 
         return CanBuildResult(CanBuildResultType.CAN_BUILD)
 
-    def build(self, config: Config, context: Context) -> Union[Any, Dict[str, Any], List[Any]]:
+    def build(self, build_context: BuildContext) -> Union[Any, Dict[str, Any], List[Any]]:
         result = []
-        config_list = config.get([])
+        config_list = build_context.get_current_config_section().get([])
 
         for config_dict in config_list:
-            config = Config(config_dict, base_path=config.base_path)
-            single_result = self._object_factory.build(config, context)
+            # FIXME (AD) this disables access to the full config file (might not matter)
+            element_config = Config(config_dict, base_path=build_context.get_current_config_section().base_path)
+            element_build_context = BuildContext(element_config, build_context.get_context())
+            single_result = build_with_subsection(self._object_factory, element_build_context)
             result.append(single_result)
         return result
 
-    def is_required(self, context: Context) -> bool:
+    def is_required(self, build_context: BuildContext) -> bool:
         return self._is_required
 
     def config_path(self) -> List[str]:

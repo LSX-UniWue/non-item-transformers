@@ -7,9 +7,12 @@ from asme.core.models.common.layers.util_layers import get_activation_layer
 from asme.core.models.cosrec.layers import CNNBlock
 from torch import nn as nn
 
+from asme.core.utils.hyperparameter_utils import save_hyperparameters
+
 
 class CosRecSequenceRepresentationComponent(SequenceRepresentationLayer):
 
+    @save_hyperparameters
     def __init__(self,
                  embedding_size: int,
                  block_num: int,

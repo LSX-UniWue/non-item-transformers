@@ -8,11 +8,11 @@ from asme.core.models.common.layers.sequence_embedding import SequenceElementsEm
 from asme.core.models.hgn.components import HGNProjectionComponent, HGNSequenceRepresentationComponent
 from asme.core.models.sequence_recommendation_model import SequenceRecommenderModel
 from asme.core.utils.hyperparameter_utils import save_hyperparameters
+from asme.core.utils.inject import InjectVocabularySize, inject
 from asme.data.datasets import USER_ENTRY_NAME
 
 
 class HGNModel(SequenceRecommenderModel):
-
     """
     The HGN model for Sequential Recommendation
 
@@ -22,6 +22,10 @@ class HGNModel(SequenceRecommenderModel):
     Arxiv: https://arxiv.org/abs/1906.09217
     """
 
+    @inject(
+        user_vocab_size=InjectVocabularySize("user"),
+        item_vocab_size=InjectVocabularySize("item")
+            )
     @save_hyperparameters
     def __init__(self,
                  user_vocab_size: int,

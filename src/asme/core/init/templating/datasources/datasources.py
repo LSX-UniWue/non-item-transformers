@@ -25,7 +25,8 @@ class DatasetSplit(Enum):
     """
 
     RATIO_SPLIT = 1
-    LEAVE_ONE_OUT = 2
+    LEAVE_ONE_OUT = 2,
+    LEAVE_PERCENTAGE_OUT = 3,
 
 
 class Stage(Enum):
@@ -94,7 +95,6 @@ class DataSourceTemplateProcessor(TemplateProcessor):
 
 PARSER_ITEM_COLUMN_NAME = 'item_column_name'
 PARSER_ITEM_SEPARATOR = 'item_separator'
-
 
 
 def _get_prefix(config: Dict[str, Any],
@@ -183,7 +183,9 @@ class LeaveOneOutNextPositionDatasetBuilder(DatasetBuilder):
 
         csv_file_path = base_path / f'{prefix}.csv'
         csv_file_index_path = base_path / f'{prefix}.session.idx'
-        nip_index_file_path = base_path / 'loo' / f'{prefix}.{stage.value}.nextitem.idx'
+        if stage is not Stage.TRAIN:
+            raise ValueError(f"The next-item-datasource is only available for training when using a leave-one-out split.")
+        nip_index_file_path = base_path / f'{prefix}.nextitem.idx'
         return {
             'type': 'sequence_position',
             'csv_file': str(csv_file_path),
@@ -193,6 +195,9 @@ class LeaveOneOutNextPositionDatasetBuilder(DatasetBuilder):
 
 
 class LeaveOneOutSequenceWindowDatasetBuilder(DatasetBuilder):
+    """
+    builds window dataset definition for leave one out split
+    """
 
     def __init__(self):
         pass
@@ -202,12 +207,14 @@ class LeaveOneOutSequenceWindowDatasetBuilder(DatasetBuilder):
 
     def build_dataset_definition(self, stage: Stage, config: Dict[str, Any]) -> Dict[str, Any]:
         base_path = Path(config['path'])
-        window_size = config["window_size"]
+        window_markov_length = config["window_markov_length"]
+        window_target_length = config["window_target_length"]
+        window_size = window_markov_length + window_target_length
         prefix = _get_prefix(config, stage)
         prefix = f"{prefix}.{stage.value}"
         csv_file = base_path / f'{prefix}.csv'
         csv_file_index = base_path / f'{prefix}.session.idx'
-        nip_index_file = base_path / 'loo' / f'{prefix}.slidingwindow.{window_size}.idx'
+        nip_index_file = base_path / f'{prefix}.slidingwindow.{window_size}.idx'
         return {
             'type': 'sequence_position',
             'csv_file': str(csv_file),
@@ -217,6 +224,9 @@ class LeaveOneOutSequenceWindowDatasetBuilder(DatasetBuilder):
 
 
 class NextPositionWindowDatasetBuilder(DatasetBuilder):
+    """
+        builds window dataset definition for ratio split
+    """
     def __init__(self):
         pass
 
@@ -225,7 +235,9 @@ class NextPositionWindowDatasetBuilder(DatasetBuilder):
 
     def build_dataset_definition(self, stage: Stage, config: Dict[str, Any]) -> Dict[str, Any]:
         base_path = Path(config['path'])
-        window_size = config["window_size"]
+        window_markov_length = config["window_markov_length"]
+        window_target_length = config["window_target_length"]
+        window_size = window_markov_length + window_target_length
         prefix = _get_prefix(config, stage)
         prefix = f"{prefix}.{stage.value}"
         csv_file = base_path / f'{prefix}.csv'
@@ -250,7 +262,50 @@ class LeaveOneOutSessionDatasetBuilder(DatasetBuilder):
         index_file_path = f"{prefix}.{stage.value}"
         csv_file = base_path / f'{prefix}.csv'
         csv_file_index = base_path / f'{prefix}.session.idx'
-        nip_index_file = base_path / 'loo' / f'{index_file_path}.loo.idx'
+        nip_index_file = base_path / f'{index_file_path}.loo.idx'
+        return {
+            'type': 'sequence_position',
+            'csv_file': str(csv_file),
+            'csv_file_index': str(csv_file_index),
+            'nip_index_file': str(nip_index_file)
+        }
+
+
+class LeavePercentageOutNextPositionDatasetBuilder(DatasetBuilder):
+
+    def can_build_dataset_definition(self, dataset_split_type: DatasetSplit) -> bool:
+        return dataset_split_type == DatasetSplit.LEAVE_PERCENTAGE_OUT
+
+    def build_dataset_definition(self, stage: Stage, config: Dict[str, Any]) -> Dict[str, Any]:
+        base_path = Path(config['path'])
+        prefix = _get_prefix(config, stage)
+
+        csv_file_path = base_path / f'{prefix}.csv'
+        csv_file_index_path = base_path / f'{prefix}.session.idx'
+        if stage is not Stage.TRAIN:
+            raise ValueError(f"The next-item-datasource is only available for training when using a "
+                             f"leave-percentage-out split.")
+        nip_index_file_path = base_path / f'{prefix}.nextitem.idx'
+        return {
+            'type': 'sequence_position',
+            'csv_file': str(csv_file_path),
+            'csv_file_index': str(csv_file_index_path),
+            'nip_index_file': str(nip_index_file_path)
+        }
+
+
+class LeavePercentageOutSessionDatasetBuilder(DatasetBuilder):
+
+    def can_build_dataset_definition(self, dataset_split_type: DatasetSplit):
+        return dataset_split_type == DatasetSplit.LEAVE_PERCENTAGE_OUT
+
+    def build_dataset_definition(self, stage: Stage, config: Dict[str, Any]) -> Dict[str, Any]:
+        base_path = Path(config['path'])
+        prefix = _get_prefix(config, stage)
+        index_file_path = f"{prefix}.{stage.value}"
+        csv_file = base_path / f'{prefix}.csv'
+        csv_file_index = base_path / f'{prefix}.session.idx'
+        nip_index_file = base_path / f'{index_file_path}.loo.idx'
         return {
             'type': 'sequence_position',
             'csv_file': str(csv_file),
@@ -268,7 +323,7 @@ def build_datasource(dataset_builders: List[DatasetBuilder],
     builds a datasource config with the specified parser, processor,
     :param dataset_builders: the builders to use to build the dataset config
     :param config: the config of the template
-    :param prefix_id: the run scope for which the datasource should be build (train, test, val)
+    :param stage: the run scope for which the datasource should be build (train, test, val)
     :param additional_processors:
     :return:
     """

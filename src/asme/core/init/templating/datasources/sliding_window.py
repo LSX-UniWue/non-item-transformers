@@ -20,49 +20,48 @@ class SlidingWindowDataSourceTemplateProcessor(DataSourceTemplateProcessor):
     TODO: write documentation
     """
 
-    TARGET_INTERACTION_CONFIG_KEY = 'number_target_interactions'
-    WINDOW_CONFIG_KEY = 'window_size'
+    WINDOW_TARGET_LENGTH_CONFIG_KEY = 'window_target_length'
+    WINDOW_MARKOV_LENGTH_CONFIG_KEY = 'window_markov_length'
 
-    TRAIN_DATASET_BUILDERS = [SequenceDatasetRatioSplitBuilder(), LeaveOneOutSessionDatasetBuilder()]
+    TRAIN_DATASET_BUILDERS = [NextPositionWindowDatasetBuilder(), LeaveOneOutSequenceWindowDatasetBuilder()]
     TEST_VALID_DATASET_BUILDERS = [NextPositionDatasetBuilder(), LeaveOneOutSessionDatasetBuilder()]
 
     def _get_template_key(self) -> str:
         return 'sliding_window_data_sources'
 
     def _build_train_datasource(self, config: Dict[str, Any]) -> Dict[str, Any]:
-        window_size = config[self.WINDOW_CONFIG_KEY]
-        number_target_interactions = config.get(self.TARGET_INTERACTION_CONFIG_KEY, 1)
-        sequence_length = window_size + number_target_interactions
-        config[self.WINDOW_CONFIG_KEY] = window_size
+        window_markov_length = config[self.WINDOW_MARKOV_LENGTH_CONFIG_KEY]
+        window_target_length = config[self.WINDOW_TARGET_LENGTH_CONFIG_KEY]
+        window_size = window_markov_length + window_target_length
+        fixed_sequence_length_processor = _build_fixed_sequence_length_processor_config(window_size)
 
-        fixed_sequence_length_processor = _build_fixed_sequence_length_processor_config(sequence_length)
-
-        par_pos_neg_sampler_processor = {
-            'type': "par_pos_neg",
-            't': number_target_interactions
+        pos_extractor_processor = {
+            'type': 'positive_item_extractor',
+            'number_positive_items': config['number_positive_items']
         }
 
-        builders = [NextPositionWindowDatasetBuilder(),
-                    LeaveOneOutSequenceWindowDatasetBuilder()]
+        neg_sampler_processor = {
+            'type': "negative_item_sampler",
+            'number_negative_items': config['number_negative_items']
+        }
 
-        processors = [fixed_sequence_length_processor, par_pos_neg_sampler_processor]
+        processors = [fixed_sequence_length_processor, pos_extractor_processor, neg_sampler_processor]
 
-        return build_datasource(builders, config, Stage.TRAIN, processors)
+        return build_datasource(self.TRAIN_DATASET_BUILDERS, config, Stage.TRAIN, processors)
 
     def _build_validation_datasource(self, config: Dict[str, Any]) -> Dict[str, Any]:
-        window_size = config[self.WINDOW_CONFIG_KEY]
-        number_target_interactions = config.get(self.TARGET_INTERACTION_CONFIG_KEY, 1)
-        sequence_length = window_size + number_target_interactions
+        window_markov_length = config[self.WINDOW_MARKOV_LENGTH_CONFIG_KEY]
+        window_target_length = config[self.WINDOW_TARGET_LENGTH_CONFIG_KEY]
+        window_size = window_markov_length + window_target_length
 
-        fixed_sequence_length_processor = _build_fixed_sequence_length_processor_config(sequence_length)
+        fixed_sequence_length_processor = _build_fixed_sequence_length_processor_config(window_size)
         return build_datasource(self.TEST_VALID_DATASET_BUILDERS, config, Stage.VALIDATION,
                                 [fixed_sequence_length_processor, TARGET_EXTRACTOR_PROCESSOR_CONFIG])
 
     def _build_test_datasource(self, config: Dict[str, Any]) -> Dict[str, Any]:
-        window_size = config[self.WINDOW_CONFIG_KEY]
-        number_target_interactions = config.get(self.TARGET_INTERACTION_CONFIG_KEY, 1)
-        sequence_length = window_size + number_target_interactions
-
-        fixed_sequence_length_processor = _build_fixed_sequence_length_processor_config(sequence_length)
+        window_markov_length = config[self.WINDOW_MARKOV_LENGTH_CONFIG_KEY]
+        window_target_length = config[self.WINDOW_TARGET_LENGTH_CONFIG_KEY]
+        window_size = window_markov_length + window_target_length
+        fixed_sequence_length_processor = _build_fixed_sequence_length_processor_config(window_size)
         return build_datasource(self.TEST_VALID_DATASET_BUILDERS, config, Stage.TEST,
                                 [fixed_sequence_length_processor, TARGET_EXTRACTOR_PROCESSOR_CONFIG])

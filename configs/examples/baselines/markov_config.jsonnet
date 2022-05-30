@@ -1,4 +1,5 @@
 local base_path = "../tests/example_dataset/";
+local output_path = '/tmp/experiments/markov';
 local max_seq_length = 7;
 local dataset = 'example';
 local metrics =  {
@@ -7,11 +8,6 @@ local metrics =  {
     ndcg: [1, 3, 5]
 };
 {
-    templates: {
-        unified_output: {
-            path: "/tmp/experiments/markov"
-        }
-    },
     datamodule: {
         dataset: dataset,
         template: {
@@ -22,7 +18,11 @@ local metrics =  {
         },
 
         preprocessing: {
-
+        }
+    },
+    templates: {
+        unified_output: {
+            path: output_path
         }
     },
     module: {
@@ -32,7 +32,7 @@ local metrics =  {
                 metrics: metrics
             },
             sampled: {
-                sample_probability_file: "example.popularity.item_id.txt",
+                sample_probability_file: base_path + dataset + ".popularity.item_id.txt",
                 num_negative_samples: 2,
                 metrics: metrics
             },

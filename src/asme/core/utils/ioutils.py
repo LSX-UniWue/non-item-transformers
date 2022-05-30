@@ -1,21 +1,24 @@
 import json
 import os
-from pathlib import Path
-from typing import List, Callable, Any, Optional
+import yaml
 
+from pathlib import Path
+from loguru import logger
+from typing import List, Callable, Any, Optional
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import LoggerCollection, LightningLoggerBase
+from aim.sdk.adapters.pytorch_lightning import AimLogger
 
 from asme.core.callbacks.best_model_writing_model_checkpoint import BestModelWritingModelCheckpoint
 from asme.core.init.config import Config
 
-
-PROCESSED_CONFIG_NAME = "config.jsonnet"
+PROCESSED_CONFIG_NAME = "config"
 FINISHED_FLAG_NAME = ".FINISHED"
 
 
 def save_config(config: Config,
+                source_file: Path,
                 path: Path,
                 make_parents=True
                 ):
@@ -23,10 +26,23 @@ def save_config(config: Config,
     Saves the provided configuration at the specified path, optionally creating parent directories.
     """
     if make_parents:
-        os.makedirs(path,exist_ok=True)
-    full_path = path / PROCESSED_CONFIG_NAME
-    with open(full_path, "w") as f:
-        json.dump(config.config, f, indent=4)
+        os.makedirs(path, exist_ok=True)
+
+    suffix = source_file.suffix
+
+    if suffix == ".json":
+        full_path = path / f"{PROCESSED_CONFIG_NAME}{suffix}"
+        with open(full_path, "w") as f:
+            json.dump(config.config, f, indent=4)
+    elif suffix == ".yaml" or suffix == ".yml":
+        full_path = path / f"{PROCESSED_CONFIG_NAME}{suffix}"
+        with open(full_path, "w") as f:
+            yaml.dump(config.config, f)
+    else:
+        logger.warning(f"Config file {source_file.name} is not in json or yaml format, saving resolved config as yaml.")
+        full_path = path / f"{PROCESSED_CONFIG_NAME}.yaml"
+        with open(full_path, "w") as f:
+            yaml.dump(config.config, f)
 
 
 def _build_log_dir_from_logger(logger: LightningLoggerBase) -> Optional[Path]:
@@ -53,10 +69,16 @@ def determine_log_dir(trainer: Trainer) -> Path:
 
     # try to infer from the logger configuration
     logger = trainer.logger
-    if type(logger) is LightningLoggerBase:
+    if type(logger) is LightningLoggerBase and type(logger) is not AimLogger:
         log_dir = _build_log_dir_from_logger(logger)
     elif type(logger) is LoggerCollection:
         for l in logger._logger_iterable:
+
+            # aim logger does not provide a log_dir
+            # TODO provide an adapter for AimLogger that returns `None`
+            if type(l) is AimLogger:
+                continue
+
             dir = _build_log_dir_from_logger(l)
             if dir is not None:
                 log_dir = dir
@@ -72,7 +94,7 @@ def determine_log_dir(trainer: Trainer) -> Path:
             if type(ckpt_callback) is ModelCheckpoint:
                 log_dir = Path(ckpt_callback.dirpath).parent
             elif type(ckpt_callback) is BestModelWritingModelCheckpoint:
-                log_dir = Path(ckpt_callback.output_base_path).parent
+                log_dir = Path(ckpt_callback.dirpath).parent
             else:
                 print(f"Could not infer output path from checkpoint callback of type: {type(ckpt_callback)}")
 

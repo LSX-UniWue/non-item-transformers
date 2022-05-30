@@ -1,26 +1,34 @@
 local base_path = "../tests/example_dataset/";
+local output_path = '/tmp/experiments/caser';
 local number_of_targets = 1;
-local max_seq_length = 2;
+local markov_length = 2;
+local max_seq_length = markov_length;
+local dataset = 'example';
 local metrics =  {
     mrr: [1, 3, 5],
     recall: [1, 3, 5],
     ndcg: [1, 3, 5]
 };
 {
+    datamodule: {
+        dataset: dataset,
+        template: {
+            name: "sliding_window",
+            split: "ratio_split",
+            file_prefix: dataset,
+            num_workers: 0,
+            batch_size: 9,
+            pad_direction: "left",
+            dynamic_padding: false,
+            window_markov_length: markov_length,
+            window_target_length: number_of_targets
+        },
+        preprocessing: {
+        }
+    },
     templates: {
         unified_output: {
-            path: "/tmp/experiments/caser"
-        },
-        sliding_window_data_sources: {
-            loader: {
-                batch_size: 9,
-                num_workers: 0,
-                dynamic_padding: false
-            },
-            path: base_path + "ratio-0.8_0.1_0.1/",
-            file_prefix: "example",
-            window_size: max_seq_length,
-            number_target_interactions: number_of_targets
+            path: output_path
         }
     },
     module: {
@@ -30,12 +38,12 @@ local metrics =  {
                 metrics: metrics
             },
             sampled: {
-                sample_probability_file: base_path + "example.popularity.item_id.txt",
+                sample_probability_file: base_path + dataset + ".popularity.item_id.txt",
                 num_negative_samples: 2,
                 metrics: metrics
             },
             fixed: {
-                item_file: base_path + "example.relevant_items.item_id.txt",
+                item_file: base_path + dataset + ".relevant_items.item_id.txt",
                 metrics: metrics
             }
         },
@@ -60,7 +68,6 @@ local metrics =  {
                     unk_token: "<UNK>"
                 },
                 vocabulary: {
-                    file: base_path + "example.vocabulary.item_id.txt"
                 }
             }
         }

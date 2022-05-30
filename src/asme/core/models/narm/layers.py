@@ -2,10 +2,12 @@ import torch
 from torch import nn as nn
 
 from asme.core.models.common.layers.sequence_embedding import SequenceElementsEmbeddingLayer
+from asme.core.utils.hyperparameter_utils import save_hyperparameters
 
 
 class LocalEncoderLayer(nn.Module):
 
+    @save_hyperparameters
     def __init__(self,
                  hidden_size: int,
                  latent_size: int
@@ -68,6 +70,8 @@ class BilinearDecoderLayer(nn.Module):
     """
         Implementation of the bilinear decoder
     """
+
+    @save_hyperparameters
     def __init__(self,
                  embedding_layer: SequenceElementsEmbeddingLayer,
                  encoded_representation_size: int,

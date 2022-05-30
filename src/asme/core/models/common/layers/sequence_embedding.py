@@ -4,6 +4,8 @@ from typing import Optional
 import torch
 from torch import nn
 
+from asme.core.utils.hyperparameter_utils import save_hyperparameters
+
 
 def _max_pooling(tensor: torch.Tensor
                  ) -> torch.Tensor:
@@ -18,6 +20,7 @@ class PooledSequenceElementsLayer(nn.Module):
     """
     A stateless module that provides pooling functionality over embedded sequences.
     """
+    @save_hyperparameters
     def __init__(self, pooling_type: str):
         """
 
@@ -48,6 +51,7 @@ class SequenceElementsEmbeddingLayer(nn.Module):
     Also supports dropout after the embedding.
     """
 
+    @save_hyperparameters
     def __init__(self,
                  item_voc_size: int,
                  embedding_size: int,

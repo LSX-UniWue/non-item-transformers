@@ -1,12 +1,15 @@
 import torch
 from torch import nn as nn
 
+from asme.core.utils.hyperparameter_utils import save_hyperparameters
+
 
 class CNNBlock(nn.Module):
     """
     CNN block with two layers.
     """
 
+    @save_hyperparameters
     def __init__(self,
                  input_dim: int,
                  output_dim: int

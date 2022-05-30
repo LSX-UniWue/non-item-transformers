@@ -52,7 +52,7 @@ def test_leave_one_out_next_template():
     assert pos == 10
 
     seq2, pos2 = train_data['4_1']
-    assert_list_equal(seq2, [7])
+    assert_list_equal(seq2, [7, 0])
     assert pos2 == 8
 
     assert_loo_test_and_validation(data_sources)

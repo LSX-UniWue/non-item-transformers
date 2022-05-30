@@ -1,0 +1,77 @@
+datamodule:
+  dataset: "ml-1m"
+  data_sources:
+    split: "leave_one_out"
+    file_prefix: "ml-1m"
+    num_workers: 4
+    batch_size: 128
+    train:
+      type: "session"
+      processors:
+        - type: "pos_neg"
+    validation:
+      type: "session"
+      processors:
+        - type: "target_extractor"
+    test:
+      type: "session"
+      processors:
+        - type: "target_extractor"
+  preprocessing:
+    extraction_directory: "/home/dallmann/uni/research/datasets/ml-1m/ml-1m"
+    output_directory: "/home/dallmann/uni/research/datasets/ml-1m/ml-1m"
+templates:
+  unified_output:
+    path: "/tmp/ml-1m/sasrec-neg"
+module:
+  type: "sasrec-neg"
+  metrics:
+    full:
+      metrics:
+        mrr: [1, 5, 10]
+        recall: [1, 5, 10]
+        ndcg: [1, 5, 10]
+    sampled:
+      sample_probability_file: "ml-1m.popularity.title.txt"
+      num_negative_samples: 100
+      metrics:
+        mrr: [ 1, 5, 10 ]
+        recall: [ 1, 5, 10 ]
+        ndcg: [ 1, 5, 10 ]
+  model:
+    max_seq_length: 200
+    num_transformer_heads: 2
+    num_transformer_layers: 2
+    transformer_hidden_size: 64
+    transformer_dropout: 0.2
+    mode: "neg_sampling"
+features:
+  item:
+    column_name: "title"
+    sequence_length: 200
+    tokenizer:
+      special_tokens:
+        pad_token: "<PAD>"
+        mask_token: "<MASK>"
+        unk_token: "<UNK>"
+      vocabulary:
+        # Inferred by the datamodule
+trainer:
+  loggers:
+    tensorboard:
+    aim:
+      repo: "aim://127.0.0.1:53800"
+      experiment: "sasrec-neg_ml-1m"
+  checkpoint:
+    monitor: "recall@10"
+    save_top_k: 3
+    mode: 'max'
+  early_stopping:
+    min_delta: 0.001
+    mode: "max"
+    monitor: "recall@10"
+    patience: 20
+  gpus: 1
+  max_epochs: 800
+  check_val_every_n_epoch: 1
+  enable_progress_bar: false

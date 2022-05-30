@@ -49,8 +49,8 @@ def test_leave_one_out_mask_template():
     assert_list_equal(sequence, [3, 4])
     assert_list_equal(target, [0, 0])
     seq2, target2 = train_data['4_1']
-    assert_list_equal(seq2, [1, 8])
-    assert_list_equal(target2, [7, 0])
+    assert_list_equal(seq2, [7, 8])
+    assert_list_equal(target2, [0, 0])
 
     # test some test data
     test_dataloader = data_sources['test']
@@ -84,12 +84,12 @@ def test_ratio_mask_template():
     assert len(train_data) == 8
 
     sequence, target = train_data['0_0']
-    assert_list_equal(sequence, [3, 10, 6, 1])
-    assert_list_equal(target, [0, 0, 0, 5])
+    assert_list_equal(sequence, [3, 10, 6, 5])
+    assert_list_equal(target, [0, 0, 0, 0])
 
     seq2, target2 = train_data['4_0']
-    assert_list_equal(seq2, [7, 8, 3, 6])
-    assert_list_equal(target2, [0, 0, 0, 0])
+    assert_list_equal(seq2, [7, 8, 3, 1])
+    assert_list_equal(target2, [0, 0, 0, 6])
 
     test_dataloader = data_sources['test']
     test_data = get_all_data(test_dataloader)

@@ -7,9 +7,12 @@ from asme.core.models.common.components.representations.sequence_elements_embedd
     EmbeddedElementsSequenceWithUserEmbedding
 from torch import nn as nn
 
+from asme.core.utils.hyperparameter_utils import save_hyperparameters
+
 
 class HGNProjectionComponent(ProjectionLayer):
 
+    @save_hyperparameters
     def __init__(self,
                  item_vocab_size: int,
                  hidden_size: int
@@ -73,6 +76,7 @@ class HGNProjectionComponent(ProjectionLayer):
 # XXX: does python support generics?!
 class HGNSequenceRepresentationComponent(SequenceRepresentationLayer):
 
+    @save_hyperparameters
     def __init__(self,
                  hidden_size: int,
                  num_successive_items: int,

@@ -1,25 +1,29 @@
-local base_path = "../tests/example_dataset/";
+local base_path = "/mnt/c/Users/seife/work/recommender/tests/example_dataset/";
+local output_path = '/tmp/experiments/bpr';
 local max_seq_length = 7;
-local prefix = 'example';
+local dataset = 'example';
 local metrics =  {
     mrr: [1, 3, 5],
     recall: [1, 3, 5],
     ndcg: [1, 3, 5]
 };
 {
+    datamodule: {
+        dataset: dataset,
+        template: {
+            name: "pos_neg",
+            split: "ratio_split",
+            file_prefix: dataset,
+            num_workers: 0,
+            batch_size: 9,
+        },
+        preprocessing: {
+        }
+    },
     templates: {
         unified_output: {
-            path: "/tmp/experiments/bpr"
+            path: output_path
         },
-        pos_neg_data_sources: {
-            loader: {
-                batch_size: 9,
-                max_seq_length: max_seq_length
-            },
-            path: base_path + "ratio_split/",
-            file_prefix: "example",
-            seed: 123456
-        }
     },
     module: {
         type: "bpr",
@@ -31,12 +35,12 @@ local metrics =  {
                 metrics: metrics
             },
             sampled: {
-                sample_probability_file: base_path + "example.popularity.item_id.txt",
+                sample_probability_file: base_path + dataset + ".popularity.item_id.txt",
                 num_negative_samples: 2,
                 metrics: metrics
             },
             fixed: {
-                item_file: base_path + "example.relevant_items.item_id.txt",
+                item_file: base_path + dataset + ".relevant_items.item_id.txt",
                 metrics: metrics
             }
         },
@@ -44,15 +48,7 @@ local metrics =  {
     features: {
         item: {
             column_name: "item_id",
-            sequence_length: max_seq_length
-        },
-        user_id: {
-            type: "int",
-            sequence: false
-        }
-    },
-    tokenizers: {
-        item: {
+            sequence_length: max_seq_length,
             tokenizer: {
                 special_tokens: {
                     pad_token: "<PAD>",
@@ -60,17 +56,16 @@ local metrics =  {
                     unk_token: "<UNK>"
                 },
                 vocabulary: {
-                    file: base_path + prefix +".vocabulary.item_id.txt"
                 }
             }
         },
         user: {
+            column_name: "user_id",
+            sequence: false,
             tokenizer: {
                 special_tokens: {
-
                 },
                 vocabulary: {
-                    file: base_path + prefix + ".vocabulary.user_id.txt"
                 }
             }
         }

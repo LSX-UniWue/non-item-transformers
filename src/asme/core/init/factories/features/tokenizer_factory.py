@@ -2,10 +2,11 @@ from typing import List
 
 from asme.core.init.config import Config
 from asme.core.init.context import Context
+from asme.core.init.factories import BuildContext
 
 from asme.core.init.factories.common.dependencies_factory import DependenciesFactory
 from asme.core.init.factories.features.vocabulary_factory import VocabularyFactory
-from asme.core.init.factories.util import require_config_keys
+from asme.core.init.factories.util import require_config_keys, can_build_with_subsection, build_with_subsection
 from asme.core.init.object_factory import ObjectFactory, CanBuildResult, CanBuildResultType
 from asme.core.tokenization.tokenizer import Tokenizer
 
@@ -24,26 +25,20 @@ class TokenizerFactory(ObjectFactory):
         super().__init__()
         self._dependencies = dependencies
 
-    def can_build(self,
-                  config: Config,
-                  context: Context
-                  ) -> CanBuildResult:
-        dependencies_result = self._dependencies.can_build(config, context)
+    def can_build(self, build_context: BuildContext) -> CanBuildResult:
+        dependencies_result = can_build_with_subsection(self._dependencies, build_context)
         if dependencies_result.type != CanBuildResultType.CAN_BUILD:
             return dependencies_result
 
-        return require_config_keys(config, [self.SPECIAL_TOKENS_KEY])
+        return require_config_keys(build_context.get_current_config_section(), [self.SPECIAL_TOKENS_KEY])
 
-    def build(self,
-              config: Config,
-              context: Context
-              ) -> Tokenizer:
-        dependencies = self._dependencies.build(config, context)
-        special_tokens = self._get_special_tokens(config)
+    def build(self, build_context: BuildContext) -> Tokenizer:
+        dependencies = build_with_subsection(self._dependencies, build_context)
+        special_tokens = self._get_special_tokens(build_context.get_current_config_section())
 
         return Tokenizer(dependencies["vocabulary"], **special_tokens)
 
-    def is_required(self, context: Context) -> bool:
+    def is_required(self, build_context: BuildContext) -> bool:
         return True
 
     def config_path(self) -> List[str]:

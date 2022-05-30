@@ -7,14 +7,15 @@ import pytorch_lightning.core as pl
 from torch.utils.data import DataLoader
 
 from asme.core.init.context import Context
+from asme.core.init.factories import BuildContext
 from asme.core.init.factories.data_sources.template_datasources import TemplateDataSourcesFactory
 from asme.core.init.factories.data_sources.user_defined_datasources import UserDefinedDataSourcesFactory
 from asme.core.init.templating.datasources.datasources import DatasetSplit
 from asme.core.utils.logging import get_logger
 from asme.data import BASE_DATASET_PATH_CONTEXT_KEY, CURRENT_SPLIT_PATH_CONTEXT_KEY, DATASET_PREFIX_CONTEXT_KEY, \
-    RATIO_SPLIT_PATH_CONTEXT_KEY, LOO_SPLIT_PATH_CONTEXT_KEY
+    RATIO_SPLIT_PATH_CONTEXT_KEY, LOO_SPLIT_PATH_CONTEXT_KEY, LPO_SPLIT_PATH_CONTEXT_KEY
 from asme.data.datamodule.config import AsmeDataModuleConfig
-from asme.datasets.dataset_pre_processing.utils import download_dataset
+from asme.data.datamodule.util import download_dataset
 
 logger = get_logger(__name__)
 
@@ -49,7 +50,7 @@ class AsmeDataModule(pl.LightningDataModule):
         # If necessary, unpack the dataset
         if ds_config.unpacker is not None:
             logger.info(f"Unpacking dataset.")
-            ds_config.unpacker(dataset_file)
+            ds_config.unpacker(dataset_file, force_unpack=self.config.force_regeneration)
 
         # Apply preprocessing steps
         for i, step in enumerate(ds_config.preprocessing_actions):
@@ -61,11 +62,7 @@ class AsmeDataModule(pl.LightningDataModule):
 
         # Populate context with the dataset path
         self.context.set(BASE_DATASET_PATH_CONTEXT_KEY, self.config.dataset_preprocessing_config.location)
-        split = self._determine_split()
-        split_path = ds_config.context.get(RATIO_SPLIT_PATH_CONTEXT_KEY) if split == DatasetSplit.RATIO_SPLIT else \
-            ds_config.context.get(LOO_SPLIT_PATH_CONTEXT_KEY)
-        self.context.set(CURRENT_SPLIT_PATH_CONTEXT_KEY, split_path)
-
+        self._set_split_path_in_context()
         # Also put the prefix into the context
         self._populate_config_and_context_with_prefix()
 
@@ -78,7 +75,7 @@ class AsmeDataModule(pl.LightningDataModule):
             # Copy the dataset
             ds_location = self.config.dataset_preprocessing_config.location
             logger.info(f"Caching dataset from '{ds_location}' to '{self.config.cache_path}'.")
-            shutil.copytree(ds_location, self.config.cache_path, dirs_exist_ok=True)
+            shutil.copytree(ds_location, self.config.cache_path, dirs_exist_ok=True, copy_function=shutil.copy)
 
             # adjust the context values such that the factories infer correct paths
             self.context.set(BASE_DATASET_PATH_CONTEXT_KEY, self.config.cache_path, overwrite=True)
@@ -87,10 +84,11 @@ class AsmeDataModule(pl.LightningDataModule):
         # Build the datasources depending on what the user specified
         if self.config.template is not None:
             factory = TemplateDataSourcesFactory("name")
-            self._objects = factory.build(self.config.template, self.context)
+
+            self._objects = factory.build(BuildContext(self.config.template, self.context))
         else:
             factory = UserDefinedDataSourcesFactory()
-            self._objects = factory.build(self.config.data_sources, self.context)
+            self._objects = factory.build(BuildContext(self.config.data_sources, self.context))
 
         self._has_setup = True
 
@@ -118,6 +116,19 @@ class AsmeDataModule(pl.LightningDataModule):
             return None
         else:
             return DatasetSplit[split.upper()]
+
+    def _set_split_path_in_context(self):
+        split = self._determine_split()
+        if split == DatasetSplit.RATIO_SPLIT:
+            split_path = self.config.dataset_preprocessing_config.context.get(RATIO_SPLIT_PATH_CONTEXT_KEY)
+        elif split == DatasetSplit.LEAVE_ONE_OUT:
+            split_path = self.config.dataset_preprocessing_config.context.get(LOO_SPLIT_PATH_CONTEXT_KEY)
+        elif split == DatasetSplit.LEAVE_PERCENTAGE_OUT:
+            split_path = self.config.dataset_preprocessing_config.context.get(LPO_SPLIT_PATH_CONTEXT_KEY)
+        else:
+            raise ValueError(f"Unkown split type: {split}.")
+
+        self.context.set(CURRENT_SPLIT_PATH_CONTEXT_KEY, split_path)
 
     def _adjust_split_path_for_caching(self, key: Union[str, List[str]]):
         """

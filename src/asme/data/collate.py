@@ -4,6 +4,7 @@ from typing import List, Callable, Any, Union, Dict
 
 import torch
 from attr import dataclass
+from asme.data.datasets import SESSION_IDENTIFIER
 
 
 class PadDirection(Enum):
@@ -89,7 +90,7 @@ def _padded_session_collate(entries_to_pad: Dict[str, PadInformation],
                 max_length = min(configured_max_seq_length, max_length_values.get(entry_name)) if dynamic_padding else configured_max_seq_length
                 padding_token_id = pad_info.pad_token_id
 
-                if isinstance(value[0], list):
+                if len(value) > 0 and isinstance(value[0], list):
                     max_seq_step_length = pad_info.max_seq_step_length
                     # first pad entries in the list to the maximum seq step length
                     padded_entries = [
@@ -100,7 +101,8 @@ def _padded_session_collate(entries_to_pad: Dict[str, PadInformation],
                 else:
                     value_to_convert = pad(value, partial(_single_item_pad, pad_token_id=padding_token_id, pad_length=max_length), max_length)
 
-            padded_sample[entry_name] = torch.as_tensor(value_to_convert)
+            if entry_name != SESSION_IDENTIFIER:
+                padded_sample[entry_name] = torch.as_tensor(value_to_convert)
 
         padded_batch.append(padded_sample)
 

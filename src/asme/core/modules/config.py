@@ -2,7 +2,7 @@ from asme.core.init.factories.modules.modules import GenericModuleFactory
 from asme.core.losses.basket.dream.dream_loss import DreamContrastiveLoss
 from asme.core.losses.cosrec.cosrec_loss import CosRecLoss
 from asme.core.losses.hgn.hgn_loss import HGNLoss
-from asme.core.losses.sasrec.sas_rec_losses import SASRecBinaryCrossEntropyLoss
+from asme.core.losses.sasrec.sas_rec_losses import SASRecBinaryCrossEntropyLoss, SASRecFullSequenceCrossEntropyLoss
 from asme.core.models.basket.nnrec.nnrec_model import NNRecModel
 from asme.core.models.bert4rec.bert4rec_model import BERT4RecModel
 from asme.core.models.caser.caser_model import CaserModel
@@ -11,7 +11,7 @@ from asme.core.models.hgn.hgn_model import HGNModel
 from asme.core.models.kebert4rec.kebert4rec_model import KeBERT4RecModel
 from asme.core.models.narm.narm_model import NarmModel
 from asme.core.models.rnn.rnn_model import RNNModel
-from asme.core.models.sasrec.sas_rec_model import SASRecModel
+from asme.core.models.sasrec.sasrec_model import SASRecModel
 from asme.core.modules.baselines.bpr_module import BprModule
 from asme.core.modules.baselines.markov_module import MarkovModule
 from asme.core.modules.baselines.pop_module import PopModule
@@ -34,9 +34,13 @@ register_module("caser", ModuleConfig(GenericModuleFactory, SequenceNextItemPred
 register_module("narm", ModuleConfig(GenericModuleFactory, NextItemPredictionTrainingModule, {
     "model_cls": NarmModel}))
 
-register_module("sasrec", ModuleConfig(GenericModuleFactory, SequenceNextItemPredictionTrainingModule, {
+register_module("sasrec-neg", ModuleConfig(GenericModuleFactory, SequenceNextItemPredictionTrainingModule, {
     "model_cls": SASRecModel,
     "loss_function": SASRecBinaryCrossEntropyLoss()}))
+
+register_module("sasrec-cross", ModuleConfig(GenericModuleFactory, NextItemPredictionTrainingModule, {
+    "model_cls": SASRecModel,
+    "loss_function": SASRecFullSequenceCrossEntropyLoss}))
 
 register_module("rnn", ModuleConfig(GenericModuleFactory, NextItemPredictionTrainingModule, {
     "model_cls": RNNModel}))

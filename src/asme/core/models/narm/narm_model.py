@@ -3,6 +3,7 @@ from asme.core.models.common.layers.layers import IdentitySequenceRepresentation
 from asme.core.models.narm.components import NARMSequenceRepresentationComponent, BilinearProjectionComponent
 from asme.core.models.sequence_recommendation_model import SequenceRecommenderModel
 from asme.core.utils.hyperparameter_utils import save_hyperparameters
+from asme.core.utils.inject import InjectVocabularySize, inject
 
 
 class NarmModel(SequenceRecommenderModel):
@@ -19,6 +20,7 @@ class NarmModel(SequenceRecommenderModel):
         * S - sequence length
     """
 
+    @inject(item_vocab_size=InjectVocabularySize("item"))
     @save_hyperparameters
     def __init__(self,
                  item_vocab_size: int,

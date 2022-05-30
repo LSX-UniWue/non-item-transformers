@@ -1,9 +1,12 @@
 import torch
 from torch import nn
 
+from asme.core.utils.hyperparameter_utils import save_hyperparameters
+
 
 class LinearUpscaler(nn.Module):
 
+    @save_hyperparameters
     def __init__(self, vocab_size: int, embed_size: int):
         super().__init__()
         self.linear = nn.Linear(vocab_size, embed_size)

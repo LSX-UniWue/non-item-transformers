@@ -58,15 +58,16 @@ def convert_target_to_multi_hot(target_tensor: torch.Tensor,
     """
     generates a mulit-hot vector of the provided indices in target_tensor
 
-    :param target_tensor:
-    :param num_classes:
-    :param pad_token_id:
-    :return: a tensor with 1s in the indices specified by
+    :param target_tensor: a target tensor with multiple target for every sequence. [BS x S]
+    :param num_classes: the number of target classes.
+    :param pad_token_id: the id of the padding token
+
+    :return: a tensor [BS, I] with a multi-hot coded target vector for each sequence. Target items are signaled by `1`.
     """
 
     multi_hot = torch.zeros(list(target_tensor.size()[:-1]) + [num_classes], device=target_tensor.device)
     target = target_tensor.clone()
-    target[target == -100] = pad_token_id
+    target[target == -100] = pad_token_id  # FIXME (AD): It seems that a target value of -100 has a special meaning, but I don't know where this comes from ?
 
     multi_hot.scatter_(-1, target, 1)
     # remove the padding for each multi-hot target

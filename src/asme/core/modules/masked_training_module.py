@@ -6,6 +6,7 @@ from typing import Union, Dict, Optional, Any
 from torch import nn
 from torch.optim.lr_scheduler import LambdaLR
 
+from asme.core.utils.inject import InjectTokenizer, InjectTokenizers, inject
 from asme.core.models.sequence_recommendation_model import SequenceRecommenderModel
 from asme.data.datasets import ITEM_SEQ_ENTRY_NAME, TARGET_ENTRY_NAME
 from asme.core.metrics.container.metrics_container import MetricsContainer
@@ -24,6 +25,7 @@ class MaskedTrainingModule(MetricsTrait, pl.LightningModule):
     For validation and evaluation the sequence and at the last position a masked item are fed to the model.
     """
 
+    @inject(item_tokenizer=InjectTokenizer("item"))
     @save_hyperparameters
     def __init__(self,
                  model: SequenceRecommenderModel,
@@ -33,7 +35,7 @@ class MaskedTrainingModule(MetricsTrait, pl.LightningModule):
                  beta_1: float = 0.99,
                  beta_2: float = 0.998,
                  weight_decay: float = 0.001,
-                 num_warmup_steps: int = 10000
+                 num_warmup_steps: int = 10000,
                  ):
         super().__init__()
 
@@ -47,14 +49,14 @@ class MaskedTrainingModule(MetricsTrait, pl.LightningModule):
 
         self.item_tokenizer = item_tokenizer
         self.metrics = metrics
-        self.save_hyperparameters(self.hyperparameters)
+        self.save_hyperparameters(self.hyperparameters, ignore=["metrics"])
 
     def get_metrics(self) -> MetricsContainer:
         return self.metrics
 
     def forward(self,
                 batch: Dict[str, torch.Tensor],
-                batch_idx: int
+                batch_idx: Optional[int] = None
                 ) -> torch.Tensor:
         input_data = build_model_input(self.model, self.item_tokenizer, batch)
         # call the model
@@ -141,6 +143,7 @@ class MaskedTrainingModule(MetricsTrait, pl.LightningModule):
         prediction = self._get_prediction_for_masked_item(batch, batch_idx)
 
         loss = self._calc_loss(prediction, targets, is_eval=True)
+
         self.log(LOG_KEY_TEST_LOSS if is_test else LOG_KEY_VALIDATION_LOSS, loss, prog_bar=True)
 
         # when we have multiple target per sequence step, we have to provide a mask for the paddings applied to
@@ -152,11 +155,11 @@ class MaskedTrainingModule(MetricsTrait, pl.LightningModule):
     def test_step(self, batch, batch_idx):
         return self._eval_step(batch, batch_idx, is_test=True)
 
-    def predict(self,
-                batch: Any,
-                batch_idx: int,
-                dataloader_idx: Optional[int] = None
-                ) -> torch.Tensor:
+    def predict_step(self,
+                     batch: Dict[str, torch.Tensor],
+                     batch_idx: int,
+                     dataloader_idx: Optional[int] = None
+                     ) -> torch.Tensor:
         return self._get_prediction_for_masked_item(batch, batch_idx)
 
     def configure_optimizers(self):

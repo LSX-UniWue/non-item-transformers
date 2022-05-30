@@ -6,11 +6,15 @@ from asme.core.models.common.layers.sequence_embedding import SequenceElementsEm
 
 
 # TODO rename file to elements_embedding
+from asme.core.utils.hyperparameter_utils import save_hyperparameters
+
+
 class SequenceElementsEmbeddingComponent(SequenceElementsRepresentationLayer):
     """
     A component that projects every element in a sequence into an embedding space. The component also supports pooling
     over elements of the sequence.
     """
+    @save_hyperparameters
     def __init__(self,
                  vocabulary_size: int,
                  embedding_size: int,

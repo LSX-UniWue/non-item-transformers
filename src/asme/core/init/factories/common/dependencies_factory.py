@@ -1,7 +1,9 @@
 from typing import Dict, List, Union, Any
 
-from asme.core.init.config import Config
+
 from asme.core.init.context import Context
+from asme.core.init.factories import BuildContext
+from asme.core.init.factories.util import can_build_with_subsection, build_with_subsection
 from asme.core.init.object_factory import ObjectFactory, CanBuildResult, CanBuildResultType
 
 
@@ -54,31 +56,32 @@ class DependenciesFactory(ObjectFactory):
         """
         return [key for key, _ in self._dependencies.items()]
 
-    def can_build(self, config: Config, context: Context) -> CanBuildResult:
+    def can_build(self, build_context: BuildContext) -> CanBuildResult:
+        config = build_context.get_current_config_section()
+        context = build_context.get_context()
+
         for key, factory in self._dependencies.items():
-            if not self._optional_based_on_path and not config.has_path(factory.config_path()) and factory.is_required(context):
+            if not self._optional_based_on_path and not config.has_path(factory.config_path()) and factory.is_required(build_context):
                 return CanBuildResult(CanBuildResultType.MISSING_CONFIGURATION, f"missing path <{'.'.join(factory.config_path())}>")
 
-            factory_config = config.get_config(factory.config_path())
-            factory_can_build_result = factory.can_build(factory_config, context)
+            factory_can_build_result =can_build_with_subsection(factory, build_context)
             if factory_can_build_result.type != CanBuildResultType.CAN_BUILD:
                 return factory_can_build_result
 
         return CanBuildResult(CanBuildResultType.CAN_BUILD)
 
-    def build(self, config: Config, context: Context) -> Union[Any, Dict[str, Any], List[Any]]:
+    def build(self, build_context: BuildContext) -> Union[Any, Dict[str, Any], List[Any]]:
         result = {}
         for key, factory in self._dependencies.items():
             factory_config_path = factory.config_path()
-            if self._optional_based_on_path and not config.has_path(factory_config_path):
+
+            if self._optional_based_on_path and not build_context.get_current_config_section().has_path(factory_config_path):
                 # we skip this dependency because the path is not present and the config allow this situation
                 continue
-            factory_config = config.get_config(factory_config_path)
-            obj = factory.build(factory_config, context)
-            result[key] = obj
+            result[key] = build_with_subsection(factory, build_context)
         return result
 
-    def is_required(self, context: Context) -> bool:
+    def is_required(self, build_context: BuildContext) -> bool:
         return self._required
 
     def config_path(self) -> List[str]:

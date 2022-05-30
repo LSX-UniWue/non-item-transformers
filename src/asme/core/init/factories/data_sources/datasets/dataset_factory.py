@@ -1,8 +1,9 @@
 from typing import List, Union, Any, Dict
 
+from asme.core.init.factories import BuildContext
+from asme.core.init.factories.util import can_build_with_subsection, build_with_subsection
 from asme.data.datasets.processors.processor import Processor
 from asme.data.datasets.sequence import ItemSessionParser
-from asme.core.init.config import Config
 from asme.core.init.context import Context
 from asme.core.init.factories.common.dependencies_factory import DependenciesFactory
 from asme.core.init.factories.data_sources.datasets.parser.item_session_parser import ItemSessionParserFactory
@@ -20,22 +21,22 @@ class DatasetFactory(ObjectFactory):
         super().__init__()
         self.parser_dependency = DependenciesFactory([ItemSessionParserFactory(), ProcessorsFactory()])
 
-    def can_build(self, config: Config, context: Context) -> CanBuildResult:
-        can_build = self.parser_dependency.can_build(config, context)
+    def can_build(self, build_context: BuildContext) -> CanBuildResult:
+        can_build = can_build_with_subsection(self.parser_dependency, build_context)
         if can_build.type != CanBuildResultType.CAN_BUILD:
             return can_build
 
-        return self._can_build_dataset(config, context)
+        return self._can_build_dataset(build_context)
 
-    def build(self, config: Config, context: Context) -> Union[Any, Dict[str, Any], List[Any]]:
-        build_result = self.parser_dependency.build(config, context)
+    def build(self, build_context: BuildContext) -> Union[Any, Dict[str, Any], List[Any]]:
+        build_result = build_with_subsection(self.parser_dependency, build_context)
 
         session_parser = build_result[ItemSessionParserFactory.KEY]
         processors = build_result[ProcessorsFactory.KEY]
 
-        return self._build_dataset(config, context, session_parser, processors)
+        return self._build_dataset(build_context, session_parser, processors)
 
-    def is_required(self, context: Context) -> bool:
+    def is_required(self, build_context: BuildContext) -> bool:
         return True
 
     def config_path(self) -> List[str]:
@@ -46,8 +47,7 @@ class DatasetFactory(ObjectFactory):
 
     @abstractmethod
     def _build_dataset(self,
-                       config: Config,
-                       context: Context,
+                       build_context: BuildContext,
                        session_parser: ItemSessionParser,
                        processors: List[Processor]
                        ) -> Any:
@@ -55,8 +55,7 @@ class DatasetFactory(ObjectFactory):
 
     @abstractmethod
     def _can_build_dataset(self,
-                           config: Config,
-                           context: Context
+                           build_context: BuildContext
                            ) -> CanBuildResult:
         pass
 

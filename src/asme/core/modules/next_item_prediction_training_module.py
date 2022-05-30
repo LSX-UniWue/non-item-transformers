@@ -1,20 +1,23 @@
+import inspect
+
 from abc import abstractmethod
 from typing import Union, Dict, Optional
 
 import torch
-
 import pytorch_lightning as pl
-from asme.core.losses.losses import CrossEntropyLoss
+from loguru import logger
 
+from asme.core.losses.losses import SequenceRecommenderLoss, SingleTargetCrossEntropyLoss
 from asme.core.models.common.layers.data.sequence import InputSequence
 from asme.core.models.sequence_recommendation_model import SequenceRecommenderModel
+from asme.core.tokenization.tokenizer import Tokenizer
+from asme.core.utils.inject import InjectTokenizer, inject
 from asme.data.datasets import ITEM_SEQ_ENTRY_NAME, TARGET_ENTRY_NAME, POSITIVE_SAMPLES_ENTRY_NAME, \
     NEGATIVE_SAMPLES_ENTRY_NAME
 from asme.core.metrics.container.metrics_container import MetricsContainer
 from asme.core.modules import LOG_KEY_VALIDATION_LOSS, LOG_KEY_TRAINING_LOSS
 from asme.core.modules.metrics_trait import MetricsTrait
 from asme.core.modules.util.module_util import get_padding_mask, build_eval_step_return_dict, get_additional_meta_data
-from asme.core.tokenization.tokenizer import Tokenizer
 from asme.core.utils.hyperparameter_utils import save_hyperparameters
 
 
@@ -27,6 +30,7 @@ class BaseNextItemPredictionTrainingModule(MetricsTrait, pl.LightningModule):
     - RNN
     """
 
+    @inject(item_tokenizer=InjectTokenizer("item"))
     @save_hyperparameters
     def __init__(self,
                  model: SequenceRecommenderModel,
@@ -36,7 +40,7 @@ class BaseNextItemPredictionTrainingModule(MetricsTrait, pl.LightningModule):
                  beta_1: float = 0.99,
                  beta_2: float = 0.998,
                  weight_decay: float = 0,
-                 loss_function: Optional = None
+                 loss_function: Optional[SequenceRecommenderLoss] = None
                  ):
         """
         Initializes the training module.
@@ -53,9 +57,19 @@ class BaseNextItemPredictionTrainingModule(MetricsTrait, pl.LightningModule):
 
         self.metrics = metrics
 
+        # FIXME (AD): right now we do not support multiple targets, we need to refactor the losses to achieve this again.
+        # TODO (AD): refactor loss init to config or use advanced introspection to match module instance variable to loss constructor arguments!
         if loss_function is None:
-            loss_function = CrossEntropyLoss
-        self.loss_function = loss_function(item_tokenizer)
+            self.loss_function = SingleTargetCrossEntropyLoss(item_tokenizer)
+        else:
+            if inspect.isclass(loss_function):
+                constructor_signature = inspect.signature(loss_function)
+                if "item_tokenizer" in constructor_signature.parameters.keys():
+                    loss_function = loss_function(item_tokenizer=item_tokenizer)
+                else:
+                    loss_function = loss_function()
+
+            self.loss_function = loss_function
 
         self.save_hyperparameters(self.hyperparameters)
 
@@ -109,7 +123,7 @@ class BaseNextItemPredictionTrainingModule(MetricsTrait, pl.LightningModule):
                   ) -> Dict[str, torch.Tensor]:
         return self.validation_step(batch, batch_idx)
 
-    def predict(self,
+    def predict_step(self,
                 batch: Dict[str, torch.Tensor],
                 batch_idx: int,
                 dataloader_idx: Optional[int] = None
@@ -177,16 +191,58 @@ class NextItemPredictionTrainingModule(BaseNextItemPredictionTrainingModule):
         where N is the batch size and S the max sequence length.
         """
 
-        input_seq = batch[ITEM_SEQ_ENTRY_NAME]
-        target = batch[TARGET_ENTRY_NAME]
+        input_seq = batch[ITEM_SEQ_ENTRY_NAME]     # BS x S
+        target = batch[TARGET_ENTRY_NAME]  # BS
 
-        logits = self(batch, batch_idx)
+        logits = self(batch, batch_idx)  # BS x S x I
 
-        loss = self._calc_loss(logits, target)
+        # in case of parallel evaluation, logits have shape: BS x S x I and we need to extract the last non-masked
+        # item state of each sequence.
+        if len(logits.size()) == 3:
+            target_logits = self._extract_target_logits(input_seq, logits)
+        elif len(logits.size()) == 2:
+            # otherwise only the next item was predicted by the model and the shape should be BS x I
+            target_logits = logits
+        else:
+            logger.error(f"This module is unable to process logits of shape: {logits.size()}!")
+            raise Exception(f"Unable to process logits of shape: {logits.size()}")
+
+        loss = self._calc_loss(target_logits, target)
         self.log(LOG_KEY_VALIDATION_LOSS, loss, prog_bar=True)
 
         mask = None if len(target.size()) == 1 else ~ target.eq(self.item_tokenizer.pad_token_id)
-        return build_eval_step_return_dict(input_seq, logits, target, mask=mask)
+        return build_eval_step_return_dict(input_seq, target_logits, target, mask=mask)
+
+    def _extract_target_logits(self, input_seq: torch.Tensor, logits: torch.Tensor) -> torch.Tensor:
+        """
+        Finds the model output for the last input item in each sequence.
+
+        :param input_seq: the input sequence. [BS x S]
+        :param logits: the logits [BS x S x I]
+
+        :return: the logits for the last input item of the sequence. [BS x I]
+        """
+        # calculate the padding mask where each non-padding token has the value `1`
+        padding_mask = get_padding_mask(input_seq, self.item_tokenizer)  # [BS x S]
+        seq_length = padding_mask.sum(dim=-1) - 1  # [BS]
+
+        batch_index = torch.arange(input_seq.size()[0])  # [BS]
+
+        # select only the outputs at the last step of each sequence
+        target_logits = logits[batch_index, seq_length]  # [BS, I]
+
+        return target_logits
+
+    def predict_step(self,
+                     batch: Dict[str, torch.Tensor],
+                     batch_idx: int,
+                     dataloader_idx: Optional[int] = None
+                     ) -> torch.Tensor:
+
+        input_seq = batch[ITEM_SEQ_ENTRY_NAME]     # BS x S
+        logits = self(batch, batch_idx)  # BS x S x I
+        target_logits = self._extract_target_logits(input_seq, logits)
+        return target_logits
 
 
 class NextItemPredictionWithNegativeSampleTrainingModule(BaseNextItemPredictionTrainingModule):

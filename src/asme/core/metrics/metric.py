@@ -2,8 +2,8 @@ from abc import abstractmethod
 from enum import Enum
 from typing import Optional, Callable, Any, Union, List
 
-import pytorch_lightning as pl
 import torch
+import torchmetrics.metric
 
 
 class MetricStorageMode(Enum):
@@ -15,7 +15,7 @@ class MetricStorageMode(Enum):
     SUM = 'sum'
 
 
-class RankingMetric(pl.metrics.Metric):
+class RankingMetric(torchmetrics.metric.Metric):
     """
     base class to implement metrics in the framework
     """
@@ -61,8 +61,8 @@ class RankingMetric(pl.metrics.Metric):
                ) -> None:
         """
         :param predictions: the prediction logits :math `(N, I)`
-        :param positive_item_mask: the positive item mask 1 if the item at index i is relevant :math `(N)`
-        :param metric_mask: a mask to mask single item in the prediction :math `(N)`
+        :param positive_item_mask: the positive item mask 1 if the item at index i is relevant :math `(N, I)`
+        :param metric_mask: a mask to mask single item in the prediction :math `(N, I)`
 
         where N is the batch size and I the item size to evaluate (can be the item vocab size)
         """

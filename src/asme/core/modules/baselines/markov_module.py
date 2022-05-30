@@ -6,6 +6,7 @@ import torch.nn.functional as F
 from pytorch_lightning.utilities import rank_zero_warn
 from torch.nn.parameter import Parameter
 
+from asme.core.utils.hyperparameter_utils import save_hyperparameters
 from asme.data.datasets import ITEM_SEQ_ENTRY_NAME, TARGET_ENTRY_NAME
 from asme.core.metrics.container.metrics_container import MetricsContainer
 from asme.core.modules.metrics_trait import MetricsTrait
@@ -31,6 +32,7 @@ def last_item_in_sequence(input_sequence: torch.tensor) -> torch.Tensor:
 
 class MarkovModule(MetricsTrait, pl.LightningModule):
 
+    @save_hyperparameters
     def __init__(self,
                  item_tokenizer: Tokenizer,
                  metrics: MetricsContainer):
@@ -46,6 +48,8 @@ class MarkovModule(MetricsTrait, pl.LightningModule):
         self.transition_matrix = Parameter(torch.full((self.item_vocab_size, self.item_vocab_size),
                                                       1 / self.item_vocab_size,
                                                       device=self.device), requires_grad=False)
+
+        self.save_hyperparameters(self.hyperparameters)
 
     def on_train_epoch_start(self) -> None:
         if self.trainer.max_epochs > 1:

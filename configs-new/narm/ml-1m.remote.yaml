@@ -1,0 +1,12 @@
+datamodule:
+  preprocessing:
+    extraction_directory: "/home/ls6/dallmann/datasets/ml-1m/extraction"
+    output_directory: "/home/ls6/dallmann/datasets/ml-1m/output"
+templates:
+  unified_output:
+    path: "/home/ls6/dallmann/results/gru/ml-1m"
+trainer:
+  loggers:
+    aim:
+      repo: "aim://aim-server:53800"
+      experiment: "gru_ml-1m"

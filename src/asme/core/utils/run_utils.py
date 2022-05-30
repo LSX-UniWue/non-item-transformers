@@ -4,25 +4,27 @@ from typing import List, Optional, Dict
 
 import _jsonnet
 import optuna
+import yaml
+from yaml import Loader
 from optuna import Study
 from optuna.study import StudyDirection
 from pytorch_lightning.utilities import cloud_io
 from torch.utils.data import DataLoader
 
+import asme.core.init.factories
 from asme.core.init.config import Config
 from asme.core.init.config_keys import TRAINER_CONFIG_KEY, CHECKPOINT_CONFIG_KEY, CHECKPOINT_CONFIG_DIR_PATH
 from asme.core.init.container import Container
 from asme.core.init.context import Context
+from asme.core.init.factories import BuildContext
 from asme.core.init.factories.container import ContainerFactory
 from asme.core.init.templating.template_engine import TemplateEngine
 from asme.core.init.templating.template_processor import TemplateProcessor
 from asme.core.tokenization.tokenizer import Tokenizer
-from asme.core.utils import logging
 from asme.core.utils.ioutils import PROCESSED_CONFIG_NAME, find_all_files
 from asme.data.datasets import ITEM_SEQ_ENTRY_NAME
 from asme.data.example_logging import ExampleLogger
-
-logger = logging.get_logger(__name__)
+from loguru import logger
 
 """ key to retrieve the object metric used in hyperparameter study """
 OBJECTIVE_METRIC_KEY = 'objective_metric'
@@ -30,6 +32,19 @@ OBJECTIVE_METRIC_KEY = 'objective_metric'
 TRIAL_BASE_PATH = 'base_output_path'
 """ the checkpoint file extension """
 CHECKPOINT_FILE_EXTENSION = '.ckpt'
+
+
+def load_config_from_json(json_content: str,
+                          additional_head_processors: List[TemplateProcessor] = [],
+                          additional_tail_processors: List[TemplateProcessor] = []) -> Config:
+
+    loaded_config = json.loads(json_content)
+
+    template_engine = TemplateEngine(head_processors=additional_head_processors,
+                                     tail_processors=additional_tail_processors)
+
+    resolved_config = template_engine.modify(loaded_config)
+    return Config(resolved_config)
 
 
 def load_config(config_file: Path,
@@ -44,9 +59,24 @@ def load_config(config_file: Path,
     if additional_tail_processors is None:
         additional_tail_processors = []
 
-    config_json = _jsonnet.evaluate_file(str(config_file))
+    if config_file.suffix == ".jsonnet":
+        resolved_config_content = _jsonnet.evaluate_file(str(config_file))
+    else:
+        with config_file.open("r") as cfg_file:
+            resolved_config_content = cfg_file.read()
 
-    loaded_config = json.loads(config_json)
+    if config_file.suffix == ".json" or config_file.suffix == ".jsonnet":
+        loaded_config = json.loads(resolved_config_content)
+    elif config_file.suffix == ".yaml" or config_file.suffix == ".yml":
+        loaded_config = yaml.load(resolved_config_content, Loader)
+    else:
+        logger.warning(f"Did not recognize the config file format by its suffix. Assuming json.")
+        try:
+            loaded_config = json.loads(resolved_config_content)
+        except Exception as e:
+            logger.exception(f"Unable to parse {config_file} as json. "
+                             f"Allowed file formats are: *.json, *.yaml, *.jsonnet")
+            exit(-1)
 
     template_engine = TemplateEngine(head_processors=additional_head_processors,
                                      tail_processors=additional_tail_processors)
@@ -67,10 +97,11 @@ def load_hyperopt_config(hyperopt_config_file: Path, processors: List[TemplatePr
 
 
 def create_container(config: Config) -> Container:
-    context = Context()
+    build_context = BuildContext(config, Context())
+    asme.core.init.factories.GLOBAL_ASME_INJECTION_CONTEXT = build_context
 
     container_factory = ContainerFactory()
-    container = container_factory.build(config, context)
+    container = container_factory.build(build_context)
 
     return container
 

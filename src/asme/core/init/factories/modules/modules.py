@@ -1,46 +1,16 @@
+import copy
 import inspect
-from dataclasses import dataclass
-
-from typing import List, Any, Dict, Optional, Union, Callable
+from typing import List, Any, Dict, Union
 
 from asme.core.init.config import Config
 from asme.core.init.context import Context
+from asme.core.init.factories import BuildContext
 from asme.core.init.factories.metrics.metrics_container import MetricsContainerFactory
-from asme.core.init.factories.features.tokenizer_factory import get_tokenizer_key_for_voc
-from asme.core.init.factories.util import require_config_keys
+from asme.core.init.factories.modules import MODEL_PARAM_NAME, METRICS_PARAM_NAME, LOSS_FUNCTION_PARAM_NAME
+from asme.core.init.factories.modules.util import get_init_parameters, filter_parameters, \
+    get_config_required_config_params
+from asme.core.init.factories.util import require_config_keys, can_build_with_subsection, build_with_subsection
 from asme.core.init.object_factory import ObjectFactory, CanBuildResult, CanBuildResultType
-from asme.core.tokenization.tokenizer import Tokenizer
-
-MODEL_PARAM_NAME = 'model'
-METRICS_PARAM_NAME = 'metrics'
-LOSS_FUNCTION_PARAM_NAME = 'loss_function'
-TOKENIZER_SUFFIX = '_tokenizer'
-VOCAB_SIZE_SUFFIX = '_vocab_size'
-
-
-@dataclass
-class ParameterInfo:
-    """ class to store information about the parameter """
-    parameter_type: type
-    default_value: Optional[Any] = None
-
-
-def _get_parameters(cls) -> Dict[str, ParameterInfo]:
-    signature = inspect.signature(cls.__init__)
-
-    parameter_infos = {}
-
-    for parameter_name, info in signature.parameters.items():
-        if parameter_name != 'self':
-            parameter_infos[parameter_name] = ParameterInfo(info.annotation, info.default)
-
-    return parameter_infos
-
-
-def _filter_parameters(parameters: Dict[str, ParameterInfo],
-                       filter_func: Callable[[], bool]
-                       ) -> Dict[str, Optional[Any]]:
-    return dict(filter(filter_func, parameters.items()))
 
 
 class GenericModuleFactory(ObjectFactory):
@@ -70,55 +40,45 @@ class GenericModuleFactory(ObjectFactory):
         self.metrics_container_factory = MetricsContainerFactory()
         self.loss_function = loss_function
 
-    def can_build(self, config: Config, context: Context) -> CanBuildResult:
-        metrics_can_build = self.metrics_container_factory.can_build(
-            config.get_config(self.metrics_container_factory.config_path()), context)
+    def can_build(self, build_context: BuildContext) -> CanBuildResult:
+
+        metrics_can_build = can_build_with_subsection(self.metrics_container_factory, build_context)
+
         if metrics_can_build.type != CanBuildResultType.CAN_BUILD:
             return metrics_can_build
         # If the module does not contain a model, we short circuit here and don't query the model factory.
-        return not self.should_build_model or \
-               self.model_factory.can_build(config.get_config(self.model_factory.config_path()), context)
 
-    def build(self, config: Config, context: Context) -> Union[Any, Dict[str, Any], List[Any]]:
+        can_build_model = can_build_with_subsection(self.model_factory, build_context)
+
+        return not self.should_build_model or can_build_model
+
+    def build(self, build_context: BuildContext) -> Union[Any, Dict[str, Any], List[Any]]:
         # collect the parameters from the config
         named_parameters = {}
 
         # collect the parameters from the config
-        parameters = _get_parameters(self._module_csl)
-        tokenizer_parameters = _filter_parameters(parameters,
-                                                  lambda param_name: param_name[1].parameter_type == Tokenizer)
-        config_parameters = dict([x for x in parameters.items() if x[0] not in tokenizer_parameters])
+        parameters = get_init_parameters(self._module_csl)
 
         # Model is only present for modules that contain a model.
         if self.should_build_model:
-            config_parameters.pop(MODEL_PARAM_NAME)
+            parameters = filter_parameters(parameters,
+                                           lambda p: not p.parameter_name == MODEL_PARAM_NAME)
 
-        config_parameters.pop(METRICS_PARAM_NAME)
+        # We do not want to build the metrics container directly from the config.
+        parameters = filter_parameters(parameters, lambda p: not p.parameter_name == METRICS_PARAM_NAME)
 
-        for parameter, parameter_info in config_parameters.items():
+        for parameter_info in parameters:
+            name = parameter_info.parameter_name
             default_value = parameter_info.default_value
             default_value = None if default_value == inspect._empty else default_value
-            named_parameters[parameter] = config.get_or_default(parameter, default_value)
-
-        # bind the tokenizers
-        for tokenizer_parameter_name, tokenizer_parameter_info in tokenizer_parameters.items():
-            tokenizer_to_use = tokenizer_parameter_name.replace(TOKENIZER_SUFFIX, '')
-            tokenizer = context.get(get_tokenizer_key_for_voc(tokenizer_to_use))
-
-            if tokenizer is None:
-                if tokenizer_parameter_info.default_value == inspect._empty:
-                    raise KeyError(f'No tokenizer with id "{tokenizer_to_use}" configured and no default value set.')
-                else:
-                    tokenizer = tokenizer_parameter_info.default_value
-            named_parameters[tokenizer_parameter_name] = tokenizer
+            named_parameters[name] = copy.deepcopy(build_context.get_current_config_section().get_or_default(name, default_value))
 
         # build the metrics container
-        metrics = self.metrics_container_factory.build(config.get_config(self.metrics_container_factory.config_path()),
-                                                       context=context)
+        metrics = build_with_subsection(self.metrics_container_factory, build_context)
 
         # build the model container if a model class was supplied
         if self.should_build_model:
-            model = self.model_factory.build(config.get_config(self.model_factory.config_path()), context)
+            model = build_with_subsection(self.model_factory, build_context)
             named_parameters[MODEL_PARAM_NAME] = model
 
         named_parameters[METRICS_PARAM_NAME] = metrics
@@ -126,9 +86,10 @@ class GenericModuleFactory(ObjectFactory):
         if self.loss_function is not None:
             named_parameters[LOSS_FUNCTION_PARAM_NAME] = self.loss_function
 
+        # create a deep copy to avoid potential config modifications made by the module to leak into asme
         return self._module_csl(**named_parameters)
 
-    def is_required(self, context: Context) -> bool:
+    def is_required(self, build_context: BuildContext) -> bool:
         return True
 
     def config_path(self) -> List[str]:
@@ -147,42 +108,25 @@ class GenericModelFactory(ObjectFactory):
         super().__init__()
         self._model_cls = model_cls
 
-    def can_build(self,
-                  config: Config,
-                  context: Context
-                  ) -> CanBuildResult:
-        config_parameters = _get_config_required_config_params(_get_parameters(self._model_cls))
+    def can_build(self, build_context: BuildContext) -> CanBuildResult:
+        config_parameters = get_config_required_config_params(get_init_parameters(self._model_cls))
 
-        return require_config_keys(config, config_parameters)
+        return require_config_keys(build_context.get_current_config_section(), config_parameters)
 
-    def build(self,
-              config: Config,
-              context: Context
-              ) -> Any:
+    def build(self, build_context: BuildContext) -> Any:
         named_parameters = {}
 
         # collect the parameters from the config
-        parameters = _get_parameters(self._model_cls)
-        for parameter, parameter_info in parameters.items():
+        parameters = get_init_parameters(self._model_cls)
+        for parameter_info in parameters:
             default_value = parameter_info.default_value
+            parameter_name = parameter_info.parameter_name
             default_value = None if default_value == inspect._empty else default_value
-            named_parameters[parameter] = config.get_or_default(parameter, default_value)
-
-        vocab_vars = _filter_parameters(parameters, lambda dict_item: dict_item[0].endswith(VOCAB_SIZE_SUFFIX))
-
-        for vocab_var in vocab_vars.keys():
-            tokenizer_to_use = vocab_var.replace(VOCAB_SIZE_SUFFIX, '')
-            tokenizer = context.get(get_tokenizer_key_for_voc(tokenizer_to_use))
-
-            vocab_size = 0
-            if tokenizer is not None:
-                vocab_size = len(tokenizer)
-
-            named_parameters[vocab_var] = vocab_size
+            named_parameters[parameter_name] = copy.deepcopy(build_context.get_current_config_section().get_or_default(parameter_name, default_value))
 
         return self._model_cls(**named_parameters)
 
-    def is_required(self, context: Context) -> bool:
+    def is_required(self, build_context: BuildContext) -> bool:
         return True
 
     def config_path(self) -> List[str]:
@@ -192,12 +136,3 @@ class GenericModelFactory(ObjectFactory):
         return self._model_cls.__name__.lower()
 
 
-def _get_config_required_config_params(parameters: Dict[str, Optional[Any]]) -> List[str]:
-    result = []
-
-    for parameter_name, parameter_info in parameters.items():
-        default_value = parameter_info.default_value
-        if default_value is inspect._empty and not parameter_name.endswith(VOCAB_SIZE_SUFFIX):
-            result.append(parameter_name)
-
-    return result

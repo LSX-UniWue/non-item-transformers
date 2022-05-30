@@ -1,6 +1,8 @@
 import inspect
 from functools import wraps
+from typing import Dict, Any
 
+import torchmetrics.metric
 from torch import nn
 from asme.core.tokenization.tokenizer import Tokenizer
 import pytorch_lightning as pl
@@ -10,28 +12,53 @@ from asme.core.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
+
+def _get_module_hyperparameters(param: str, module: nn.Module) -> Dict[str, Any]:
+    if hasattr(module, 'hyperparameters'):  # special handling of the model parameter
+        return module.hyperparameters
+    else:
+        logger.warning(f"Your module contains a submodule named <{param}>"
+                       f" that does not report its hyperparameters,"
+                       f" consider adding @save_hyperparameters annotation.")
+        return {}
+
+
 def _get_hyperparameters(args, kwargs, init_func):
 
     parameters = list(inspect.signature(init_func).parameters.items())
 
     hyperparameters = {}
-    # first the args
-
+    params = kwargs.copy()
     for index, arg in enumerate(args):
-        # index + 1 because self is the first parameter of init
-        hyperparameters[parameters[index + 1][0]] = arg
+        params[parameters[index + 1][0]] = arg
 
-    for index, arg in enumerate(kwargs):
-        value = kwargs.get(arg, None)
-        if isinstance(value, (MetricsContainer, pl.metrics.Metric, Tokenizer)):  # excluding non-hyperparameters like Metrics and Tokenizer
+    for index, arg in enumerate(params):
+        value = params.get(arg, None)
+        # Exclude non-hyperparameters such as MetricContainers, Metrics, etc.
+        if isinstance(value, (MetricsContainer, torchmetrics.metric.Metric, Tokenizer, type)):
             continue
-        hyperparameters[arg] = value
-        if isinstance(value, nn.Module):
-            if hasattr(value, 'hyperparameters'):                    # special handling of the model parameter
-                model_hyperparameters = value.hyperparameters
-                hyperparameters[arg] = model_hyperparameters
-            else:
-                logger.warning(f"Your module contains a submodule named <{arg}> that does not report its hyperparameters, consider adding @save_hyperparameters annotation.")
+        # Check all elements of a list separately
+        elif isinstance(value, list):
+            hyperparameters[arg] = []
+            for i, entry in enumerate(value):
+                if isinstance(entry, nn.Module):
+                    hyperparameters[arg] += [_get_module_hyperparameters(f"<{arg}>.{i}", entry)]
+                else:
+                    hyperparameters[arg] = value
+        # Check all entries of a dict separately
+        elif isinstance(value, dict):
+            hyperparameters[arg] = {}
+            for key, entry in value.items():
+                if isinstance(value, nn.Module):
+                    hyperparameters[arg][key] = _get_module_hyperparameters(f"<{arg}>.{key}", entry)
+                else:
+                    hyperparameters[arg][key] = value
+        # If the parameter is a Module, try to retrieve its hyperparameters
+        elif isinstance(value, nn.Module):
+            hyperparameters[arg] = _get_module_hyperparameters(arg, value)
+        # If its just some object or primitive, copy the value.
+        else:
+            hyperparameters[arg] = value
 
     return hyperparameters
 

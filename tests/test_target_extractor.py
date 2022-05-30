@@ -1,10 +1,11 @@
 from asme.data.datasets import ITEM_SEQ_ENTRY_NAME, TARGET_ENTRY_NAME
 from asme.data.datasets.processors.target_extractor import TargetExtractorProcessor
+from asme.data.datasets.sequence import MetaInformation
 from util_test import assert_list_equal
 
 
 def test_target_extractor_processor():
-    target_extractor_processor = TargetExtractorProcessor()
+    target_extractor_processor = TargetExtractorProcessor(features=[MetaInformation(ITEM_SEQ_ENTRY_NAME, "int")])
 
     parsed_sequence = {
         ITEM_SEQ_ENTRY_NAME: [5, 8, 9, 7, 3, 4]

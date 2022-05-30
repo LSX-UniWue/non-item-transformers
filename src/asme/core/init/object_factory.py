@@ -4,6 +4,7 @@ from enum import Enum
 
 from asme.core.init.config import Config
 from asme.core.init.context import Context
+from asme.core.init.factories import BuildContext
 
 
 class CanBuildResultType(Enum):
@@ -43,16 +44,14 @@ class ObjectFactory:
     """
     @abc.abstractmethod
     def can_build(self,
-                  config: Config,
-                  context: Context
+                  build_context: BuildContext
                   ) -> CanBuildResult:
         """
         Checks if the factory can build its object, based on the configuration and current context.
         This method is expected to raise an Exception if the constraints can never be satisfied, e.g. some configuration
         is missing.
 
-        :param config: the relevant section of the configuration (see config_path()).
-        :param context: the current context.
+        :param build_context: the build context.
 
         :return: :code a result.
         """
@@ -60,16 +59,14 @@ class ObjectFactory:
 
     @abc.abstractmethod
     def build(self,
-              config: Config,
-              context: Context
+              build_context: BuildContext
               ) -> Union[Any, Dict[str, Any], List[Any]]:
         """
         Builds the object.
 
         Note: By design, the caller is responsible for adding the object to the context, if so desired.
 
-        :param config: the relevant section of the configuration (see config_path()).
-        :param context: the current context.
+       :param build_context: the build context.
 
         :return the object that has been build, can be a dictionary if the factory builds several objects.
 
@@ -77,10 +74,11 @@ class ObjectFactory:
         pass
 
     @abc.abstractmethod
-    def is_required(self, context: Context) -> bool:
+    def is_required(self, build_context: BuildContext) -> bool:
         """
         Tells whether this factory's object needs to be build.
-        :param context: the current context.
+              :param build_context: the build context.
+
 
         :return: :code true if this factory must be called, :code false otherwise.
         """

@@ -1,25 +1,31 @@
 local base_path = "../tests/example_dataset/";
+local output_path = '/tmp/experiments/hgn';
 local max_seq_length = 7;
+local dataset = 'example';
+local num_successive_items = 3;
 local metrics =  {
     mrr: [1, 3, 5],
     recall: [1, 3, 5],
     ndcg: [1, 3, 5]
 };
 
-local num_successive_items = 3;
-
 {
+    datamodule: {
+        cache_path: "/tmp/ssd",
+        dataset: dataset,
+        template: {
+            name: "pos_neg",
+            split: "ratio_split",
+            file_prefix: dataset,
+            num_workers: 0,
+            batch_size: 9
+        },
+        preprocessing: {
+        }
+    },
     templates: {
         unified_output: {
             path: "/tmp/experiments/hgn"
-        },
-        pos_neg_data_sources: {
-            loader: {
-                batch_size: 9,
-                num_workers: 0
-            },
-            path: base_path + "ratio-0.8_0.1_0.1/",
-            file_prefix: "example"
         }
     },
     module: {
@@ -29,12 +35,12 @@ local num_successive_items = 3;
                 metrics: metrics
             },
             sampled: {
-                sample_probability_file: base_path + "example.popularity.item_id.txt",
+                sample_probability_file: base_path + dataset + ".popularity.item_id.txt",
                 num_negative_samples: 2,
                 metrics: metrics
             },
             fixed: {
-                item_file: base_path + "example.relevant_items.item_id.txt",
+                item_file: base_path + dataset + ".relevant_items.item_id.txt",
                 metrics: metrics
             }
         },
@@ -55,7 +61,6 @@ local num_successive_items = 3;
                     unk_token: "<UNK>"
                 },
                 vocabulary: {
-                    file: base_path + "example.vocabulary.item_id.txt"
                 }
             }
         }

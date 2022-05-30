@@ -1,5 +1,6 @@
 from typing import List, Dict
 
+from asme.core.init.factories import BuildContext
 from asme.core.tokenization.tokenizer import Tokenizer
 from asme.data.datasets.processors.last_item_mask import LastItemMaskProcessor
 from asme.core.init.config import Config
@@ -61,24 +62,25 @@ class LastItemMaskProcessorFactory(ObjectFactory):
     """
 
     def can_build(self,
-                  config: Config,
-                  context: Context
+                  build_context: BuildContext
                   ) -> CanBuildResult:
-        if not context.has_path(get_tokenizer_key_for_voc(ITEM_TOKENIZER_ID)):
+        if not build_context.get_context().has_path(get_tokenizer_key_for_voc(ITEM_TOKENIZER_ID)):
             return CanBuildResult(CanBuildResultType.MISSING_DEPENDENCY, 'item tokenizer missing')
 
         return CanBuildResult(CanBuildResultType.CAN_BUILD)
 
     def build(self,
-              config: Config,
-              context: Context
+              build_context: BuildContext
               ) -> LastItemMaskProcessor:
+        config = build_context.get_current_config_section()
+        context = build_context.get_context()
+
         tokenizers = get_all_tokenizers_from_context(context)
 
         masking_targets = get_sequence_feature_names(config, context)
         return LastItemMaskProcessor(tokenizers, masking_targets)
 
-    def is_required(self, context: Context) -> bool:
+    def is_required(self, build_context: BuildContext) -> bool:
         return False
 
     def config_path(self) -> List[str]:

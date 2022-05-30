@@ -4,11 +4,14 @@ import torch
 from asme.core.models.common.layers.util_layers import get_activation_layer
 from torch import nn
 
+from asme.core.utils.hyperparameter_utils import save_hyperparameters
+
 
 class CaserHorizontalConvNet(nn.Module):
     """
     the horizontal convolution module for the Caser model
     """
+    @save_hyperparameters
     def __init__(self,
                  num_filters: int,
                  kernel_size: Tuple[int, int],
