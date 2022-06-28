@@ -34,7 +34,10 @@ def _build_padding_info(context: Context,
                         meta_data: MetaInformation
                         ) -> PadInformation:
     key = meta_data.feature_name
-    padding_token = context.get(get_tokenizer_key_for_voc(key)).pad_token_id
+    if context.get(get_tokenizer_key_for_voc(key)) is not None:
+        padding_token = context.get(get_tokenizer_key_for_voc(key)).pad_token_id
+    else:
+        padding_token = meta_data.dictionary.pad_value
     max_seq_length = meta_data.sequence_length
     max_seq_step_length = meta_data.configs.get('max_sequence_step_length')
     return PadInformation(padding_token, max_seq_length, max_seq_step_length)

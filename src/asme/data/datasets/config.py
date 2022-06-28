@@ -903,6 +903,7 @@ def get_example_preprocessing_config(
     columns = [MetaInformation("item_id", column_name="item_id", type="str"),
                # TODO (AD) find out why setting type to int prevents correct vocabulary creation (vocabulary is not saved with consecutive ids)
                MetaInformation("user_id", column_name="user_id", type="str"),
+               MetaInformation("item_map", column_name="item_id", type="float"),
                MetaInformation("session_id", column_name="session_id", type="str"),
                MetaInformation("attr_one", column_name="attr_one", type="str")]
 

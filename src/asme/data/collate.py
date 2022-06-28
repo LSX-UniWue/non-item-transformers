@@ -16,7 +16,7 @@ class PadDirection(Enum):
 @dataclass
 class PadInformation:
 
-    pad_token_id: int
+    pad_value: Any
     max_seq_length: int
     max_seq_step_length: int = None
 
@@ -88,7 +88,7 @@ def _padded_session_collate(entries_to_pad: Dict[str, PadInformation],
                 configured_max_seq_length = pad_info.max_seq_length
 
                 max_length = min(configured_max_seq_length, max_length_values.get(entry_name)) if dynamic_padding else configured_max_seq_length
-                padding_token_id = pad_info.pad_token_id
+                padding_token_id = pad_info.pad_value
 
                 if len(value) > 0 and isinstance(value[0], list):
                     max_seq_step_length = pad_info.max_seq_step_length
@@ -96,13 +96,16 @@ def _padded_session_collate(entries_to_pad: Dict[str, PadInformation],
                     padded_entries = [
                         pad(value_entry, partial(_single_item_pad, pad_token_id=padding_token_id, pad_length=max_seq_step_length), max_seq_step_length) for value_entry in value
                     ]
-
-                    value_to_convert = pad(padded_entries, lambda length: [[padding_token_id] * max_seq_step_length] * (max_length - length), max_length)
+                    if len(padding_token_id) != max_seq_step_length:
+                        value_to_convert = pad(padded_entries, lambda length: [[padding_token_id] * max_seq_step_length] * (max_length - length), max_length)
+                    else:
+                        value_to_convert = pad(padded_entries, lambda length: [padding_token_id] * (max_length - length), max_length)
                 else:
                     value_to_convert = pad(value, partial(_single_item_pad, pad_token_id=padding_token_id, pad_length=max_length), max_length)
 
             if entry_name != SESSION_IDENTIFIER:
                 padded_sample[entry_name] = torch.as_tensor(value_to_convert)
+
 
         padded_batch.append(padded_sample)
 

@@ -6,8 +6,11 @@ from asme.core.models.common.layers.transformer_layers import TransformerEmbeddi
 from asme.core.models.kebert4rec.layers import LinearUpscaler
 from torch import nn
 
+from asme.core.tokenization.vector_dictionary import VectorDictionary
 from asme.core.utils.hyperparameter_utils import save_hyperparameters
 from asme.data.datasets.processors.tokenizer import Tokenizer
+
+import torch
 
 
 def _build_embedding_type(embedding_type: str,
@@ -21,6 +24,29 @@ def _build_embedding_type(embedding_type: str,
                                          embed_size=hidden_size)
     }[embedding_type]
 
+class ContentVectorMaskAndScale(nn.Module):
+
+    @save_hyperparameters
+    def __init__(self, input_size: int, embed_size: int, item_mask_token: int):
+        super().__init__()
+        self.item_mask_token = item_mask_token
+        self.linear = nn.Linear(input_size, embed_size)
+        self.trained_mask = nn.Parameter(torch.Tensor(input_size))
+        self.embedding_norm = nn.LayerNorm(embed_size)
+        nn.init.normal_(self.trained_mask, mean=1, std=0.5)
+
+    def forward(self,
+                content_sequence: torch.Tensor,
+                item_sequence: torch.Tensor
+                ) -> torch.Tensor:
+
+        mask_indices = (item_sequence == self.item_mask_token).unsqueeze(-1)
+        sequence = torch.where(mask_indices, self.trained_mask, content_sequence)
+        sequence = self.linear(sequence)
+        sequence = self.embedding_norm(sequence)
+
+        return sequence
+
 
 class KeBERT4RecSequenceElementsRepresentationComponent(SequenceElementsRepresentationLayer):
 
@@ -28,14 +54,16 @@ class KeBERT4RecSequenceElementsRepresentationComponent(SequenceElementsRepresen
     def __init__(self,
                  item_embedding_layer: TransformerEmbedding,
                  embedding_size: int,
+                 item_tokenizer: Tokenizer,
                  additional_attributes: Dict[str, Dict[str, Any]],
                  additional_attributes_tokenizer: Dict[str, Tokenizer],
+                 vector_dictionaries: Dict[str, VectorDictionary],
                  dropout: float = 0.0
                  ):
         super().__init__()
 
-        self.item_embedding_layer = item_embedding_layer
 
+        self.item_embedding_layer = item_embedding_layer
         additional_attribute_embeddings = {}
         for attribute_name, attribute_infos in additional_attributes.items():
             embedding_type = attribute_infos['embedding_type']
@@ -43,6 +71,12 @@ class KeBERT4RecSequenceElementsRepresentationComponent(SequenceElementsRepresen
             additional_attribute_embeddings[attribute_name] = _build_embedding_type(embedding_type=embedding_type,
                                                                                     vocab_size=vocab_size,
                                                                                     hidden_size=embedding_size)
+        vector_embedding = {}
+        for attribute_name, vector_dict in vector_dictionaries.items():
+            default = vector_dict.unk_value
+            vector_embedding[attribute_name] = ContentVectorMaskAndScale(len(default), embedding_size, item_tokenizer.mask_token_id)
+        self.vector_embedding = nn.ModuleDict(vector_embedding)
+
         self.additional_attribute_embeddings = nn.ModuleDict(additional_attribute_embeddings)
 
         self.dropout_embedding = nn.Dropout(dropout)
@@ -53,7 +87,14 @@ class KeBERT4RecSequenceElementsRepresentationComponent(SequenceElementsRepresen
         embedding = embedding_sequence.embedded_sequence
         for input_key, module in self.additional_attribute_embeddings.items():
             additional_metadata = sequence.get_attribute(input_key)
-            embedding += module(additional_metadata)
+            test = module(additional_metadata)
+            embedding += test
+
+        for input_key, module in self.vector_embedding.items():
+            additional_metadata = sequence.get_attribute(input_key)
+            test = module(content_sequence=additional_metadata, item_sequence=sequence.sequence)
+            embedding += test
+
         embedding = self.norm_embedding(embedding)
         embedding = self.dropout_embedding(embedding)
         return EmbeddedElementsSequence(embedding)

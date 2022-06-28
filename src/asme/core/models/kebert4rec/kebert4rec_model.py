@@ -9,47 +9,52 @@ from asme.core.models.common.layers.transformer_layers import TransformerEmbeddi
 from asme.core.models.kebert4rec.components import KeBERT4RecSequenceElementsRepresentationComponent
 from asme.core.models.transformer.transformer_encoder_model import TransformerEncoderModel
 from asme.core.tokenization.tokenizer import Tokenizer
+from asme.core.tokenization.vector_dictionary import VectorDictionary
 from asme.core.utils.hyperparameter_utils import save_hyperparameters
-from asme.core.utils.inject import InjectVocabularySize, InjectTokenizers, inject
+from asme.core.utils.inject import InjectVocabularySize, InjectTokenizers, inject, InjectDictionaries, InjectTokenizer
 
 
 class KeBERT4RecModel(TransformerEncoderModel):
 
     @inject(
-        item_vocab_size=InjectVocabularySize("item"),
-        additional_attributes_tokenizer=InjectTokenizers()
+        item_tokenizer=InjectTokenizer("item"),
+        additional_attributes_tokenizer=InjectTokenizers(),
+        vector_dictionaries=InjectDictionaries()
     )
     @save_hyperparameters
     def __init__(self,
                  transformer_hidden_size: int,
                  num_transformer_heads: int,
                  num_transformer_layers: int,
-                 item_vocab_size: int,
+                 item_tokenizer: Tokenizer,
                  max_seq_length: int,
                  transformer_dropout: float,
                  additional_attributes: Dict[str, Dict[str, Any]],
                  additional_attributes_tokenizer: Dict[str, Tokenizer],
+                 vector_dictionaries: Dict[str, VectorDictionary],
                  embedding_pooling_type: str = None,
                  initializer_range: float = 0.02,
                  transformer_intermediate_size: Optional[int] = None,
                  transformer_attention_dropout: Optional[float] = None):
         # save for later call by the training module
-        self.additional_metadata_keys = list(additional_attributes.keys())
+        self.additional_metadata_keys = list(additional_attributes.keys()) + list(vector_dictionaries.keys())
 
         # embedding will be normed and dropout after all embeddings are added to the representation
-        sequence_embedding = TransformerEmbedding(item_vocab_size, max_seq_length, transformer_hidden_size, 0.0,
+        sequence_embedding = TransformerEmbedding(len(item_tokenizer), max_seq_length, transformer_hidden_size, 0.0,
                                                   embedding_pooling_type=embedding_pooling_type,
                                                   norm_embedding=False)
 
         element_representation = KeBERT4RecSequenceElementsRepresentationComponent(sequence_embedding,
                                                                                    transformer_hidden_size,
+                                                                                   item_tokenizer,
                                                                                    additional_attributes,
                                                                                    additional_attributes_tokenizer,
+                                                                                   vector_dictionaries,
                                                                                    dropout=transformer_dropout)
 
         modifier_layer = FFNSequenceRepresentationModifierComponent(transformer_hidden_size)
 
-        projection_layer = build_projection_layer(PROJECT_TYPE_LINEAR, transformer_hidden_size, item_vocab_size,
+        projection_layer = build_projection_layer(PROJECT_TYPE_LINEAR, transformer_hidden_size, len(item_tokenizer),
                                                   sequence_embedding.item_embedding.embedding)
 
         super().__init__(
@@ -70,3 +75,6 @@ class KeBERT4RecModel(TransformerEncoderModel):
 
     def required_metadata_keys(self):
         return self.additional_metadata_keys
+
+
+

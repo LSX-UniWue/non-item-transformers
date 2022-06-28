@@ -2,18 +2,27 @@ from typing import Dict, Union, List
 
 import torch
 from asme.core.init.factories.features.tokenizer_factory import ITEM_TOKENIZER_ID, get_tokenizer_key_for_voc
+from asme.core.init.factories.features.vector_dictionary_factory import get_dict_key_for_attribute
 from asme.core.tokenization.tokenizer import Tokenizer
+from asme.core.tokenization.vector_dictionary import VectorDictionary
 from asme.data.datasets import ITEM_SEQ_ENTRY_NAME
 
 
-def get_mask_token(tokenizers: Dict[str, Tokenizer],
+def get_mask_value(tokenizers: Dict[str, Tokenizer],
+                   dictionaries: Dict[str, VectorDictionary],
                    target: str,
                    sequence: Union[List[int], List[List[int]]]
                    ) -> Union[int, List[int]]:
     tokenizer = get_tokenizer(tokenizers, target)
-    mask_token = tokenizer.mask_token_id
+    if tokenizer is not None:
+        mask_value = tokenizer.mask_token_id
+        return [mask_value] if isinstance(sequence[0], list) else mask_value
+    dictionary = dictionaries.get(get_dict_key_for_attribute(target), None)
+    if dictionary is not None:
+        mask_value = dictionary.mask_value
+        return mask_value
 
-    return [mask_token] if isinstance(sequence[0], list) else mask_token
+
 
 
 def get_tokenizer(tokenizers: Dict[str, Tokenizer],
@@ -23,7 +32,8 @@ def get_tokenizer(tokenizers: Dict[str, Tokenizer],
     if target == ITEM_SEQ_ENTRY_NAME:
         tokenizer_id = ITEM_TOKENIZER_ID
 
-    return tokenizers[get_tokenizer_key_for_voc(tokenizer_id)]
+    return tokenizers.get(get_tokenizer_key_for_voc(tokenizer_id), None)
+
 
 
 def random_uniform(start: float = 0., end: float = 1.) -> float:

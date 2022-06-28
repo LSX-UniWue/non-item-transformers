@@ -7,7 +7,7 @@ from asme.core.tokenization.tokenizer import Tokenizer
 class TokenizerProcessor(Processor):
 
     """
-    Tokenizes the the fields specified by the tokenizer id of the sequence
+    Tokenizes the fields specified by the tokenizer id of the sequence
 
     Must be the first tokenizer in the chain of processors
 

@@ -2,13 +2,13 @@ from typing import List, Dict
 
 from asme.core.init.factories import BuildContext
 from asme.core.tokenization.tokenizer import Tokenizer
+from asme.core.tokenization.vector_dictionary import VectorDictionary
 from asme.data.datasets.processors.last_item_mask import LastItemMaskProcessor
 from asme.core.init.config import Config
 from asme.core.init.context import Context
 from asme.core.init.factories.features.tokenizer_factory import get_tokenizer_key_for_voc, ITEM_TOKENIZER_ID
 from asme.core.init.object_factory import ObjectFactory, CanBuildResult, CanBuildResultType
 from asme.data.datasets.sequence import MetaInformation
-
 
 # TODO (DZO): move constants and methods
 CONTEXT_META_INFO_KEY = "metadata_info"
@@ -22,6 +22,16 @@ def get_all_tokenizers_from_context(context: Context) -> Dict[str, Tokenizer]:
     """
     return {
         key: value for key, value in context.as_dict().items() if isinstance(value, Tokenizer)
+    }
+
+def get_all_vector_dictionaries_from_context(context: Context) -> Dict[str, VectorDictionary]:
+    """
+    returns a dict with all VectorDictionaries loaded in the context
+    :param context: the context to extract the tokenizers from
+    :return: the dict containing only tokenizers in the context
+    """
+    return {
+        key: value for key, value in context.as_dict().items() if isinstance(value, VectorDictionary)
     }
 
 
@@ -76,9 +86,9 @@ class LastItemMaskProcessorFactory(ObjectFactory):
         context = build_context.get_context()
 
         tokenizers = get_all_tokenizers_from_context(context)
-
+        dictionaries = get_all_vector_dictionaries_from_context(context)
         masking_targets = get_sequence_feature_names(config, context)
-        return LastItemMaskProcessor(tokenizers, masking_targets)
+        return LastItemMaskProcessor(tokenizers, dictionaries, masking_targets)
 
     def is_required(self, build_context: BuildContext) -> bool:
         return False
