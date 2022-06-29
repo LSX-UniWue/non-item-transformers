@@ -14,3 +14,4 @@ out/
 
 poetry.lock
 docs/build
+datasets
