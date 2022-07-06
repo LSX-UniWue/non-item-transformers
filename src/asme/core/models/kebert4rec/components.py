@@ -42,8 +42,9 @@ class ContentVectorMaskAndScale(nn.Module):
 
         mask_indices = (item_sequence == self.item_mask_token).unsqueeze(-1)
         sequence = torch.where(mask_indices, self.trained_mask, content_sequence)
-        sequence = self.linear(sequence)
+        #sequence = self.linear(sequence)
         sequence = self.embedding_norm(sequence)
+        sequence = self.linear(sequence)
 
         return sequence
 
