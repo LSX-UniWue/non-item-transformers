@@ -31,7 +31,13 @@ class TargetExtractorProcessorFactory(ObjectFactory):
         else:
             parallel = False
 
-        return TargetExtractorProcessor(features, parallel)
+        if config.has_path(["first_target"]):
+            first_target_flag = config.get(["first_target"])
+            first_target = first_target_flag if isinstance(first_target_flag, bool) else distutils.util.strtobool(config.get(["first_target"]))
+        else:
+            first_target = False
+
+        return TargetExtractorProcessor(features, parallel, first_target)
 
     def is_required(self, build_context: BuildContext) -> bool:
         return False

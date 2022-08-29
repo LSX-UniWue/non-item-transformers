@@ -1,22 +1,25 @@
-local raw_dataset_path = "datasets/dataset/ml-1m/";
+local raw_dataset_path = "./datasets/dataset/ml-1m/";
+local output_path = "./datasets/ml-1m/output/";
+local extr_dir = "./datasets/ml-1m-raw/";
 local max_seq_length = 200;
+local prefix = 'ml-1m';
 local dataset = 'ml-1m';
-
 local metrics =  {
-    mrr: [1, 3, 5],
-    recall: [1, 3, 5],
-    ndcg: [1, 3, 5]
+    mrr: [1, 5, 10],
+    recall: [1, 5, 10],
+    ndcg: [1, 5, 10],
+    rank: []
 };
 {
     templates: {
         unified_output: {
-            path: "/tmp/experiments/pop"
+            path: "/Users/lisa/recommender/pop_ml/"
         },
      },
      datamodule: {
         dataset: dataset,
         data_sources: {
-            split: "ratio_split",
+            split: "leave_one_out",
             file_prefix: dataset,
             num_workers: 4,
             train: {
@@ -24,7 +27,7 @@ local metrics =  {
                 processors: []
             },
             validation: {
-                type: "next_item",
+                type: "session",
                 processors: [
                     {
                         "type": "target_extractor"
@@ -32,7 +35,7 @@ local metrics =  {
                 ]
             },
             test: {
-             type: "next_item",
+             type: "session",
                 processors: [
                     {
                         "type": "target_extractor"
@@ -40,12 +43,9 @@ local metrics =  {
                 ]
             }
         },
-
         preprocessing: {
-            extraction_directory: "/tmp/ml-1m/",
+            extraction_directory: extr_dir,
             output_directory: raw_dataset_path,
-            min_item_feedback: 4,
-            min_sequence_length: 4,
         }
     },
     module: {

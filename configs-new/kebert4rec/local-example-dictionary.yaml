@@ -1,0 +1,115 @@
+datamodule:
+  dataset: "example"
+  data_sources:
+    num_workers: 4
+    batch_size: 2
+    max_seq_length: 7
+    #mask_probability: 0.2
+    #mask_seed: 42
+    split: "ratio_split"
+    file_prefix: "example"
+    train:
+      type: "session"
+      processors:
+        - type: "read_dicts"
+        - type: "cloze"
+          mask_probability: 0.2
+          only_last_item_mask_prob: 0.1
+    validation:
+      type: "session"
+      processors:
+        - type: "read_dicts"
+        - type: "target_extractor"
+        - type: "last_item_mask"
+    test:
+      type: "session"
+      processors:
+        - type: "read_dicts"
+        - type: "target_extractor"
+        - type: "last_item_mask"
+  preprocessing:
+    input_file_path: "/Users/lisa/recommender/example_data/example.csv"
+    output_directory: "/Users/lisa/recommender/example_data/"
+templates:
+  unified_output:
+    path: "/Users/lisa/recommender/tmp/example/kebert4rec"
+module:
+  type: "kebert4rec"
+  metrics:
+    full:
+      metrics:
+        mrr: [1, 5, 10]
+        recall: [1, 5, 10]
+        ndcg: [1, 5, 10]
+  model:
+    max_seq_length: 7
+    num_transformer_heads: 1
+    num_transformer_layers: 1
+    transformer_hidden_size: 4
+    transformer_dropout: 0.2
+    additional_attributes:
+      attr_one:
+        embedding_type: 'content_embedding'
+features:
+  item:
+    column_name: "item_id"
+    sequence_length: 7
+    tokenizer:
+      special_tokens:
+        pad_token: "<PAD>"
+        mask_token: "<MASK>"
+        unk_token: "<UNK>"
+      vocabulary:
+  item_map:
+    column_name: "item_id"
+    sequence_length: 7
+    max_sequence_step_length: 2
+    run_tokenization: false
+    dictionary:
+      dict_path: "/Users/lisa/recommender/example_data/image_vectors.csv"
+      delimiter: ","
+      type: "pd.array"
+      element_type: "float"
+      pad_value: '["0.5","0.5"]'
+  attr_one:
+    column_name: "attr_one"
+    sequence_length: 7
+    #type: "list"
+    #element_type: "str"
+    #max_sequence_step_length: 2
+    tokenizer:
+      special_tokens:
+        pad_token: "<PAD>"
+        mask_token: "<MASK>"
+        unk_token: "<UNK>"
+      # Inferred by the datamodule
+trainer:
+  loggers:
+    tensorboard:
+    mlflow:
+  checkpoint:
+    monitor: "recall@10"
+    save_top_k: 3
+    mode: 'max'
+  early_stopping:
+    min_delta: 0.001
+    mode: "max"
+    monitor: "recall@10"
+    patience: 100
+  gpus: 0
+  max_epochs: 5
+  check_val_every_n_epoch: 1
+evaluation:
+  evaluators:
+      - type: "sid"
+        use_session_id: false
+      - type: "recommendation"
+      - type: "metrics"
+      - type: "input"
+      - type: "scores"
+      - type: "target"
+  #filter_items:
+  #  file: "/Users/lisa/recommender/configs/selected_items.csv"
+  number_predictions: 5
+  writer:
+    type: "csv-single-line"

@@ -1,5 +1,6 @@
-from typing import List, Dict
+from typing import List
 
+from asme.core.init.factories.util import get_all_tokenizers_from_context
 from asme.core.init.factories import BuildContext
 from asme.core.tokenization.tokenizer import Tokenizer
 from asme.core.tokenization.vector_dictionary import VectorDictionary

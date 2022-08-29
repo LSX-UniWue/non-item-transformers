@@ -52,7 +52,9 @@ def _build_padding_info_map(context: Context,
     pad_info = _build_padding_info(context, meta_data)
     return {
         key: pad_info,
-        key + TARGET_SUFFIX: pad_info
+        key + TARGET_SUFFIX: pad_info,
+        NEGATIVE_SAMPLES_ENTRY_NAME+"."+key: pad_info,
+        POSITIVE_SAMPLES_ENTRY_NAME+"."+key: pad_info
     }
 
 

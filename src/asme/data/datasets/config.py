@@ -110,10 +110,11 @@ def get_ml_1m_preprocessing_config(
 
     columns = [MetaInformation("rating", type="int", run_tokenization=False),
                MetaInformation("gender", type="str"),
-               MetaInformation("age", type="int", run_tokenization=False),
+               MetaInformation("age", type="str"),
                MetaInformation("occupation", type="str"),
                MetaInformation("zip", type="str"),
                MetaInformation("title", type="str"),
+               MetaInformation("user_all", type="list", configs={"delimiter": "|", "element_type":"str"}),
                MetaInformation("year", type="str", run_tokenization=False),
                MetaInformation("genres", type="str", configs={"delimiter": "|"})]
 

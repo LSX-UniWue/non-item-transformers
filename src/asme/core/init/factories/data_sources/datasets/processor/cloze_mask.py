@@ -4,10 +4,8 @@ from asme.core.init.factories import BuildContext
 from asme.core.init.factories.data_sources.datasets.processor.last_item_mask import get_all_tokenizers_from_context, \
     get_sequence_feature_names, get_all_vector_dictionaries_from_context
 from asme.data.datasets.processors.cloze_mask import ClozeMaskProcessor
-from asme.core.init.config import Config
-from asme.core.init.context import Context
 from asme.core.init.factories.features.tokenizer_factory import get_tokenizer_key_for_voc, ITEM_TOKENIZER_ID
-from asme.core.init.factories.util import check_config_keys_exist
+from asme.core.init.factories.util import check_config_keys_exist, get_all_tokenizers_from_context
 from asme.core.init.object_factory import ObjectFactory, CanBuildResult, CanBuildResultType
 
 

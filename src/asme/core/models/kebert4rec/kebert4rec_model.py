@@ -6,7 +6,8 @@ from asme.core.models.common.components.representation_modifier.ffn_modifier imp
     FFNSequenceRepresentationModifierComponent
 from asme.core.models.common.layers.layers import PROJECT_TYPE_LINEAR, build_projection_layer
 from asme.core.models.common.layers.transformer_layers import TransformerEmbedding
-from asme.core.models.kebert4rec.components import KeBERT4RecSequenceElementsRepresentationComponent
+from asme.core.models.kebert4rec.components import PreFusionContextSequenceElementsRepresentationComponent, \
+    PostFusionContextSequenceRepresentationModifierComponent
 from asme.core.models.transformer.transformer_encoder_model import TransformerEncoderModel
 from asme.core.tokenization.tokenizer import Tokenizer
 from asme.core.tokenization.vector_dictionary import VectorDictionary
@@ -29,32 +30,45 @@ class KeBERT4RecModel(TransformerEncoderModel):
                  item_tokenizer: Tokenizer,
                  max_seq_length: int,
                  transformer_dropout: float,
-                 additional_attributes: Dict[str, Dict[str, Any]],
-                 vector_attributes: Dict[str, Dict[str, Any]],
-                 additional_attributes_tokenizer: Dict[str, Tokenizer],
-                 vector_dictionaries: Dict[str, VectorDictionary],
+                 prefusion_attributes: Dict[str, Dict[str, Any]] = None,
+                 postfusion_attributes:  Dict[str, Dict[str, Any]] = None,
+                 additional_attributes_tokenizer: Dict[str, Tokenizer] = None,
+                 postfusion_merge_function: str = "add",
+                 vector_dictionaries: Dict[str, VectorDictionary] = None,
+                 vector_attributes: Dict[str, Dict[str, Any]] = None,
+                 positional_embedding: bool = True,
                  embedding_pooling_type: str = None,
                  initializer_range: float = 0.02,
                  transformer_intermediate_size: Optional[int] = None,
                  transformer_attention_dropout: Optional[float] = None):
+
         # save for later call by the training module
-        self.additional_metadata_keys = list(additional_attributes.keys()) + list(vector_attributes.keys())
+        self.additional_metadata_keys = list()
+        self.add_keys_to_metadata_keys(prefusion_attributes)
+        self.add_keys_to_metadata_keys(postfusion_attributes)
+        self.add_key_to_metadata_keys(vector_attributes)
 
         # embedding will be normed and dropout after all embeddings are added to the representation
         sequence_embedding = TransformerEmbedding(len(item_tokenizer), max_seq_length, transformer_hidden_size, 0.0,
                                                   embedding_pooling_type=embedding_pooling_type,
                                                   norm_embedding=False)
 
-        element_representation = KeBERT4RecSequenceElementsRepresentationComponent(sequence_embedding,
-                                                                                   transformer_hidden_size,
-                                                                                   item_tokenizer,
-                                                                                   additional_attributes,
-                                                                                   additional_attributes_tokenizer,
-                                                                                   vector_attributes,
-                                                                                   vector_dictionaries,
-                                                                                   dropout=transformer_dropout)
 
-        modifier_layer = FFNSequenceRepresentationModifierComponent(transformer_hidden_size)
+        element_representation = PreFusionContextSequenceElementsRepresentationComponent(sequence_embedding,
+                                                                                         transformer_hidden_size,
+                                                                                         item_tokenizer,
+                                                                                         prefusion_attributes,
+                                                                                         additional_attributes_tokenizer,
+                                                                                         vector_attributes,
+                                                                                         vector_dictionaries,
+                                                                                         dropout=transformer_dropout)
+        if postfusion_attributes is not None:
+            modifier_layer = PostFusionContextSequenceRepresentationModifierComponent(transformer_hidden_size,
+                                                                                      postfusion_attributes,
+                                                                                      additional_attributes_tokenizer,
+                                                                                      postfusion_merge_function)
+        else:
+            modifier_layer = FFNSequenceRepresentationModifierComponent(transformer_hidden_size)
 
         projection_layer = build_projection_layer(PROJECT_TYPE_LINEAR, transformer_hidden_size, len(item_tokenizer),
                                                   sequence_embedding.item_embedding.embedding)
@@ -78,5 +92,7 @@ class KeBERT4RecModel(TransformerEncoderModel):
     def required_metadata_keys(self):
         return self.additional_metadata_keys
 
-
+    def add_keys_to_metadata_keys(self, dictionary):
+        if dictionary is not None:
+            self.additional_metadata_keys.extend(list(dictionary.keys()))
 

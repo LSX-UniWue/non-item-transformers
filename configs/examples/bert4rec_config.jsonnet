@@ -1,5 +1,6 @@
+#Beispielconfig
 local base_path = '../tests/example_dataset/';
-local output_path = '/tmp/experiments/sasrec';
+local output_path = '/tmp/experiments/bert4rec';
 local max_seq_length = 7;
 local dataset = 'example';
 local metrics =  {
@@ -8,6 +9,12 @@ local metrics =  {
     ndcg: [1, 3, 5],
     rank: []
 };
+local tokenizer {
+    special_tokens: {
+      pad_token: "<PAD>",
+      mask_token: "<MASK>",
+      unk_token: "<UNK>"
+    },
 {
     datamodule: {
         cache_path: "/tmp/cache",
@@ -76,14 +83,6 @@ local metrics =  {
                 num_negative_samples: 2,
                 metrics: metrics
             },
-            random_negative_sampled: {
-                num_negative_samples: 2,
-                metrics: metrics
-            },
-            #fixed: {
-            #    item_file: dataset_path + "loo/example.relevant_items.item_id.txt",
-            #    metrics: metrics
-            #}
         },
         model: {
             max_seq_length: max_seq_length,
@@ -97,15 +96,7 @@ local metrics =  {
         item: {
             column_name: "item_id",
             sequence_length: max_seq_length,
-            tokenizer: {
-                special_tokens: {
-                    pad_token: "<PAD>",
-                    mask_token: "<MASK>",
-                    unk_token: "<UNK>"
-                },
-                vocabulary: {
-                    #file: "example.vocabulary.item_id.txt"
-                }
+            tokenizer: tokenizer
             }
         },
          session_identifier: {

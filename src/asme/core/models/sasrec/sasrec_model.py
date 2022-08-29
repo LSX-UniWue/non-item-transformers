@@ -1,11 +1,16 @@
+from typing import Dict, Any
+
 from torch import nn
 
 from asme.core.models.common.layers.layers import IdentitySequenceRepresentationModifierLayer, LinearProjectionLayer
 from asme.core.models.common.layers.transformer_layers import TransformerEmbedding
-from asme.core.models.sasrec.components import SASRecProjectionComponent
+from asme.core.models.kebert4rec.components import PreFusionContextSequenceElementsRepresentationComponent
+from asme.core.models.sasrec.components import SASRecProjectionComponent, \
+    PostFusionIdentitySequenceRepresentationModifierLayer
 from asme.core.models.transformer.transformer_encoder_model import TransformerEncoderModel
+from asme.core.tokenization.tokenizer import Tokenizer
 from asme.core.utils.hyperparameter_utils import save_hyperparameters
-from asme.core.utils.inject import InjectVocabularySize, inject
+from asme.core.utils.inject import InjectVocabularySize, inject, InjectTokenizers
 
 
 class SASRecModel(TransformerEncoderModel):
@@ -16,7 +21,10 @@ class SASRecModel(TransformerEncoderModel):
     see https://github.com/kang205/SASRec for the original Tensorflow implementation
     """
 
-    @inject(item_vocab_size=InjectVocabularySize("item"))
+    @inject(
+        item_vocab_size=InjectVocabularySize("item"),
+        additional_attributes_tokenizer=InjectTokenizers()
+    )
     @save_hyperparameters
     def __init__(self,
                  transformer_hidden_size: int,
@@ -25,30 +33,52 @@ class SASRecModel(TransformerEncoderModel):
                  item_vocab_size: int,
                  max_seq_length: int,
                  transformer_dropout: float,
+                 prefusion_attributes: Dict[str, Dict[str, Any]] = None,
+                 postfusion_attributes:  Dict[str, Dict[str, Any]] = None,
+                 additional_attributes_tokenizer: Dict[str, Tokenizer] = None,
+                 postfusion_merge_function: str = "add",
                  embedding_pooling_type: str = None,
                  transformer_intermediate_size: int = None,
                  transformer_attention_dropout: float = None,
                  mode: str = "neg_sampling"  # alternative: "full"
                  ):
+        self.additional_metadata_keys = list()
+        self.add_keys_to_metadata_keys(prefusion_attributes)
+        self.add_keys_to_metadata_keys(postfusion_attributes)
 
-        embedding_layer = TransformerEmbedding(
+        sequence_embedding_layer = TransformerEmbedding(
             item_voc_size=item_vocab_size,
             max_seq_len=max_seq_length,
             embedding_size=transformer_hidden_size,
             dropout=transformer_dropout,
-            embedding_pooling_type=embedding_pooling_type
+            embedding_pooling_type=embedding_pooling_type,
+            positional_embedding=True
         )
+
+        element_representation = PreFusionContextSequenceElementsRepresentationComponent(sequence_embedding_layer,
+                                                                                         transformer_hidden_size,
+                                                                                         prefusion_attributes,
+                                                                                         additional_attributes_tokenizer,
+                                                                                         dropout=transformer_dropout)
 
         self.mode = mode
 
         if mode == "neg_sampling":
             #  use positive / negative sampling for training and evaluation as described in the original paper
-            projection_layer = SASRecProjectionComponent(embedding_layer)
+            projection_layer = SASRecProjectionComponent(sequence_embedding_layer)
         elif mode == "full":
             # compute a full ranking over all items as necessary with cross-entropy loss
             projection_layer = LinearProjectionLayer(transformer_hidden_size, item_vocab_size)
         else:
             raise Exception(f"{mode} is an unknown projection mode. Choose either <full> or <neg_sampling>.")
+
+        if postfusion_attributes is not None:
+            modifier_layer = PostFusionIdentitySequenceRepresentationModifierLayer(transformer_hidden_size,
+                                                                                  postfusion_attributes,
+                                                                                  additional_attributes_tokenizer,
+                                                                                  postfusion_merge_function)
+        else:
+            modifier_layer = IdentitySequenceRepresentationModifierLayer()
 
         super().__init__(
             transformer_hidden_size=transformer_hidden_size,
@@ -56,8 +86,8 @@ class SASRecModel(TransformerEncoderModel):
             num_transformer_layers=num_transformer_layers,
             transformer_dropout=transformer_dropout,
             bidirectional=False,
-            embedding_layer=embedding_layer,
-            sequence_representation_modifier_layer=IdentitySequenceRepresentationModifierLayer(),
+            embedding_layer=element_representation,
+            sequence_representation_modifier_layer=modifier_layer,
             projection_layer=projection_layer,
             transformer_intermediate_size=transformer_intermediate_size,
             transformer_attention_dropout=transformer_attention_dropout
@@ -76,3 +106,11 @@ class SASRecModel(TransformerEncoderModel):
             module.weight.data.fill_(1.0)
         if is_linear_layer and module.bias is not None:
             module.bias.data.zero_()
+
+    def add_keys_to_metadata_keys(self, dictionary):
+        if dictionary is not None:
+            self.additional_metadata_keys.extend(list(dictionary.keys()))
+        print("Add",self.additional_metadata_keys)
+
+    def required_metadata_keys(self):
+        return self.additional_metadata_keys
