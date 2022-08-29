@@ -58,6 +58,7 @@ class KeBERT4RecSequenceElementsRepresentationComponent(SequenceElementsRepresen
                  item_tokenizer: Tokenizer,
                  additional_attributes: Dict[str, Dict[str, Any]],
                  additional_attributes_tokenizer: Dict[str, Tokenizer],
+                 vector_attributes: Dict[str, Dict[str, Any]],
                  vector_dictionaries: Dict[str, VectorDictionary],
                  dropout: float = 0.0
                  ):
@@ -73,8 +74,8 @@ class KeBERT4RecSequenceElementsRepresentationComponent(SequenceElementsRepresen
                                                                                     vocab_size=vocab_size,
                                                                                     hidden_size=embedding_size)
         vector_embedding = {}
-        for attribute_name, vector_dict in vector_dictionaries.items():
-            default = vector_dict.unk_value
+        for attribute_name, vector_dict in vector_attributes.items():
+            default = vector_dictionaries[attribute_name].unk_value
             vector_embedding[attribute_name] = ContentVectorMaskAndScale(len(default), embedding_size, item_tokenizer.mask_token_id)
         self.vector_embedding = nn.ModuleDict(vector_embedding)
 

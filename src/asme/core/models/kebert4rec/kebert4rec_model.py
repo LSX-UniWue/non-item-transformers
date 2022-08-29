@@ -30,6 +30,7 @@ class KeBERT4RecModel(TransformerEncoderModel):
                  max_seq_length: int,
                  transformer_dropout: float,
                  additional_attributes: Dict[str, Dict[str, Any]],
+                 vector_attributes: Dict[str, Dict[str, Any]],
                  additional_attributes_tokenizer: Dict[str, Tokenizer],
                  vector_dictionaries: Dict[str, VectorDictionary],
                  embedding_pooling_type: str = None,
@@ -37,7 +38,7 @@ class KeBERT4RecModel(TransformerEncoderModel):
                  transformer_intermediate_size: Optional[int] = None,
                  transformer_attention_dropout: Optional[float] = None):
         # save for later call by the training module
-        self.additional_metadata_keys = list(additional_attributes.keys()) + list(vector_dictionaries.keys())
+        self.additional_metadata_keys = list(additional_attributes.keys()) + list(vector_attributes.keys())
 
         # embedding will be normed and dropout after all embeddings are added to the representation
         sequence_embedding = TransformerEmbedding(len(item_tokenizer), max_seq_length, transformer_hidden_size, 0.0,
@@ -49,6 +50,7 @@ class KeBERT4RecModel(TransformerEncoderModel):
                                                                                    item_tokenizer,
                                                                                    additional_attributes,
                                                                                    additional_attributes_tokenizer,
+                                                                                   vector_attributes,
                                                                                    vector_dictionaries,
                                                                                    dropout=transformer_dropout)
 
