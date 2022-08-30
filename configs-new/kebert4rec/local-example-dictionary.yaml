@@ -1,7 +1,7 @@
 datamodule:
   dataset: "example"
   data_sources:
-    num_workers: 1
+    num_workers: 4
     batch_size: 2
     max_seq_length: 7
     #mask_probability: 0.2
@@ -30,9 +30,6 @@ datamodule:
   preprocessing:
     input_file_path: "/Users/lisa/recommender/example_data/example.csv"
     output_directory: "/Users/lisa/recommender/example_data/"
-    ratio_split_train_percentage: 0.6
-    ratio_split_validation_percentage: 0.2
-    ratio_split_test_percentage: 0.2
 templates:
   unified_output:
     path: "/Users/lisa/recommender/tmp/example/kebert4rec"

@@ -77,10 +77,21 @@ class PreFusionContextSequenceElementsRepresentationComponent(SequenceElementsRe
                                                                                         hidden_size=transformer_hidden_size)
         self.prefusion_attribute_embeddings = nn.ModuleDict(prefusion_attribute_embeddings)
 
+        self.item_embedding_layer = item_embedding_layer
+        prefusion_attribute_embeddings = {}
+        if prefusion_attributes is not None:
+            for attribute_name, attribute_infos in prefusion_attributes.items():
+                embedding_type = attribute_infos['embedding_type']
+                vocab_size = len(additional_attributes_tokenizer["tokenizers." + attribute_name])
+                prefusion_attribute_embeddings[attribute_name] = _build_embedding_type(embedding_type=embedding_type,
+                                                                                        vocab_size=vocab_size,
+                                                                                        hidden_size=embedding_size)
+        self.prefusion_attribute_embeddings = nn.ModuleDict(prefusion_attribute_embeddings)
         vector_embedding = {}
-        for attribute_name, vector_dict in vector_attributes.items():
-            default = vector_dictionaries[attribute_name].unk_value
-            vector_embedding[attribute_name] = ContentVectorMaskAndScale(len(default), transformer_hidden_size, item_tokenizer.mask_token_id)
+        if vector_dictionaries is not None:
+            for attribute_name, vector_dict in vector_dictionaries.items():
+                default = vector_dict.unk_value
+                vector_embedding[attribute_name] = ContentVectorMaskAndScale(len(default), embedding_size, item_tokenizer.mask_token_id)
         self.vector_embedding = nn.ModuleDict(vector_embedding)
 
         self.dropout_embedding = nn.Dropout(dropout)

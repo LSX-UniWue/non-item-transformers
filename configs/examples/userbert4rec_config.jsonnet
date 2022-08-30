@@ -95,12 +95,6 @@ local metrics =  {
             transformer_hidden_size: 2,
             transformer_dropout: 0.1,
             segment_embedding: true,
-            additional_attributes: {
-                attr_one: {
-                    embedding_type: 'content_embedding',
-                    vocab_size: 7
-                }
-            },
             user_attributes: {
                 user_one: {
                     embedding_type: 'user_embedding',
@@ -121,19 +115,6 @@ local metrics =  {
                 },
                 vocabulary: {
                     file: base_path + "example.vocabulary.item_id.txt"
-                }
-            }
-        },
-        attr_one: {
-            sequence_length: max_seq_length,
-            tokenizer: {
-                special_tokens: {
-                    pad_token: "<PAD>",
-                    mask_token: "<MASK>",
-                    unk_token: "<UNK>"
-                },
-                vocabulary: {
-                    file: base_path + "example.vocabulary.attr_one.txt"
                 }
             }
         },

@@ -43,6 +43,7 @@ class KeBERT4RecModel(TransformerEncoderModel):
                  transformer_attention_dropout: Optional[float] = None):
 
         # save for later call by the training module
+
         self.additional_metadata_keys = list()
         self.add_keys_to_metadata_keys(prefusion_attributes)
         self.add_keys_to_metadata_keys(postfusion_attributes)
@@ -51,7 +52,7 @@ class KeBERT4RecModel(TransformerEncoderModel):
         # embedding will be normed and dropout after all embeddings are added to the representation
         sequence_embedding = TransformerEmbedding(len(item_tokenizer), max_seq_length, transformer_hidden_size, 0.0,
                                                   embedding_pooling_type=embedding_pooling_type,
-                                                  norm_embedding=False)
+                                                  norm_embedding=False, positional_embedding=positional_embedding)
 
 
         element_representation = PreFusionContextSequenceElementsRepresentationComponent(sequence_embedding,

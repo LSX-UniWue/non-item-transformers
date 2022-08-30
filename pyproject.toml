@@ -12,7 +12,7 @@ packages = [
 [tool.poetry.dependencies]
 python = ">=3.8,<3.11"
 tqdm = "^4.59.0"
-numpy = "^1.22.3"
+#numpy = "^1.21.4"
 scipy = "^1.8.0"
 scikit-learn = "^1.0.2"
 pandas = "^1.4.2"
@@ -31,6 +31,8 @@ dataclasses-json = "^0.5.7"
 flatten-dict = "^0.4.2"
 loguru = "^0.6.0"
 aim = "^3.9.4"
+torchmetrics = "0.6.0"
+
 
 
 [tool.poetry.dev-dependencies]

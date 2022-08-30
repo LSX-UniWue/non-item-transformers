@@ -9,23 +9,16 @@ local metrics =  {
     ndcg: [1, 3, 5],
     rank: []
 };
-local tokenizer {
+local tokenizer= {
     special_tokens: {
       pad_token: "<PAD>",
       mask_token: "<MASK>",
-      unk_token: "<UNK>"
-    },
+      unk_token: "<UNK>"}
+    };
 {
     datamodule: {
         cache_path: "/tmp/cache",
         dataset: dataset,
-        /*template: {
-            name: "masked",
-            split: "leave_one_out",
-            path: dataset_path,
-            file_prefix: dataset,
-            num_workers: 0
-        },*/
         data_sources: {
             split: "ratio_split",
             #path: dataset_path,
@@ -64,7 +57,6 @@ local tokenizer {
             }
         },
         preprocessing: {
-            min_sequence_length: 2,
         }
     },
     templates: {
@@ -76,11 +68,6 @@ local tokenizer {
         type: "bert4rec",
         metrics: {
             full: {
-                metrics: metrics
-            },
-            sampled: {
-                sample_probability_file: base_path + dataset + ".popularity.item_id.txt",
-                num_negative_samples: 2,
                 metrics: metrics
             },
         },
@@ -97,15 +84,15 @@ local tokenizer {
             column_name: "item_id",
             sequence_length: max_seq_length,
             tokenizer: tokenizer
-            }
-        },
-         session_identifier: {
+            },
+        session_identifier: {
                     column_name: "session_id",
                     sequence_length: max_seq_length,
                     sequence: false,
                     run_tokenization: false,
          },
-    },
+
+        },
     trainer: {
         loggers: {
             tensorboard: {},
@@ -125,15 +112,16 @@ local tokenizer {
         max_epochs: 5
     },
     evaluation: {
-        evaluators: [
-            {type: "sid", use_session_id: true},
-            {type: "recommendation"},
-        #    {type: "metrics"},
-        #    {type: "input"},
-        #    {type: "scores"},
-        #    {type: "target"},
-            ],
-        #selected_items_file: "/Users/lisa/recommender/configs/selected_items.csv",
-        number_predictions: 5
-        }
+            evaluators: [
+                {type: "sid", use_session_id: true},
+                {type: "recommendation"},
+            #    {type: "metrics"},
+            #    {type: "input"},
+            #    {type: "scores"},
+            #    {type: "target"},
+                ],
+            number_predictions: 30,
+            writer: {type: "csv-single-line"
+            }
+    }
 }

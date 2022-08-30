@@ -9,8 +9,9 @@ from asme.core.models.sasrec.components import SASRecProjectionComponent, \
     PostFusionIdentitySequenceRepresentationModifierLayer
 from asme.core.models.transformer.transformer_encoder_model import TransformerEncoderModel
 from asme.core.tokenization.tokenizer import Tokenizer
+from asme.core.tokenization.vector_dictionary import VectorDictionary
 from asme.core.utils.hyperparameter_utils import save_hyperparameters
-from asme.core.utils.inject import InjectVocabularySize, inject, InjectTokenizers
+from asme.core.utils.inject import InjectVocabularySize, inject, InjectTokenizers, InjectTokenizer
 
 
 class SASRecModel(TransformerEncoderModel):
@@ -22,6 +23,7 @@ class SASRecModel(TransformerEncoderModel):
     """
 
     @inject(
+        item_tokenizer=InjectTokenizer("item"),
         item_vocab_size=InjectVocabularySize("item"),
         additional_attributes_tokenizer=InjectTokenizers()
     )
@@ -33,6 +35,8 @@ class SASRecModel(TransformerEncoderModel):
                  item_vocab_size: int,
                  max_seq_length: int,
                  transformer_dropout: float,
+                 item_tokenizer: Tokenizer,
+                 vector_dictionaries: Dict[str, VectorDictionary] = None,
                  prefusion_attributes: Dict[str, Dict[str, Any]] = None,
                  postfusion_attributes:  Dict[str, Dict[str, Any]] = None,
                  additional_attributes_tokenizer: Dict[str, Tokenizer] = None,
@@ -45,6 +49,7 @@ class SASRecModel(TransformerEncoderModel):
         self.additional_metadata_keys = list()
         self.add_keys_to_metadata_keys(prefusion_attributes)
         self.add_keys_to_metadata_keys(postfusion_attributes)
+        self.add_keys_to_metadata_keys(vector_dictionaries)
 
         sequence_embedding_layer = TransformerEmbedding(
             item_voc_size=item_vocab_size,
@@ -57,8 +62,10 @@ class SASRecModel(TransformerEncoderModel):
 
         element_representation = PreFusionContextSequenceElementsRepresentationComponent(sequence_embedding_layer,
                                                                                          transformer_hidden_size,
+                                                                                         item_tokenizer,
                                                                                          prefusion_attributes,
                                                                                          additional_attributes_tokenizer,
+                                                                                         vector_dictionaries,
                                                                                          dropout=transformer_dropout)
 
         self.mode = mode
