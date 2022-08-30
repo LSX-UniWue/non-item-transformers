@@ -46,7 +46,7 @@ class KeBERT4RecModel(TransformerEncoderModel):
         self.additional_metadata_keys = list()
         self.add_keys_to_metadata_keys(prefusion_attributes)
         self.add_keys_to_metadata_keys(postfusion_attributes)
-        self.add_key_to_metadata_keys(vector_attributes)
+        self.add_keys_to_metadata_keys(vector_attributes)
 
         # embedding will be normed and dropout after all embeddings are added to the representation
         sequence_embedding = TransformerEmbedding(len(item_tokenizer), max_seq_length, transformer_hidden_size, 0.0,

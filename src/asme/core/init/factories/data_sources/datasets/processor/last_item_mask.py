@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 
 from asme.core.init.factories.util import get_all_tokenizers_from_context
 from asme.core.init.factories import BuildContext

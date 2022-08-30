@@ -96,12 +96,19 @@ def _padded_session_collate(entries_to_pad: Dict[str, PadInformation],
                     padded_entries = [
                         pad(value_entry, partial(_single_item_pad, pad_token_id=padding_token_id, pad_length=max_seq_step_length), max_seq_step_length) for value_entry in value
                     ]
-                    if len(padding_token_id) != max_seq_step_length:
+                    if isinstance(padding_token_id, list) and len(padding_token_id) != max_seq_step_length:
                         value_to_convert = pad(padded_entries, lambda length: [[padding_token_id] * max_seq_step_length] * (max_length - length), max_length)
                     else:
-                        value_to_convert = pad(padded_entries, lambda length: [padding_token_id] * (max_length - length), max_length)
+                        if isinstance(padding_token_id, list) and len(padding_token_id) == max_seq_step_length:
+                            value_to_convert = pad(padded_entries, lambda length: [padding_token_id] * (max_length - length), max_length)
+                        else:
+                            value_to_convert = pad(padded_entries, lambda length: [[padding_token_id] * max_seq_step_length] * (max_length - length), max_length)
+
+
                 else:
                     value_to_convert = pad(value, partial(_single_item_pad, pad_token_id=padding_token_id, pad_length=max_length), max_length)
+
+
 
             if entry_name != SESSION_IDENTIFIER:
                 padded_sample[entry_name] = torch.as_tensor(value_to_convert)

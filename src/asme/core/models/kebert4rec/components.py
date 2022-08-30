@@ -34,7 +34,7 @@ class ContentVectorMaskAndScale(nn.Module):
         self.item_mask_token = item_mask_token
         self.linear = nn.Linear(input_size, embed_size)
         self.trained_mask = nn.Parameter(torch.Tensor(input_size))
-        self.embedding_norm = nn.LayerNorm(embed_size)
+        self.embedding_norm = nn.LayerNorm(input_size)
         nn.init.normal_(self.trained_mask, mean=1, std=0.5)
 
     def forward(self,
@@ -44,7 +44,6 @@ class ContentVectorMaskAndScale(nn.Module):
 
         mask_indices = (item_sequence == self.item_mask_token).unsqueeze(-1)
         sequence = torch.where(mask_indices, self.trained_mask, content_sequence)
-        #sequence = self.linear(sequence)
         sequence = self.embedding_norm(sequence)
         sequence = self.linear(sequence)
 
@@ -56,6 +55,7 @@ class PreFusionContextSequenceElementsRepresentationComponent(SequenceElementsRe
     @save_hyperparameters
     def __init__(self,
                  item_embedding_layer: TransformerEmbedding,
+                 transformer_hidden_size: int,
                  item_tokenizer: Tokenizer,
                  prefusion_attributes: Dict[str, Dict[str, Any]],
                  additional_attributes_tokenizer: Dict[str, Tokenizer],
@@ -63,8 +63,9 @@ class PreFusionContextSequenceElementsRepresentationComponent(SequenceElementsRe
                  vector_dictionaries: Dict[str, VectorDictionary],
                  dropout: float = 0.0
                  ):
-        super().__init__()
 
+        super().__init__()
+        self.item_embedding_layer = item_embedding_layer
 
         prefusion_attribute_embeddings = {}
         if prefusion_attributes is not None:
@@ -73,20 +74,17 @@ class PreFusionContextSequenceElementsRepresentationComponent(SequenceElementsRe
                 vocab_size = len(additional_attributes_tokenizer["tokenizers." + attribute_name])
                 prefusion_attribute_embeddings[attribute_name] = _build_embedding_type(embedding_type=embedding_type,
                                                                                         vocab_size=vocab_size,
-                                                                                        hidden_size=embedding_size)
+                                                                                        hidden_size=transformer_hidden_size)
         self.prefusion_attribute_embeddings = nn.ModuleDict(prefusion_attribute_embeddings)
 
         vector_embedding = {}
         for attribute_name, vector_dict in vector_attributes.items():
             default = vector_dictionaries[attribute_name].unk_value
-            vector_embedding[attribute_name] = ContentVectorMaskAndScale(len(default), embedding_size, item_tokenizer.mask_token_id)
+            vector_embedding[attribute_name] = ContentVectorMaskAndScale(len(default), transformer_hidden_size, item_tokenizer.mask_token_id)
         self.vector_embedding = nn.ModuleDict(vector_embedding)
 
-
-
-
         self.dropout_embedding = nn.Dropout(dropout)
-        self.norm_embedding = nn.LayerNorm(embedding_size)
+        self.norm_embedding = nn.LayerNorm(transformer_hidden_size)
 
     def forward(self, sequence: InputSequence) -> EmbeddedElementsSequence:
         embedding_sequence = self.item_embedding_layer(sequence)

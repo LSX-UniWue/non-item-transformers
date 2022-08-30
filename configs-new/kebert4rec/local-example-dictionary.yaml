@@ -1,7 +1,7 @@
 datamodule:
   dataset: "example"
   data_sources:
-    num_workers: 4
+    num_workers: 1
     batch_size: 2
     max_seq_length: 7
     #mask_probability: 0.2
@@ -30,6 +30,9 @@ datamodule:
   preprocessing:
     input_file_path: "/Users/lisa/recommender/example_data/example.csv"
     output_directory: "/Users/lisa/recommender/example_data/"
+    ratio_split_train_percentage: 0.6
+    ratio_split_validation_percentage: 0.2
+    ratio_split_test_percentage: 0.2
 templates:
   unified_output:
     path: "/Users/lisa/recommender/tmp/example/kebert4rec"
@@ -47,9 +50,13 @@ module:
     num_transformer_layers: 1
     transformer_hidden_size: 4
     transformer_dropout: 0.2
-    additional_attributes:
-      attr_one:
-        embedding_type: 'content_embedding'
+      #postfusion_merge_function: "multiply"
+      #prefusion_attributes:
+      #attr_one:
+    #embedding_type: 'linear_upscale'
+    vector_attributes:
+      item_map:
+        embedding_merge: 'add'
 features:
   item:
     column_name: "item_id"
@@ -70,13 +77,13 @@ features:
       delimiter: ","
       type: "pd.array"
       element_type: "float"
-      pad_value: '["0.5","0.5"]'
   attr_one:
     column_name: "attr_one"
     sequence_length: 7
-    #type: "list"
-    #element_type: "str"
-    #max_sequence_step_length: 2
+    type: "list"
+    delimiter: "|"
+    element_type: "str"
+    max_sequence_step_length: 2
     tokenizer:
       special_tokens:
         pad_token: "<PAD>"
