@@ -79,7 +79,8 @@ class PreFusionContextSequenceElementsRepresentationComponent(SequenceElementsRe
         self.prefusion_attribute_embeddings = nn.ModuleDict(prefusion_attribute_embeddings)
         vector_embedding = {}
         if vector_dictionaries is not None:
-            for attribute_name, vector_dict in vector_attributes.items():
+            for attribute_name, attributes_infos in vector_attributes.items():
+                vector_dict = vector_dictionaries[attribute_name]
                 default = vector_dict.unk_value
                 vector_embedding[attribute_name] = ContentVectorMaskAndScale(len(default), transformer_hidden_size, item_tokenizer.mask_token_id)
         self.vector_embedding = nn.ModuleDict(vector_embedding)
