@@ -8,6 +8,7 @@ from asme.core.models.bert4rec.bert4rec_model import BERT4RecModel
 from asme.core.models.caser.caser_model import CaserModel
 from asme.core.models.cosrec.cosrec_model import CosRecModel
 from asme.core.models.hgn.hgn_model import HGNModel
+from asme.core.models.content_bert4rec.content_bert4rec_model import ContentBERT4RecModel
 from asme.core.models.kebert4rec.kebert4rec_model import KeBERT4RecModel
 from asme.core.models.ubert4rec.ubert4rec_model import UBERT4RecModel
 from asme.core.models.user_sasrec.user_sasrec_model import UserSASRecModel
@@ -27,8 +28,12 @@ from asme.core.modules.next_item_prediction_training_module import NextItemPredi
 from asme.core.modules.registry import register_module, ModuleConfig
 from asme.core.modules.sequence_next_item_prediction_training_module import SequenceNextItemPredictionTrainingModule
 
+register_module('content-bert4rec', ModuleConfig(GenericModuleFactory, MaskedTrainingModule, {
+    "model_cls": ContentBERT4RecModel}))
+
 register_module('kebert4rec', ModuleConfig(GenericModuleFactory, MaskedTrainingModule, {
     "model_cls": KeBERT4RecModel}))
+
 
 register_module('ubert4rec', ModuleConfig(GenericModuleFactory, UBERTMaskedTrainingModule, {
     "model_cls": UBERT4RecModel}))

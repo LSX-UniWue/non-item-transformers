@@ -34,7 +34,7 @@ templates:
   unified_output:
     path: "/Users/lisa/recommender/tmp/example/kebert4rec"
 module:
-  type: "kebert4rec"
+  type: "content-bert4rec"
   metrics:
     full:
       metrics:
@@ -47,13 +47,23 @@ module:
     num_transformer_layers: 1
     transformer_hidden_size: 4
     transformer_dropout: 0.2
-      #postfusion_merge_function: "multiply"
-      #prefusion_attributes:
-      #attr_one:
-    #embedding_type: 'linear_upscale'
-    vector_attributes:
-      item_map:
-        embedding_merge: 'add'
+    user_attributes:
+      prepend:
+        attr_one:
+          embedding: "keys"
+          embedding_type: 'linear_upscale'
+    item_attributes:
+      prefusion:
+        item_map:
+          embedding: "vector"
+          embedding_type: 'linear_upscale'
+          merge_function: "add"
+      postfusion:
+        item_map:
+          embedding: "vector"
+          embedding_type: 'linear_upscale'
+          merge_function: "multiply"
+
 features:
   item:
     column_name: "item_id"
