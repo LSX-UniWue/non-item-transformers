@@ -1,16 +1,14 @@
 from typing import List
 
-from asme.core.init.config import Config
-from asme.core.init.context import Context
 from asme.core.init.factories import BuildContext
 
-from asme.core.init.factories.util import require_config_keys, can_build_with_subsection, build_with_subsection
-from asme.core.init.object_factory import ObjectFactory, CanBuildResult, CanBuildResultType
-from asme.core.tokenization.vector_dictionary import VectorDictionary, SpecialValues
+from asme.core.init.factories.util import require_config_keys
+from asme.core.init.object_factory import ObjectFactory, CanBuildResult
+from asme.core.tokenization.vector_dictionary import ItemDictionary
 
 
 
-class VectorDictionaryFactory(ObjectFactory):
+class ItemrDictionaryFactory(ObjectFactory):
     """
     Builds a single tokenizer entry inside the tokenizers section.
     """
@@ -22,7 +20,7 @@ class VectorDictionaryFactory(ObjectFactory):
     def can_build(self, build_context: BuildContext) -> CanBuildResult:
         return require_config_keys(build_context.get_current_config_section(), self.REQUIRED_KEYS)
 
-    def build(self, build_context: BuildContext) -> VectorDictionary:
+    def build(self, build_context: BuildContext) -> ItemDictionary:
 
         config = build_context.get_current_config_section()
 
@@ -34,8 +32,8 @@ class VectorDictionaryFactory(ObjectFactory):
         unk_value = config.get_or_default("unk_value", "average")
         mask_value = config.get_or_default("mask_value", "average")
 
-        return VectorDictionary(dict_path=dict_path,delimiter=delimiter, type=type, pad_value=pad_value,
-                                mask_value=mask_value,unk_value =unk_value, element_type=element_type)
+        return ItemDictionary(dict_path=dict_path, delimiter=delimiter, type=type, pad_value=pad_value,
+                              mask_value=mask_value, unk_value =unk_value, element_type=element_type)
 
 
 

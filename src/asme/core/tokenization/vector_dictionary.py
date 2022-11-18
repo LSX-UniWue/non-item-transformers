@@ -14,7 +14,7 @@ class SpecialValues:
         self.none_value = none_value
 
 
-class VectorDictionary:
+class ItemDictionary:
     """
     TODO: add docu
     """

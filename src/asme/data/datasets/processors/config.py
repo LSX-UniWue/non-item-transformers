@@ -12,7 +12,7 @@ from asme.core.init.factories.data_sources.datasets.processor.pos_neg_sampler im
 from asme.core.init.factories.data_sources.datasets.processor.position_token import PositionTokenProcessorFactory
 from asme.core.init.factories.data_sources.datasets.processor.positive_item_extractor import \
     PositiveItemExtractorProcessorFactory
-from asme.core.init.factories.data_sources.datasets.processor.read_dictionary import ReadDictionaryProcessorFactory
+from asme.core.init.factories.data_sources.datasets.processor.input_dictionary import InputDictionaryProcessorFactory
 from asme.core.init.factories.data_sources.datasets.processor.target_extractor import TargetExtractorProcessorFactory
 from asme.core.init.factories.data_sources.datasets.processor.tokenizer import TokenizerProcessorFactory
 from asme.data.datasets.processors.registry import register_processor, ProcessorConfig
@@ -28,5 +28,5 @@ register_processor("negative_item_sampler", ProcessorConfig(NegativeItemSamplerP
 register_processor("positive_item_extractor", ProcessorConfig(PositiveItemExtractorProcessorFactory))
 register_processor("fixed_sequence_length_processor", ProcessorConfig(CutToFixedSequenceLengthProcessorFactory))
 register_processor("pad_feature", ProcessorConfig(PadFeatureProcessorFactory))
-register_processor("read_dicts", ProcessorConfig(ReadDictionaryProcessorFactory))
+register_processor("input_dictionaries", ProcessorConfig(InputDictionaryProcessorFactory))
 

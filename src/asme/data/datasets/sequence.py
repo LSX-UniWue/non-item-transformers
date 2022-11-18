@@ -8,7 +8,7 @@ import csv
 from torch.utils.data import Dataset
 
 from asme.core.tokenization.tokenizer import Tokenizer
-from asme.core.tokenization.vector_dictionary import VectorDictionary
+from asme.core.tokenization.vector_dictionary import ItemDictionary
 
 from asme.data.base.reader import CsvDatasetReader
 from asme.data.datasets import SAMPLE_IDS
@@ -29,7 +29,7 @@ class MetaInformation:
     is_generated: bool = False  # True iff the feature will be generated based on other features
     column_name: Optional[str] = None
     configs: Dict[str, Any] = field(default_factory=dict)
-    dictionary: Optional[VectorDictionary] = None
+    dictionary: Optional[ItemDictionary] = None
 
     def get_config(self, config_key: str) -> Optional[Any]:
         return self.configs.get(config_key, None)

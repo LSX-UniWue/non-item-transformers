@@ -1,6 +1,6 @@
 from typing import Dict, Any, List
 
-from asme.core.tokenization.vector_dictionary import VectorDictionary
+from asme.core.tokenization.vector_dictionary import ItemDictionary
 from asme.data.datasets import ITEM_SEQ_ENTRY_NAME
 from asme.data.datasets.processors.processor import Processor
 from asme.core.tokenization.tokenizer import Tokenizer
@@ -23,7 +23,7 @@ class LastItemMaskProcessor(Processor):
 
     def __init__(self,
                  tokenizers: Dict[str, Tokenizer],
-                 dictionaries: Dict[str, VectorDictionary],
+                 dictionaries: Dict[str, ItemDictionary],
                  masking_targets: List[str] = None
                  ):
         super().__init__()

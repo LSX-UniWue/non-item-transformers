@@ -12,21 +12,18 @@ datamodule:
       type: "session"
       processors:
         - type: "input_dictionaries"
-        - type: "cloze"
-          mask_probability: 0.2
-          only_last_item_mask_prob: 0.1
+        - type: "target_extractor"
+          parallel: true
     validation:
       type: "session"
       processors:
         - type: "input_dictionaries"
         - type: "target_extractor"
-        - type: "last_item_mask"
     test:
       type: "session"
       processors:
         - type: "input_dictionaries"
         - type: "target_extractor"
-        - type: "last_item_mask"
   preprocessing:
     input_file_path: "/Users/lisa/recommender/example_data/example.csv"
     output_directory: "/Users/lisa/recommender/example_data/"

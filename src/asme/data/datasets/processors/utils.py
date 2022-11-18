@@ -4,12 +4,12 @@ import torch
 from asme.core.init.factories.features.tokenizer_factory import ITEM_TOKENIZER_ID, get_tokenizer_key_for_voc
 from asme.core.init.factories.features.vector_dictionary_factory import get_dict_key_for_attribute
 from asme.core.tokenization.tokenizer import Tokenizer
-from asme.core.tokenization.vector_dictionary import VectorDictionary
+from asme.core.tokenization.vector_dictionary import ItemDictionary
 from asme.data.datasets import ITEM_SEQ_ENTRY_NAME
 
 
 def get_mask_value(tokenizers: Dict[str, Tokenizer],
-                   dictionaries: Dict[str, VectorDictionary],
+                   dictionaries: Dict[str, ItemDictionary],
                    target: str,
                    sequence: Union[List[int], List[List[int]]]
                    ) -> Union[int, List[int]]:

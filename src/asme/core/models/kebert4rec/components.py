@@ -8,7 +8,7 @@ from asme.core.models.common.layers.transformer_layers import TransformerEmbeddi
 from asme.core.models.kebert4rec.layers import LinearUpscaler
 from torch import nn
 
-from asme.core.tokenization.vector_dictionary import VectorDictionary
+from asme.core.tokenization.vector_dictionary import ItemDictionary
 from asme.core.utils.hyperparameter_utils import save_hyperparameters
 from asme.data.datasets.processors.tokenizer import Tokenizer
 
@@ -60,7 +60,7 @@ class PreFusionContextSequenceElementsRepresentationComponent(SequenceElementsRe
                  prefusion_attributes: Dict[str, Dict[str, Any]],
                  additional_attributes_tokenizer: Dict[str, Tokenizer],
                  vector_attributes: Dict[str, Dict[str, Any]],
-                 vector_dictionaries: Dict[str, VectorDictionary],
+                 vector_dictionaries: Dict[str, ItemDictionary],
                  dropout: float = 0.0
                  ):
 

@@ -9,7 +9,7 @@ from asme.core.models.sasrec.components import SASRecProjectionComponent, \
     PostFusionIdentitySequenceRepresentationModifierLayer
 from asme.core.models.transformer.transformer_encoder_model import TransformerEncoderModel
 from asme.core.tokenization.tokenizer import Tokenizer
-from asme.core.tokenization.vector_dictionary import VectorDictionary
+from asme.core.tokenization.vector_dictionary import ItemDictionary
 from asme.core.utils.hyperparameter_utils import save_hyperparameters
 from asme.core.utils.inject import InjectVocabularySize, inject, InjectTokenizers, InjectTokenizer
 
@@ -36,7 +36,7 @@ class SASRecModel(TransformerEncoderModel):
                  max_seq_length: int,
                  transformer_dropout: float,
                  item_tokenizer: Tokenizer,
-                 vector_dictionaries: Dict[str, VectorDictionary] = None,
+                 vector_dictionaries: Dict[str, ItemDictionary] = None,
                  prefusion_attributes: Dict[str, Dict[str, Any]] = None,
                  postfusion_attributes:  Dict[str, Dict[str, Any]] = None,
                  additional_attributes_tokenizer: Dict[str, Tokenizer] = None,

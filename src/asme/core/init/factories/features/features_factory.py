@@ -6,7 +6,7 @@ from asme.core.init.factories import BuildContext
 from asme.core.init.factories.common.dependencies_factory import DependenciesFactory
 from asme.core.init.factories.common.list_elements_factory import NamedListElementsFactory
 from asme.core.init.factories.features.tokenizer_factory import TokenizerFactory
-from asme.core.init.factories.features.vector_dictionary_factory import VectorDictionaryFactory
+from asme.core.init.factories.features.vector_dictionary_factory import ItemrDictionaryFactory
 from asme.core.init.factories.util import infer_whole_path, can_build_with_subsection, build_with_subsection
 from asme.core.init.object_factory import ObjectFactory, CanBuildResult, CanBuildResultType
 from asme.data import CURRENT_SPLIT_PATH_CONTEXT_KEY, DATASET_PREFIX_CONTEXT_KEY
@@ -23,7 +23,7 @@ class MetaInformationFactory(ObjectFactory):
     CONFIG_KEYS = ['type', 'sequence', 'column_name', "tokenizer", "dictionary"]
 
     def __init__(self,
-                 dependencies=DependenciesFactory([TokenizerFactory(), VectorDictionaryFactory()],
+                 dependencies=DependenciesFactory([TokenizerFactory(), ItemrDictionaryFactory()],
                                                   optional_based_on_path=True)
                  ):
         super().__init__()

@@ -7,19 +7,22 @@ from asme.core.models.common.components.representation_modifier.ffn_modifier imp
     FFNSequenceRepresentationModifierComponent
 from asme.core.models.common.layers.layers import PROJECT_TYPE_LINEAR, build_projection_layer
 from asme.core.models.common.layers.transformer_layers import TransformerEmbedding
-from asme.core.models.content_bert4rec.components import PreFusionContextSequenceElementsRepresentationComponent, \
-    ContextSequenceRepresentationModifierComponent, ContextSequenceElementsRepresentationComponent
+from asme.core.models.content_bert4rec.components import ContextSequenceRepresentationModifierComponent, \
+    ContextSequenceElementsRepresentationComponent, PrependedTransformerSequenceRepresentationComponent
+from asme.core.models.sequence_recommendation_model import SequenceRecommenderModel
 from asme.core.models.transformer.transformer_encoder_model import TransformerEncoderModel
+from asme.core.models.ubert4rec.components import UserTransformerSequenceRepresentationComponent
 from asme.core.tokenization.tokenizer import Tokenizer
-from asme.core.tokenization.vector_dictionary import VectorDictionary
+from asme.core.tokenization.vector_dictionary import ItemDictionary
 from asme.core.utils.hyperparameter_utils import save_hyperparameters
 from asme.core.utils.inject import InjectTokenizers, inject, InjectDictionaries, InjectTokenizer
 
 prefusion = "prefusion"
 postfusion = "postfusion"
+sequence_prepend = "prepend"
 
 
-class ContentBERT4RecModel(TransformerEncoderModel):
+class ContentBERT4RecModel(SequenceRecommenderModel):
 
     @inject(
         item_tokenizer=InjectTokenizer("item"),
@@ -37,20 +40,25 @@ class ContentBERT4RecModel(TransformerEncoderModel):
                  item_attributes: Dict[str, Dict[str, Any]] = None,
                  sequence_attributes: Dict[str, Dict[str, Any]] = None,
                  attribute_tokenizers: Dict[str, Tokenizer] = None,
-                 vector_dictionaries: Dict[str, VectorDictionary] = None,
+                 vector_dictionaries: Dict[str, ItemDictionary] = None,
                  positional_embedding: bool = True,
+                 segment_embedding: bool = False,
                  embedding_pooling_type: str = None,
                  initializer_range: float = 0.02,
                  transformer_intermediate_size: Optional[int] = None,
                  transformer_attention_dropout: Optional[float] = None):
 
         # save for later call by the training module
-        self.additional_metadata_keys = []
-        self.additional_sequence_data_keys = []
-        self.add_keys_to_metadata_keys(item_attributes)
+        self.item_metadata_keys = []
+        self.sequence_metadata_keys = []
+        self.add_keys_to_metadata(item_attributes, self.item_metadata_keys)
+        self.add_keys_to_metadata(sequence_attributes, self.item_metadata_keys)
+        self.add_keys_to_metadata(sequence_attributes, self.sequence_metadata_keys)
+
 
         prefusion_attributes = item_attributes.get(prefusion, None)
         postfusion_attributes = item_attributes.get(postfusion, None)
+        prepend_attributes = sequence_attributes.get(sequence_prepend, None)
 
         # embedding will be normed and dropout after all embeddings are added to the representation
         sequence_embedding = TransformerEmbedding(len(item_tokenizer), max_seq_length, transformer_hidden_size, 0.0,
@@ -62,46 +70,58 @@ class ContentBERT4RecModel(TransformerEncoderModel):
                                                                                 transformer_hidden_size,
                                                                                 item_tokenizer,
                                                                                 prefusion_attributes,
+                                                                                prepend_attributes,
                                                                                 attribute_tokenizers,
                                                                                 vector_dictionaries,
-                                                                                dropout=transformer_dropout)
+                                                                                dropout=transformer_dropout,
+                                                                                segment_embedding_active=segment_embedding)
+
+        sequence_representation = PrependedTransformerSequenceRepresentationComponent(transformer_hidden_size,
+                                                                                 num_transformer_heads,
+                                                                                 num_transformer_layers,
+                                                                                 transformer_dropout,
+                                                                                 sequence_attributes,
+                                                                                 bidirectional=False,
+                                                                                 transformer_attention_dropout=transformer_attention_dropout,
+                                                                                 transformer_intermediate_size=transformer_intermediate_size,)
+
+
         if postfusion_attributes is not None:
-            modifier_layer = ContextSequenceRepresentationModifierComponent(transformer_hidden_size,
-                                                                            item_tokenizer,
-                                                                            postfusion_attributes,
-                                                                            attribute_tokenizers,
-                                                                            vector_dictionaries)
+                modifier_layer = ContextSequenceRepresentationModifierComponent(transformer_hidden_size,
+                                                                                item_tokenizer,
+                                                                                postfusion_attributes,
+                                                                                sequence_attributes,
+                                                                                attribute_tokenizers,
+                                                                                vector_dictionaries)
         else:
             modifier_layer = FFNSequenceRepresentationModifierComponent(transformer_hidden_size)
 
         projection_layer = build_projection_layer(PROJECT_TYPE_LINEAR, transformer_hidden_size, len(item_tokenizer),
                                                   sequence_embedding.item_embedding.embedding)
 
-        super().__init__(
-            transformer_hidden_size=transformer_hidden_size,
-            num_transformer_heads=num_transformer_heads,
-            num_transformer_layers=num_transformer_layers,
-            transformer_dropout=transformer_dropout,
-            embedding_layer=element_representation,
-            sequence_representation_modifier_layer=modifier_layer,
-            projection_layer=projection_layer,
-            bidirectional=True,
-            transformer_intermediate_size=transformer_intermediate_size,
-            transformer_attention_dropout=transformer_attention_dropout
-        )
+
+
+        super().__init__(element_representation, sequence_representation, modifier_layer, projection_layer)
+
+        # FIXME: move init code
+        self.apply(functools.partial(normal_initialize_weights, initializer_range=initializer_range))
 
         # FIXME: move init code
         self.apply(functools.partial(normal_initialize_weights, initializer_range=initializer_range))
 
     def required_metadata_keys(self):
-        return self.additional_metadata_keys
+        return self.item_metadata_keys
 
-    def add_keys_to_metadata_keys(self, dictionary):
-        self.additional_metadata_keys.extend(list(dictionary[prefusion].keys()))
+    def optional_metadata_keys(self):
+        return self.sequence_metadata_keys
+
+    def add_keys_to_metadata(self, dictionary, metadata_keys):
         if dictionary is not None:
             if dictionary.get(prefusion):
-                self.additional_metadata_keys.extend(list(dictionary[prefusion].keys()))
+                metadata_keys.extend(list(dictionary[prefusion].keys()))
             if dictionary.get(postfusion):
-                self.additional_metadata_keys.extend(list(dictionary[postfusion].keys()))
+                metadata_keys.extend(list(dictionary[postfusion].keys()))
+            if dictionary.get(sequence_prepend):
+                metadata_keys.extend(list(dictionary[sequence_prepend].keys()))
 
 

@@ -28,7 +28,7 @@ from asme.core.modules.next_item_prediction_training_module import NextItemPredi
 from asme.core.modules.registry import register_module, ModuleConfig
 from asme.core.modules.sequence_next_item_prediction_training_module import SequenceNextItemPredictionTrainingModule
 
-register_module('content-bert4rec', ModuleConfig(GenericModuleFactory, MaskedTrainingModule, {
+register_module('content-bert4rec', ModuleConfig(GenericModuleFactory, UBERTMaskedTrainingModule, {
     "model_cls": ContentBERT4RecModel}))
 
 register_module('kebert4rec', ModuleConfig(GenericModuleFactory, MaskedTrainingModule, {

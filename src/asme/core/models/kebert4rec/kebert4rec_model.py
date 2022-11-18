@@ -10,7 +10,7 @@ from asme.core.models.kebert4rec.components import PreFusionContextSequenceEleme
     PostFusionContextSequenceRepresentationModifierComponent
 from asme.core.models.transformer.transformer_encoder_model import TransformerEncoderModel
 from asme.core.tokenization.tokenizer import Tokenizer
-from asme.core.tokenization.vector_dictionary import VectorDictionary
+from asme.core.tokenization.vector_dictionary import ItemDictionary
 from asme.core.utils.hyperparameter_utils import save_hyperparameters
 from asme.core.utils.inject import InjectVocabularySize, InjectTokenizers, inject, InjectDictionaries, InjectTokenizer
 
@@ -34,7 +34,7 @@ class KeBERT4RecModel(TransformerEncoderModel):
                  postfusion_attributes:  Dict[str, Dict[str, Any]] = None,
                  additional_attributes_tokenizer: Dict[str, Tokenizer] = None,
                  postfusion_merge_function: str = "add",
-                 vector_dictionaries: Dict[str, VectorDictionary] = None,
+                 vector_dictionaries: Dict[str, ItemDictionary] = None,
                  vector_attributes: Dict[str, Dict[str, Any]] = None,
                  positional_embedding: bool = True,
                  embedding_pooling_type: str = None,

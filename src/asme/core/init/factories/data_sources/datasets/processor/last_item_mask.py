@@ -3,7 +3,7 @@ from typing import List, Dict
 from asme.core.init.factories.util import get_all_tokenizers_from_context
 from asme.core.init.factories import BuildContext
 from asme.core.tokenization.tokenizer import Tokenizer
-from asme.core.tokenization.vector_dictionary import VectorDictionary
+from asme.core.tokenization.vector_dictionary import ItemDictionary
 from asme.data.datasets.processors.last_item_mask import LastItemMaskProcessor
 from asme.core.init.config import Config
 from asme.core.init.context import Context
@@ -25,14 +25,14 @@ def get_all_tokenizers_from_context(context: Context) -> Dict[str, Tokenizer]:
         key: value for key, value in context.as_dict().items() if isinstance(value, Tokenizer)
     }
 
-def get_all_vector_dictionaries_from_context(context: Context) -> Dict[str, VectorDictionary]:
+def get_all_vector_dictionaries_from_context(context: Context) -> Dict[str, ItemDictionary]:
     """
     returns a dict with all VectorDictionaries loaded in the context
     :param context: the context to extract the tokenizers from
     :return: the dict containing only tokenizers in the context
     """
     return {
-        key: value for key, value in context.as_dict().items() if isinstance(value, VectorDictionary)
+        key: value for key, value in context.as_dict().items() if isinstance(value, ItemDictionary)
     }
 
 
