@@ -2,14 +2,22 @@ from torch import nn
 
 from asme.core.models.common.layers.layers import IdentitySequenceRepresentationModifierLayer, LinearProjectionLayer
 from asme.core.models.common.layers.transformer_layers import TransformerEmbedding
+from asme.core.models.content_bert4rec.components import ContextSequenceElementsRepresentationComponent, \
+    PrependedTransformerSequenceRepresentationComponent, ContextSequenceRepresentationModifierComponent
 from asme.core.models.ubert4rec.components import UBERT4RecSequenceElementsRepresentationComponent
 from asme.core.models.ubert4rec.components import UserTransformerSequenceRepresentationComponent
 from asme.core.models.user_sasrec.components import UserSASRecProjectionComponent
 from asme.core.models.sequence_recommendation_model import SequenceRecommenderModel
+from asme.core.tokenization.tokenizer import Tokenizer
+from asme.core.tokenization.vector_dictionary import ItemDictionary
 from asme.core.utils.hyperparameter_utils import save_hyperparameters
-from asme.core.utils.inject import InjectVocabularySize, InjectTokenizers
+from asme.core.utils.inject import InjectVocabularySize, InjectTokenizers, inject, InjectTokenizer, InjectDictionaries
 from typing import Dict, Any
 
+
+prefusion = "prefusion"
+postfusion = "postfusion"
+sequence_prepend = "prepend"
 
 class UserSASRecModel(SequenceRecommenderModel):
     """
@@ -18,48 +26,46 @@ class UserSASRecModel(SequenceRecommenderModel):
 
     see https://github.com/kang205/SASRec for the original Tensorflow implementation
     """
-
+    @inject(
+        item_tokenizer=InjectTokenizer("item"),
+        attribute_tokenizers=InjectTokenizers(),
+        vector_dictionaries=InjectDictionaries()
+    )
     @save_hyperparameters
     def __init__(self,
                  transformer_hidden_size: int,
                  num_transformer_heads: int,
                  num_transformer_layers: int,
-                 item_vocab_size: InjectVocabularySize("item"),
+                 item_tokenizer: Tokenizer,
                  max_seq_length: int,
                  transformer_dropout: float,
-                 additional_attributes: Dict[str, Dict[str, Any]],
-                 additional_tokenizers: InjectTokenizers(),
-                 user_attributes: Dict[str, Dict[str, Any]],
-                 segment_embedding: False,
+                 item_attributes: Dict[str, Dict[str, Any]] = None,
+                 sequence_attributes: Dict[str, Dict[str, Any]] = None,
+                 attribute_tokenizers: Dict[str, Tokenizer] = None,
+                 vector_dictionaries: Dict[str, ItemDictionary] = None,
+                 positional_embedding: bool = True,
+                 segment_embedding: bool = False,
                  embedding_pooling_type: str = None,
                  transformer_intermediate_size: int = None,
                  transformer_attention_dropout: float = None,
-                 mode: str = "neg_sampling", # alternative: "full"
-                 positional_embedding: bool = True,
-                 replace_first_item: bool = False
+                 mode: str = "full",
                  ):
 
 
-        self.additional_userdata_keys = []
-        self.additional_userdata_keys = []
-        self.additional_metadata_keys = []
-        if user_attributes is not None:
-            self.additional_metadata_keys = list(user_attributes.keys())
-            self.additional_userdata_keys = list(user_attributes.keys())
-            max_seq_length += 1
+        # save for later call by the training module
+        self.item_metadata_keys = []
+        self.sequence_metadata_keys = []
+        self.add_keys_to_metadata(item_attributes, self.item_metadata_keys)
+        self.add_keys_to_metadata(sequence_attributes, self.item_metadata_keys)
+        self.add_keys_to_metadata(sequence_attributes, self.sequence_metadata_keys)
 
-        if additional_attributes is not None:
-            if user_attributes is not None:
-                self.additional_metadata_keys = self.additional_metadata_keys + list(additional_attributes.keys())
-            else:
-                self.additional_metadata_keys = list(additional_attributes.keys())
-
-        print("METADATA",self.additional_metadata_keys)
-        print("USERDATA",self.additional_metadata_keys)
+        prefusion_attributes = item_attributes.get(prefusion, None)
+        postfusion_attributes = item_attributes.get(postfusion, None)
+        prepend_attributes = sequence_attributes.get(sequence_prepend, None)
 
         # embedding will be normed and dropout after all embeddings are added to the representation
         embedding_layer = TransformerEmbedding(
-            item_voc_size=item_vocab_size,
+            item_voc_size=len(item_tokenizer),
             max_seq_len=max_seq_length,
             embedding_size=transformer_hidden_size,
             dropout=transformer_dropout,
@@ -74,32 +80,42 @@ class UserSASRecModel(SequenceRecommenderModel):
             projection_layer = UserSASRecProjectionComponent(embedding_layer)
         elif mode == "full":
             # compute a full ranking over all items as necessary with cross-entropy loss
-            projection_layer = LinearProjectionLayer(transformer_hidden_size, item_vocab_size)
+            projection_layer = LinearProjectionLayer(transformer_hidden_size, len(item_tokenizer))
         else:
             raise Exception(f"{mode} is an unknown projection mode. Choose either <full> or <neg_sampling>.")
 
 
-        element_representation = UBERT4RecSequenceElementsRepresentationComponent(embedding_layer,
-                                                                                  transformer_hidden_size,
-                                                                                  additional_attributes,
-                                                                                  user_attributes,
-                                                                                  additional_tokenizers,
-                                                                                  segment_embedding,
-                                                                                  dropout=transformer_dropout,
-                                                                                  replace_first_item=replace_first_item)
-        sequence_representation = UserTransformerSequenceRepresentationComponent(transformer_hidden_size,
-                                                                                 num_transformer_heads,
-                                                                                 num_transformer_layers,
-                                                                                 transformer_dropout,
-                                                                                 user_attributes,
-                                                                                 bidirectional=False,
-                                                                                 transformer_attention_dropout=transformer_attention_dropout,
-                                                                                 transformer_intermediate_size=transformer_intermediate_size,
-                                                                                 replace_first_item=replace_first_item)
+        element_representation = ContextSequenceElementsRepresentationComponent(embedding_layer,
+                                                                                transformer_hidden_size,
+                                                                                item_tokenizer,
+                                                                                prefusion_attributes,
+                                                                                prepend_attributes,
+                                                                                attribute_tokenizers,
+                                                                                vector_dictionaries,
+                                                                                dropout=transformer_dropout,
+                                                                                segment_embedding_active=segment_embedding)
 
-        transform_layer = IdentitySequenceRepresentationModifierLayer()
+        sequence_representation = PrependedTransformerSequenceRepresentationComponent(transformer_hidden_size,
+                                                                                      num_transformer_heads,
+                                                                                      num_transformer_layers,
+                                                                                      transformer_dropout,
+                                                                                      sequence_attributes,
+                                                                                      bidirectional=False,
+                                                                                      transformer_attention_dropout=transformer_attention_dropout,
+                                                                                      transformer_intermediate_size=transformer_intermediate_size,)
 
-        super().__init__(element_representation, sequence_representation, transform_layer, projection_layer)
+        if postfusion_attributes is not None:
+            modifier_layer = ContextSequenceRepresentationModifierComponent(transformer_hidden_size,
+                                                                            item_tokenizer,
+                                                                            postfusion_attributes,
+                                                                            sequence_attributes,
+                                                                            attribute_tokenizers,
+                                                                            vector_dictionaries)
+        else:
+            modifier_layer = IdentitySequenceRepresentationModifierLayer()
+
+
+        super().__init__(element_representation, sequence_representation, modifier_layer, projection_layer)
 
         self.apply(self._init_weights)
 
@@ -116,7 +132,17 @@ class UserSASRecModel(SequenceRecommenderModel):
             module.bias.data.zero_()
 
     def required_metadata_keys(self):
-        return self.additional_metadata_keys
+        return self.item_metadata_keys
 
     def optional_metadata_keys(self):
-        return self.additional_userdata_keys
+        return self.sequence_metadata_keys
+
+    def add_keys_to_metadata(self, dictionary, metadata_keys):
+        if dictionary is not None:
+            if dictionary.get(prefusion):
+                metadata_keys.extend(list(dictionary[prefusion].keys()))
+            if dictionary.get(postfusion):
+                metadata_keys.extend(list(dictionary[postfusion].keys()))
+            if dictionary.get(sequence_prepend):
+                metadata_keys.extend(list(dictionary[sequence_prepend].keys()))
+

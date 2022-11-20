@@ -10,8 +10,6 @@ from asme.core.models.common.layers.transformer_layers import TransformerEmbeddi
 from asme.core.models.content_bert4rec.components import ContextSequenceRepresentationModifierComponent, \
     ContextSequenceElementsRepresentationComponent, PrependedTransformerSequenceRepresentationComponent
 from asme.core.models.sequence_recommendation_model import SequenceRecommenderModel
-from asme.core.models.transformer.transformer_encoder_model import TransformerEncoderModel
-from asme.core.models.ubert4rec.components import UserTransformerSequenceRepresentationComponent
 from asme.core.tokenization.tokenizer import Tokenizer
 from asme.core.tokenization.vector_dictionary import ItemDictionary
 from asme.core.utils.hyperparameter_utils import save_hyperparameters

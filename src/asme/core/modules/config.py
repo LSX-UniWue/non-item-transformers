@@ -34,7 +34,6 @@ register_module('content-bert4rec', ModuleConfig(GenericModuleFactory, UBERTMask
 register_module('kebert4rec', ModuleConfig(GenericModuleFactory, MaskedTrainingModule, {
     "model_cls": KeBERT4RecModel}))
 
-
 register_module('ubert4rec', ModuleConfig(GenericModuleFactory, UBERTMaskedTrainingModule, {
     "model_cls": UBERT4RecModel}))
 
@@ -51,7 +50,7 @@ register_module("sasrec-neg", ModuleConfig(GenericModuleFactory, SequenceNextIte
     "model_cls": SASRecModel,
     "loss_function": SASRecBinaryCrossEntropyLoss()}))
 
-register_module("user-sasrec-full", ModuleConfig(GenericModuleFactory, UserNextItemPredictionTrainingModule, {
+register_module("content-sasrec-full", ModuleConfig(GenericModuleFactory, UserNextItemPredictionTrainingModule, {
     "model_cls": UserSASRecModel,
     "loss_function": SASRecFullSequenceCrossEntropyLoss}))
 

@@ -4,6 +4,8 @@ import inspect
 
 import torch
 
+from asme.core.tokenization.tokenizer import Tokenizer
+from asme.core.utils.hyperparameter_utils import save_hyperparameters
 from asme.data.datasets import ITEM_SEQ_ENTRY_NAME, TARGET_ENTRY_NAME, POSITIVE_SAMPLES_ENTRY_NAME, \
     NEGATIVE_SAMPLES_ENTRY_NAME
 from asme.core.metrics.container.metrics_container import MetricsContainer
@@ -12,14 +14,19 @@ from asme.core.modules.metrics_trait import MetricsTrait
 from asme.core.modules.util.module_util import get_padding_mask, build_eval_step_return_dict, get_additional_meta_data
 from asme.core.modules.next_item_prediction_training_module import BaseNextItemPredictionTrainingModule
 from asme.core.models.sequence_recommendation_model import SequenceRecommenderModel
-from asme.core.utils.inject import InjectTokenizer
+from asme.core.utils.inject import InjectTokenizer, inject
 from asme.core.losses.losses import CrossEntropyLoss, SequenceRecommenderLoss, SingleTargetCrossEntropyLoss
 
 class UserNextItemPredictionTrainingModule(BaseNextItemPredictionTrainingModule):
 
+
+    @inject(
+        item_tokenizer=InjectTokenizer("item")
+    )
+    @save_hyperparameters
     def __init__(self,
                  model: SequenceRecommenderModel,
-                 item_tokenizer: InjectTokenizer("item"),
+                 item_tokenizer: Tokenizer,
                  metrics: MetricsContainer,
                  learning_rate: float = 0.001,
                  beta_1: float = 0.99,
@@ -29,7 +36,8 @@ class UserNextItemPredictionTrainingModule(BaseNextItemPredictionTrainingModule)
                  first_item: bool = False
                  ):
 
-        super().__init__(model,item_tokenizer,metrics,learning_rate,beta_1,beta_2,weight_decay,loss_function)
+        super().__init__(model=model,metrics=metrics,learning_rate=learning_rate,beta_1=beta_1,beta_2=beta_2,
+                         weight_decay=weight_decay,loss_function=loss_function)
         self.user_key_len = len(model.optional_metadata_keys())
         self.first_item = first_item
 

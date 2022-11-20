@@ -172,10 +172,12 @@ class ContextSequenceRepresentationModifierComponent(SequenceRepresentationModif
                  postfusion_attributes: Dict[str, Dict[str, Any]],
                  sequence_attributes: Dict[str, Dict[str, Any]],
                  attribute_tokenizers: Dict[str, Tokenizer],
-                 vector_dictionaries: Dict[str, ItemDictionary]
+                 vector_dictionaries: Dict[str, ItemDictionary],
+                 use_transform_layer: bool = True
                  ):
         super().__init__()
 
+        self.use_transform_layer = use_transform_layer
         self.postfusion_attributes = postfusion_attributes
         self.added_sequence_attributes = sequence_attributes is not None
 
@@ -198,11 +200,13 @@ class ContextSequenceRepresentationModifierComponent(SequenceRepresentationModif
                                                                                                 item_tokenizer.mask_token_id)
 
         self.postfusion_attribute_embeddings = nn.ModuleDict(postfusion_attribute_embeddings)
-        self.transform = nn.Sequential(
-            nn.Linear(feature_size, feature_size),
-            nn.GELU(),
-            nn.LayerNorm(feature_size)
-        )
+
+        if self.use_transform_layer:
+            self.transform = nn.Sequential(
+                nn.Linear(feature_size, feature_size),
+                nn.GELU(),
+                nn.LayerNorm(feature_size)
+            )
 
     def forward(self, sequence_representation: SequenceRepresentation) -> ModifiedSequenceRepresentation:
         postfusion_embedded_sequence = sequence_representation.encoded_sequence
@@ -228,7 +232,10 @@ class ContextSequenceRepresentationModifierComponent(SequenceRepresentationModif
             else:
                 postfusion_embedded_sequence = merge_function(postfusion_embedded_sequence, embedded_data)
 
-        transformation = self.transform(postfusion_embedded_sequence)
+        if self.use_transform_layer:
+            transformation = self.transform(postfusion_embedded_sequence)
+        else:
+            transformation = postfusion_embedded_sequence
         return ModifiedSequenceRepresentation(transformation)
 
 

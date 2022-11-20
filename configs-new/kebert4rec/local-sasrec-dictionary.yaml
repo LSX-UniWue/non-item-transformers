@@ -31,7 +31,7 @@ templates:
   unified_output:
     path: "/Users/lisa/recommender/tmp/example/kebert4rec"
 module:
-  type: "content-bert4rec"
+  type: "content-sasrec-full"
   metrics:
     full:
       metrics:
@@ -44,6 +44,7 @@ module:
     num_transformer_layers: 1
     transformer_hidden_size: 4
     transformer_dropout: 0.2
+    mode: "full"
     sequence_attributes:
       prepend:
         attr_one:
