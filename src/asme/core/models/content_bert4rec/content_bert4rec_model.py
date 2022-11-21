@@ -11,9 +11,10 @@ from asme.core.models.content_bert4rec.components import ContextSequenceRepresen
     ContextSequenceElementsRepresentationComponent, PrependedTransformerSequenceRepresentationComponent
 from asme.core.models.sequence_recommendation_model import SequenceRecommenderModel
 from asme.core.tokenization.tokenizer import Tokenizer
-from asme.core.tokenization.vector_dictionary import ItemDictionary
+from asme.core.tokenization.item_dictionary import ItemDictionary
 from asme.core.utils.hyperparameter_utils import save_hyperparameters
 from asme.core.utils.inject import InjectTokenizers, inject, InjectDictionaries, InjectTokenizer
+from asme.data.datasets import ITEM_SEQ_ENTRY_NAME
 
 prefusion = "prefusion"
 postfusion = "postfusion"
@@ -23,7 +24,7 @@ sequence_prepend = "prepend"
 class ContentBERT4RecModel(SequenceRecommenderModel):
 
     @inject(
-        item_tokenizer=InjectTokenizer("item"),
+        item_tokenizer=InjectTokenizer(ITEM_SEQ_ENTRY_NAME),
         attribute_tokenizers=InjectTokenizers(),
         vector_dictionaries=InjectDictionaries()
     )

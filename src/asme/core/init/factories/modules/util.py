@@ -6,7 +6,7 @@ from asme.core.init.context import Context
 from asme.core.init.factories.features.vector_dictionary_factory import DICTIONARIES_PREFIX
 from asme.core.init.factories.modules import TOKENIZER_SUFFIX, VOCAB_SIZE_SUFFIX
 from asme.core.tokenization.tokenizer import Tokenizer
-from asme.core.tokenization.vector_dictionary import ItemDictionary
+from asme.core.tokenization.item_dictionary import ItemDictionary
 
 
 @dataclass

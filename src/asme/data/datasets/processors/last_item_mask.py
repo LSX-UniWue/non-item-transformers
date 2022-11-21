@@ -1,6 +1,6 @@
 from typing import Dict, Any, List
 
-from asme.core.tokenization.vector_dictionary import ItemDictionary
+from asme.core.tokenization.item_dictionary import ItemDictionary
 from asme.data.datasets import ITEM_SEQ_ENTRY_NAME
 from asme.data.datasets.processors.processor import Processor
 from asme.core.tokenization.tokenizer import Tokenizer

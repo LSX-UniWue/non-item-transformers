@@ -10,7 +10,7 @@ from asme.core.models.common.layers.transformer_layers import TransformerEmbeddi
 from asme.core.models.kebert4rec.layers import LinearUpscaler
 from torch import nn
 
-from asme.core.tokenization.vector_dictionary import ItemDictionary
+from asme.core.tokenization.item_dictionary import ItemDictionary
 from asme.core.utils.hyperparameter_utils import save_hyperparameters
 from asme.data.datasets.processors.tokenizer import Tokenizer
 

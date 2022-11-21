@@ -11,30 +11,29 @@ from asme.core.models.hgn.hgn_model import HGNModel
 from asme.core.models.content_bert4rec.content_bert4rec_model import ContentBERT4RecModel
 from asme.core.models.kebert4rec.kebert4rec_model import KeBERT4RecModel
 from asme.core.models.ubert4rec.ubert4rec_model import UBERT4RecModel
-from asme.core.models.user_sasrec.user_sasrec_model import UserSASRecModel
 from asme.core.models.narm.narm_model import NarmModel
 from asme.core.models.rnn.rnn_model import RNNModel
 from asme.core.models.sasrec.sasrec_model import SASRecModel
-from asme.core.models.user_sasrec.user_sasrec_model import UserSASRecModel
+from asme.core.models.content_sasrec.content_sasrec_model import ContentSASRecModel
 from asme.core.modules.baselines.bpr_module import BprModule
 from asme.core.modules.baselines.markov_module import MarkovModule
 from asme.core.modules.baselines.pop_module import PopModule
 from asme.core.modules.baselines.session_pop_module import SessionPopModule
 from asme.core.modules.masked_training_module import MaskedTrainingModule
-from asme.core.modules.ubert_masked_training_module import UBERTMaskedTrainingModule
-from asme.core.modules.user_next_item_prediction_training_module import UserNextItemPredictionTrainingModule
+from asme.core.modules.prepend_content.user_masked_training_module import SequenceContentMaskedTrainingModule
+from asme.core.modules.prepend_content.user_next_item_prediction_training_module import UserNextItemPredictionTrainingModule
 from asme.core.modules.next_item_prediction_training_module import NextItemPredictionTrainingModule, \
     NextItemPredictionWithNegativeSampleTrainingModule
 from asme.core.modules.registry import register_module, ModuleConfig
 from asme.core.modules.sequence_next_item_prediction_training_module import SequenceNextItemPredictionTrainingModule
 
-register_module('content-bert4rec', ModuleConfig(GenericModuleFactory, UBERTMaskedTrainingModule, {
+register_module('content-bert4rec', ModuleConfig(GenericModuleFactory, SequenceContentMaskedTrainingModule, {
     "model_cls": ContentBERT4RecModel}))
 
 register_module('kebert4rec', ModuleConfig(GenericModuleFactory, MaskedTrainingModule, {
     "model_cls": KeBERT4RecModel}))
 
-register_module('ubert4rec', ModuleConfig(GenericModuleFactory, UBERTMaskedTrainingModule, {
+register_module('ubert4rec', ModuleConfig(GenericModuleFactory, SequenceContentMaskedTrainingModule, {
     "model_cls": UBERT4RecModel}))
 
 register_module('bert4rec', ModuleConfig(GenericModuleFactory, MaskedTrainingModule, {
@@ -51,7 +50,7 @@ register_module("sasrec-neg", ModuleConfig(GenericModuleFactory, SequenceNextIte
     "loss_function": SASRecBinaryCrossEntropyLoss()}))
 
 register_module("content-sasrec-full", ModuleConfig(GenericModuleFactory, UserNextItemPredictionTrainingModule, {
-    "model_cls": UserSASRecModel,
+    "model_cls": ContentSASRecModel,
     "loss_function": SASRecFullSequenceCrossEntropyLoss}))
 
 register_module("sasrec-cross", ModuleConfig(GenericModuleFactory, NextItemPredictionTrainingModule, {

@@ -3,7 +3,7 @@ from typing import List, Dict
 from asme.core.init.factories.util import get_all_tokenizers_from_context
 from asme.core.init.factories import BuildContext
 from asme.core.tokenization.tokenizer import Tokenizer
-from asme.core.tokenization.vector_dictionary import ItemDictionary
+from asme.core.tokenization.item_dictionary import ItemDictionary
 from asme.data.datasets.processors.last_item_mask import LastItemMaskProcessor
 from asme.core.init.config import Config
 from asme.core.init.context import Context

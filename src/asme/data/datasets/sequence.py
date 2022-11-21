@@ -8,7 +8,7 @@ import csv
 from torch.utils.data import Dataset
 
 from asme.core.tokenization.tokenizer import Tokenizer
-from asme.core.tokenization.vector_dictionary import ItemDictionary
+from asme.core.tokenization.item_dictionary import ItemDictionary
 
 from asme.data.base.reader import CsvDatasetReader
 from asme.data.datasets import SAMPLE_IDS

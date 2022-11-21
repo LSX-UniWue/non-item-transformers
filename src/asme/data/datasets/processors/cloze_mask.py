@@ -1,7 +1,7 @@
 from typing import Dict, Any, List
 
 from asme.core.init.factories.features.vector_dictionary_factory import get_dict_key_for_attribute
-from asme.core.tokenization.vector_dictionary import ItemDictionary
+from asme.core.tokenization.item_dictionary import ItemDictionary
 from asme.data.datasets import ITEM_SEQ_ENTRY_NAME, TARGET_ENTRY_NAME
 from asme.data.datasets.processors.processor import Processor
 from asme.core.init.factories.features.tokenizer_factory import get_tokenizer_key_for_voc, \

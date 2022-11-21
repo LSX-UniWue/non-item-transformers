@@ -10,7 +10,7 @@ from asme.core.models.kebert4rec.components import PreFusionContextSequenceEleme
     PostFusionContextSequenceRepresentationModifierComponent
 from asme.core.models.transformer.transformer_encoder_model import TransformerEncoderModel
 from asme.core.tokenization.tokenizer import Tokenizer
-from asme.core.tokenization.vector_dictionary import ItemDictionary
+from asme.core.tokenization.item_dictionary import ItemDictionary
 from asme.core.utils.hyperparameter_utils import save_hyperparameters
 from asme.core.utils.inject import InjectVocabularySize, InjectTokenizers, inject, InjectDictionaries, InjectTokenizer
 

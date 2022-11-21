@@ -4,7 +4,7 @@ from asme.core.init.factories import BuildContext
 
 from asme.core.init.factories.util import require_config_keys
 from asme.core.init.object_factory import ObjectFactory, CanBuildResult
-from asme.core.tokenization.vector_dictionary import ItemDictionary
+from asme.core.tokenization.item_dictionary import ItemDictionary
 
 
 
