@@ -7,7 +7,7 @@ from asme.core.models.common.layers.data.sequence import InputSequence, Embedded
 from asme.core.models.common.layers.layers import SequenceElementsRepresentationLayer, \
     SequenceRepresentationModifierLayer, SequenceRepresentationLayer
 from asme.core.models.common.layers.transformer_layers import TransformerEmbedding, TransformerLayer
-from asme.core.models.kebert4rec.layers import LinearUpscaler
+from asme.core.models.content_bert4rec.layers import LinearUpscaler
 from torch import nn
 
 from asme.core.tokenization.item_dictionary import ItemDictionary

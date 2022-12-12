@@ -5,7 +5,7 @@ import torch
 from asme.core.models.common.layers.data.sequence import ModifiedSequenceRepresentation, SequenceRepresentation
 from asme.core.models.common.layers.layers import ProjectionLayer, SequenceRepresentationModifierLayer
 from asme.core.models.common.layers.transformer_layers import TransformerEmbedding
-from asme.core.models.kebert4rec.components import _build_embedding_type
+from asme.core.models.content_bert4rec.components import _build_embedding_type
 from asme.core.tokenization.tokenizer import Tokenizer
 from asme.core.utils.hyperparameter_utils import save_hyperparameters
 from torch import nn
