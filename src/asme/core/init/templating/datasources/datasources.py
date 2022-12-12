@@ -1,7 +1,9 @@
 from abc import abstractmethod
 from enum import Enum
-from typing import Dict, Any, List
 from pathlib import Path
+from typing import Any
+from typing import Dict
+from typing import List
 
 from asme.core.init.templating import TEMPLATES_CONFIG_KEY
 from asme.core.init.templating.template_processor import TemplateProcessor
@@ -311,6 +313,16 @@ class LeavePercentageOutSessionDatasetBuilder(DatasetBuilder):
             'csv_file': str(csv_file),
             'csv_file_index': str(csv_file_index),
             'nip_index_file': str(nip_index_file)
+        }
+
+
+class PlaceholderDatasetBuilder(DatasetBuilder):
+    def can_build_dataset_definition(self, dataset_split_type: DatasetSplit) -> bool:
+        return dataset_split_type == DatasetSplit.RATIO_SPLIT
+
+    def build_dataset_definition(self, stage: Stage, config: Dict[str, Any]) -> Dict[str, Any]:
+        return {
+            'type': 'placeholder'
         }
 
 

@@ -1,24 +1,35 @@
 import multiprocessing
-from typing import Any, List, Dict
+from typing import Any
+from typing import Dict
+from typing import List
 
-from asme.core.init.factories import BuildContext
-from asme.data.datasets.sequence import MetaInformation
-from torch.utils.data import DataLoader
-
-from asme.core.init.factories.data_sources.datasets.processor.last_item_mask import get_sequence_features
-from asme.data.collate import padded_session_collate, PadDirection, PadInformation
-from asme.data.datasets import ITEM_SEQ_ENTRY_NAME, POSITIVE_SAMPLES_ENTRY_NAME, NEGATIVE_SAMPLES_ENTRY_NAME, TARGET_SUFFIX
-from asme.data.multi_processing import mp_worker_init_fn
 from asme.core.init.config import Config
 from asme.core.init.context import Context
+from asme.core.init.factories import BuildContext
 from asme.core.init.factories.common.dependencies_factory import DependenciesFactory
 from asme.core.init.factories.common.union_factory import UnionFactory
 from asme.core.init.factories.data_sources.datasets.item_session import ItemSessionDatasetFactory
-from asme.core.init.factories.features.tokenizer_factory import get_tokenizer_key_for_voc
+from asme.core.init.factories.data_sources.datasets.processor.last_item_mask import get_sequence_features
+from asme.core.init.factories.data_sources.datasets.registry import get_dataset_factories
 from asme.core.init.factories.data_sources.datasets.sequence_position import SequencePositionDatasetFactory
-from asme.core.init.factories.util import check_config_keys_exist, check_context_entries_exists, \
-    can_build_with_subsection, build_with_subsection
-from asme.core.init.object_factory import ObjectFactory, CanBuildResult, CanBuildResultType
+from asme.core.init.factories.features.tokenizer_factory import get_tokenizer_key_for_voc
+from asme.core.init.factories.util import build_with_subsection
+from asme.core.init.factories.util import can_build_with_subsection
+from asme.core.init.factories.util import check_config_keys_exist
+from asme.core.init.factories.util import check_context_entries_exists
+from asme.core.init.object_factory import CanBuildResult
+from asme.core.init.object_factory import CanBuildResultType
+from asme.core.init.object_factory import ObjectFactory
+from asme.data.collate import padded_session_collate
+from asme.data.collate import PadDirection
+from asme.data.collate import PadInformation
+from asme.data.datasets import ITEM_SEQ_ENTRY_NAME
+from asme.data.datasets import NEGATIVE_SAMPLES_ENTRY_NAME
+from asme.data.datasets import POSITIVE_SAMPLES_ENTRY_NAME
+from asme.data.datasets import TARGET_SUFFIX
+from asme.data.datasets.sequence import MetaInformation
+from asme.data.multi_processing import mp_worker_init_fn
+from torch.utils.data import DataLoader
 
 
 def _get_item_feature_info(context: Context
@@ -78,6 +89,8 @@ def _build_entries_to_pad(config: Config,
     return entries_to_pad
 
 
+LOADER_FACTORIES = []
+
 class LoaderFactory(ObjectFactory):
     KEY = "loader"
 
@@ -99,10 +112,7 @@ class LoaderFactory(ObjectFactory):
     def __init__(self,
                  dependencies: DependenciesFactory = DependenciesFactory(
                      [
-                        UnionFactory([
-                            ItemSessionDatasetFactory(),
-                            SequencePositionDatasetFactory()
-                        ], DATASET_DEPENDENCY_KEY, [DATASET_DEPENDENCY_KEY])
+                        UnionFactory(get_dataset_factories(), DATASET_DEPENDENCY_KEY, [DATASET_DEPENDENCY_KEY])
                      ]
                  )):
         super(LoaderFactory, self).__init__()
