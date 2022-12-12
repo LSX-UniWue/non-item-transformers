@@ -8,7 +8,7 @@ from asme.core.tokenization.item_dictionary import ItemDictionary
 
 
 
-class ItemrDictionaryFactory(ObjectFactory):
+class ItemDictionaryFactory(ObjectFactory):
     """
     Builds a single tokenizer entry inside the tokenizers section.
     """

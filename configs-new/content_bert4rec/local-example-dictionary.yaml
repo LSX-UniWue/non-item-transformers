@@ -84,6 +84,9 @@ features:
       delimiter: ","
       type: "pd.array"
       element_type: "float"
+      pad_value: "average"
+      mask_value: "average"
+      unk_value: "average"
 
   attr_one:
     column_name: "attr_one"
