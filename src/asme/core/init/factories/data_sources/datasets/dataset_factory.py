@@ -1,16 +1,21 @@
-from typing import List, Union, Any, Dict
+from abc import abstractmethod
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Union
 
-from asme.core.init.factories import BuildContext
-from asme.core.init.factories.util import can_build_with_subsection, build_with_subsection
-from asme.data.datasets.processors.processor import Processor
-from asme.data.datasets.sequence import ItemSessionParser
 from asme.core.init.context import Context
+from asme.core.init.factories import BuildContext
 from asme.core.init.factories.common.dependencies_factory import DependenciesFactory
 from asme.core.init.factories.data_sources.datasets.parser.item_session_parser import ItemSessionParserFactory
 from asme.core.init.factories.data_sources.datasets.processor.processors import ProcessorsFactory
-from asme.core.init.object_factory import ObjectFactory, CanBuildResult, CanBuildResultType
-
-from abc import abstractmethod
+from asme.core.init.factories.util import build_with_subsection
+from asme.core.init.factories.util import can_build_with_subsection
+from asme.core.init.object_factory import CanBuildResult
+from asme.core.init.object_factory import CanBuildResultType
+from asme.core.init.object_factory import ObjectFactory
+from asme.data.datasets.processors.processor import Processor
+from asme.data.datasets.sequence import ItemSessionParser
 
 
 class DatasetFactory(ObjectFactory):
@@ -31,7 +36,7 @@ class DatasetFactory(ObjectFactory):
     def build(self, build_context: BuildContext) -> Union[Any, Dict[str, Any], List[Any]]:
         build_result = build_with_subsection(self.parser_dependency, build_context)
 
-        session_parser = build_result[ItemSessionParserFactory.KEY]
+        session_parser = build_result.get(ItemSessionParserFactory.KEY, None)
         processors = build_result[ProcessorsFactory.KEY]
 
         return self._build_dataset(build_context, session_parser, processors)
@@ -58,5 +63,3 @@ class DatasetFactory(ObjectFactory):
                            build_context: BuildContext
                            ) -> CanBuildResult:
         pass
-
-

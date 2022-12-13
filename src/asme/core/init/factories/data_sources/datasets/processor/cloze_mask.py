@@ -2,12 +2,10 @@ from typing import List
 
 from asme.core.init.factories import BuildContext
 from asme.core.init.factories.data_sources.datasets.processor.last_item_mask import get_all_tokenizers_from_context, \
-    get_sequence_feature_names
+    get_sequence_feature_names, get_all_vector_dictionaries_from_context
 from asme.data.datasets.processors.cloze_mask import ClozeMaskProcessor
-from asme.core.init.config import Config
-from asme.core.init.context import Context
 from asme.core.init.factories.features.tokenizer_factory import get_tokenizer_key_for_voc, ITEM_TOKENIZER_ID
-from asme.core.init.factories.util import check_config_keys_exist
+from asme.core.init.factories.util import check_config_keys_exist, get_all_tokenizers_from_context
 from asme.core.init.object_factory import ObjectFactory, CanBuildResult, CanBuildResultType
 
 
@@ -36,13 +34,14 @@ class ClozeProcessorFactory(ObjectFactory):
         config = build_context.get_current_config_section()
         context = build_context.get_context()
         tokenizers = get_all_tokenizers_from_context(context)
+        dictionaries = get_all_vector_dictionaries_from_context(context)
 
         mask_probability = config.get('mask_probability')
         only_last_item_mask_prob = config.get('only_last_item_mask_prob')
 
         masking_targets = get_sequence_feature_names(config, context)
 
-        return ClozeMaskProcessor(tokenizers, mask_probability, only_last_item_mask_prob, masking_targets)
+        return ClozeMaskProcessor(tokenizers, dictionaries, mask_probability, only_last_item_mask_prob, masking_targets)
 
     def is_required(self, build_context: BuildContext) -> bool:
         return False

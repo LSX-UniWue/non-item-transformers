@@ -142,7 +142,7 @@ class SequenceNextItemPredictionTrainingModule(MetricsTrait, pl.LightningModule)
         """
         input_seq = batch[ITEM_SEQ_ENTRY_NAME]
         targets = batch[TARGET_ENTRY_NAME]
-        prediction = self.predict(batch, batch_idx)
+        prediction = self.predict_step(batch, batch_idx)
 
         mask = None if len(targets.size()) == 1 else ~ targets.eq(self.item_tokenizer.pad_token_id)
         return build_eval_step_return_dict(input_seq, prediction, targets, mask=mask)

@@ -133,7 +133,8 @@ def _build_tensorboard_logger(parameters: Dict[str, Any]) -> LightningLoggerBase
 def _build_mlflow_logger(parameters: Dict[str, Any]) -> LightningLoggerBase:
     return MLFlowLogger(
         experiment_name=parameters["experiment_name"],
-        tracking_uri=parameters["tracking_uri"]
+        tracking_uri=parameters["tracking_uri"],
+        run_name = parameters.get("run_name")
     )
 
 

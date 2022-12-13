@@ -1,39 +1,48 @@
+import json
 import os
 import shutil
+from pathlib import Path
+from typing import Callable
+from typing import List
+from typing import Optional
 
+import optuna
 import torch
 import typer
-import optuna
-import json
-from pathlib import Path
-from typing import Optional, Callable, List
-
-from pytorch_lightning.loggers import LoggerCollection, MLFlowLogger
-from loguru import logger
-
 from asme.core.callbacks.metrics_history import MetricsHistoryCallback
-from asme.core.init.templating.search.resolver import OptunaParameterResolver
-
-from asme.core.init.templating.search.processor import SearchTemplateProcessor
-
 from asme.core.init.config import Config
-
-from asme.core.init.config_keys import TRAINER_CONFIG_KEY, CHECKPOINT_CONFIG_KEY, CHECKPOINT_CONFIG_DIR_PATH
-from optuna.study import StudyDirection
-from pytorch_lightning import seed_everything, Trainer
-from tqdm import tqdm
-from jinja2 import Template
-
+from asme.core.init.config_keys import CHECKPOINT_CONFIG_DIR_PATH
+from asme.core.init.config_keys import CHECKPOINT_CONFIG_KEY
+from asme.core.init.config_keys import TRAINER_CONFIG_KEY
 from asme.core.init.context import Context
 from asme.core.init.factories.metrics.metrics_container import MetricsContainerFactory
 from asme.core.init.templating.search.configuration import SearchConfigurationTemplateProcessor
-from asme.core.utils.run_utils import load_config, create_container, OBJECTIVE_METRIC_KEY, TRIAL_BASE_PATH, \
-    load_and_restore_from_file_or_study, log_dataloader_example, load_hyperopt_config, load_config_from_json
+from asme.core.init.templating.search.processor import SearchTemplateProcessor
+from asme.core.init.templating.search.resolver import OptunaParameterResolver
 from asme.core.utils import ioutils
-from asme.core.utils.ioutils import determine_log_dir, save_config, save_finished_flag, \
-    finished_flag_exists
-from asme.core.writer.results.results_writer import build_result_writer, check_file_format_supported
+from asme.core.utils.ioutils import determine_log_dir
+from asme.core.utils.ioutils import finished_flag_exists
+from asme.core.utils.ioutils import save_config
+from asme.core.utils.ioutils import save_finished_flag
 from asme.core.utils.pred_utils import move_tensors_to_device
+from asme.core.utils.run_utils import create_container
+from asme.core.utils.run_utils import load_and_restore_from_file_or_study
+from asme.core.utils.run_utils import load_config
+from asme.core.utils.run_utils import load_config_from_json
+from asme.core.utils.run_utils import load_hyperopt_config
+from asme.core.utils.run_utils import log_dataloader_example
+from asme.core.utils.run_utils import OBJECTIVE_METRIC_KEY
+from asme.core.utils.run_utils import TRIAL_BASE_PATH
+from asme.core.writer.results.results_writer import build_result_writer
+from asme.core.writer.results.results_writer import check_file_format_supported
+from jinja2 import Template
+from loguru import logger
+from optuna.study import StudyDirection
+from pytorch_lightning import seed_everything
+from pytorch_lightning import Trainer
+from pytorch_lightning.loggers import LoggerCollection
+from pytorch_lightning.loggers import MLFlowLogger
+from tqdm import tqdm
 
 _ERROR_MESSAGE_LOAD_CHECKPOINT_FROM_FILE_OR_STUDY = "You have to specify at least the checkpoint file and config or" \
                                                     " the study name and study storage to infer the config and " \
@@ -57,6 +66,8 @@ def train(config_file: Path = typer.Argument(..., help='the path to the config f
 
     container = create_container(config)
     trainer = container.trainer().build()
+
+
 
     # save plain json config to the log dir/root dir of the trainer
     log_dir = determine_log_dir(trainer)
@@ -449,7 +460,8 @@ def resume(log_dir: str = typer.Argument(..., help='the path to the logging dire
         exit(-1)
 
     # check for config file
-    config_file = log_dir / ioutils.PROCESSED_CONFIG_NAME
+    #config_file = log_dir / ioutils.PROCESSED_CONFIG_NAME
+    config_file = log_dir / f"{ioutils.PROCESSED_CONFIG_NAME}.yaml"  # TODO: bug, missing config file suffix
     if not os.path.isfile(config_file):
         logger.error(f"Could not find '{ioutils.PROCESSED_CONFIG_NAME} in path {log_dir}.")
         exit(-1)
@@ -477,7 +489,8 @@ def resume(log_dir: str = typer.Argument(..., help='the path to the logging dire
     train_loader = container.train_dataloader()
     validation_loader = container.validation_dataloader()
 
-    trainer.fit(module, train_dataloader=train_loader, val_dataloaders=validation_loader)
+    #trainer.fit(module, train_dataloader=train_loader, val_dataloaders=validation_loader)
+    trainer.fit(module, train_dataloaders=train_loader, val_dataloaders=validation_loader)  # TODO: bug, typo
 
     # Save finished flag
     save_finished_flag(log_dir)

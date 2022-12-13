@@ -17,7 +17,8 @@ from asme.data.datasets import ITEM_SEQ_ENTRY_NAME, TARGET_ENTRY_NAME, POSITIVE_
 from asme.core.metrics.container.metrics_container import MetricsContainer
 from asme.core.modules import LOG_KEY_VALIDATION_LOSS, LOG_KEY_TRAINING_LOSS
 from asme.core.modules.metrics_trait import MetricsTrait
-from asme.core.modules.util.module_util import get_padding_mask, build_eval_step_return_dict, get_additional_meta_data
+from asme.core.modules.util.module_util import get_padding_mask, build_eval_step_return_dict, get_additional_meta_data, \
+    build_model_input
 from asme.core.utils.hyperparameter_utils import save_hyperparameters
 
 
@@ -138,6 +139,15 @@ class BaseNextItemPredictionTrainingModule(MetricsTrait, pl.LightningModule):
 
 
 class NextItemPredictionTrainingModule(BaseNextItemPredictionTrainingModule):
+
+
+    def forward(self,
+                batch: Dict[str, torch.Tensor],
+                batch_idx: Optional[int] = None
+                ) -> torch.Tensor:
+        input_data = build_model_input(self.model, self.item_tokenizer, batch)
+        # call the model
+        return self.model(input_data)
 
     def training_step(self,
                       batch: Dict[str, torch.Tensor],

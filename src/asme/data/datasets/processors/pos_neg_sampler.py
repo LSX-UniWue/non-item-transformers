@@ -1,11 +1,16 @@
 import torch
 
-from typing import Union, List, Dict, Any, Set
+from typing import Union, List, Dict, Any, Set, Optional
+from asme.core.utils import logging
+from asme.data.datasets.sequence import MetaInformation
+from asme.core.init.factories.features.tokenizer_factory import get_tokenizer_key_for_voc, \
+    ITEM_TOKENIZER_ID
 
 from asme.data.datasets import ITEM_SEQ_ENTRY_NAME, SAMPLE_IDS, POSITIVE_SAMPLES_ENTRY_NAME, NEGATIVE_SAMPLES_ENTRY_NAME
 from asme.data.datasets.processors.processor import Processor
 from asme.core.tokenization.tokenizer import Tokenizer
 
+logger = logging.get_logger(__name__)
 
 class PositiveNegativeSamplerProcessor(Processor):
     """
@@ -26,21 +31,23 @@ class PositiveNegativeSamplerProcessor(Processor):
 
     """
     def __init__(self,
-                 tokenizer: Tokenizer
+                 tokenizers: Dict[str, Tokenizer],
+                 features: Optional[List[MetaInformation]] = None,
                  ):
         super().__init__()
-        self._tokenizer = tokenizer
+        self.tokenizers = tokenizers
+        self.features = features
 
     def _sample_negative_target(self,
-                                sequence: Union[List[int], List[List[int]]]
-                                ) -> Union[List[int], List[List[int]]]:
+                                sequence: Union[List[int], List[List[int]]],
+                                tokenizer: Tokenizer) -> Union[List[int], List[List[int]]]:
 
         # we want to use a multinomial distribution to draw negative samples fast
         # start with a uniform distribution over all vocabulary tokens
-        weights = torch.ones([len(self._tokenizer)])
+        weights = torch.ones([len(tokenizer)])
 
         # set weight for special tokens to 0.
-        weights[self._tokenizer.get_special_token_ids()] = 0.
+        weights[tokenizer.get_special_token_ids()] = 0.
 
         # prevent sampling of tokens already present in the session
         used_tokens = self._get_all_tokens_of_sequence(sequence)
@@ -65,6 +72,20 @@ class PositiveNegativeSamplerProcessor(Processor):
 
         return set(flat_items)
 
+    def is_sequence(self, feature_name: str) -> bool:
+        """
+        Determines whether the feature is a sequence.
+
+        :param feature_name: the name of the feature.
+        :return: True iff the feature is a sequence, otherwise False.
+        """
+        for feature in self.features:
+            if feature.feature_name == feature_name:
+                return feature.is_sequence
+
+        logger.warning(f"Unable to find meta-information for feature: {feature_name}. Assuming it is not a sequence.")
+        return False
+
     def process(self,
                 parsed_sequence: Dict[str, Any]
                 ) -> Dict[str, Any]:
@@ -76,9 +97,18 @@ class PositiveNegativeSamplerProcessor(Processor):
 
         x = sequence[:-1]
         pos = sequence[1:]
-        neg = self._sample_negative_target(sequence)
+        neg = self._sample_negative_target(sequence, self.tokenizers[get_tokenizer_key_for_voc(ITEM_TOKENIZER_ID)])
 
         parsed_sequence[ITEM_SEQ_ENTRY_NAME] = x
         parsed_sequence[POSITIVE_SAMPLES_ENTRY_NAME] = pos
         parsed_sequence[NEGATIVE_SAMPLES_ENTRY_NAME] = neg
+
+
+        for key in list(parsed_sequence.keys()):
+            value = parsed_sequence[key]
+            if key != ITEM_SEQ_ENTRY_NAME and isinstance(value, list) and self.is_sequence(key):
+                tokenizer = self.tokenizers[get_tokenizer_key_for_voc(key)]
+                parsed_sequence[key] = parsed_sequence[key][:-1]
+                parsed_sequence[POSITIVE_SAMPLES_ENTRY_NAME+"."+key] = value[1:]
+                parsed_sequence[NEGATIVE_SAMPLES_ENTRY_NAME+"."+key] = self._sample_negative_target(value, tokenizer)
         return parsed_sequence

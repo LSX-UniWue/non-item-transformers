@@ -4,6 +4,7 @@ import torch
 from pytorch_lightning.utilities import rank_zero_warn
 
 from asme.core.utils.hyperparameter_utils import save_hyperparameters
+from asme.core.utils.inject import InjectTokenizer
 from asme.data.datasets import ITEM_SEQ_ENTRY_NAME, TARGET_ENTRY_NAME
 from asme.core.metrics.container.metrics_container import MetricsContainer
 from asme.core.modules.metrics_trait import MetricsTrait
@@ -18,7 +19,7 @@ class SessionPopModule(MetricsTrait, pl.LightningModule):
 
     @save_hyperparameters
     def __init__(self,
-                 item_tokenizer: Tokenizer,
+                 item_tokenizer: InjectTokenizer("item"),
                  metrics: MetricsContainer
                  ):
         super().__init__()

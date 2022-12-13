@@ -2,6 +2,7 @@ import torch
 from torch.nn.parameter import Parameter
 
 from asme.core.utils.hyperparameter_utils import save_hyperparameters
+from asme.core.utils.inject import InjectTokenizer
 from asme.data.datasets import POSITIVE_SAMPLES_ENTRY_NAME, NEGATIVE_SAMPLES_ENTRY_NAME
 from asme.core.metrics.container.metrics_container import MetricsContainer
 from asme.core.modules.metrics_trait import MetricsTrait
@@ -15,8 +16,8 @@ class BprModule(MetricsTrait, pl.LightningModule):
 
     @save_hyperparameters
     def __init__(self,
-                 item_tokenizer: Tokenizer,
-                 user_tokenizer: Tokenizer,
+                 item_tokenizer: InjectTokenizer("item"),
+                 user_tokenizer: InjectTokenizer("user"),
                  embedding_size: int,
                  regularization_factor: float,
                  metrics: MetricsContainer):

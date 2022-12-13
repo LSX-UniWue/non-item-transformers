@@ -5,6 +5,8 @@ from asme.data.datasets.processors.pos_neg_sampler import PositiveNegativeSample
 from asme.core.init.context import Context
 from asme.core.init.factories.features.tokenizer_factory import get_tokenizer_key_for_voc, ITEM_TOKENIZER_ID
 from asme.core.init.object_factory import ObjectFactory, CanBuildResult, CanBuildResultType
+from asme.core.init.factories.features.features_factory import FeaturesFactory
+from asme.core.init.factories.util import get_all_tokenizers_from_context
 
 
 class PositiveNegativeSamplerProcessorFactory(ObjectFactory):
@@ -26,9 +28,11 @@ class PositiveNegativeSamplerProcessorFactory(ObjectFactory):
     def build(self,
               build_context: BuildContext
               ) -> PositiveNegativeSamplerProcessor:
-        tokenizer = build_context.get_context().get(get_tokenizer_key_for_voc(ITEM_TOKENIZER_ID))
+        context = build_context.get_context()
+        features = context.get([FeaturesFactory.KEY])
+        tokenizers = get_all_tokenizers_from_context(context)
 
-        return PositiveNegativeSamplerProcessor(tokenizer)
+        return PositiveNegativeSamplerProcessor(tokenizers, features)
 
     def is_required(self, build_context: BuildContext) -> bool:
         return False
@@ -38,3 +42,4 @@ class PositiveNegativeSamplerProcessorFactory(ObjectFactory):
 
     def config_key(self) -> str:
         return 'pos_neg_sampler_processor'
+
