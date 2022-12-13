@@ -16,7 +16,7 @@ from asme.data.datamodule.preprocessing.action import PreprocessingAction, MAIN_
 from asme.data.datamodule.preprocessing.util import format_prefix
 from asme.data.datamodule.util import SplitNames, TrainValidationTestSplitIndices
 from asme.data.datasets.index_builder import SequencePositionIndexBuilder
-from asme.data.datasets.sequence import MetaInformation, ItemSessionParser, ItemSequenceDataset, PlainSequenceDataset
+from asme.data.datasets.sequence import ItemSessionParser, ItemSequenceDataset, PlainSequenceDataset, MetaInformation
 from asme.data.utils.csv import create_indexed_header, read_csv_header
 
 

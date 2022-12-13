@@ -12,7 +12,8 @@ from asme.core.init.context import Context
 from asme.core.init.factories import GLOBAL_ASME_INJECTION_CONTEXT, BuildContext
 from asme.core.init.factories.features.tokenizer_factory import get_tokenizer_key_for_voc
 from asme.core.init.factories.modules.modules import GenericModelFactory
-from asme.core.init.factories.modules.util import ParameterInfo, get_init_parameters, get_tokenizers_from_context
+from asme.core.init.factories.modules.util import ParameterInfo, get_init_parameters, get_tokenizers_from_context, \
+    get_dictionaries_from_context
 
 
 # All injection annotations should inherit from this base class to ensure extendability for future use cases.
@@ -26,6 +27,9 @@ class InjectTokenizer(Inject):
 
 
 class InjectTokenizers(Inject):
+    pass
+
+class InjectDictionaries(Inject):
     pass
 
 
@@ -191,6 +195,9 @@ def _handle_injects(injectable_parameters: List[ParameterInfo],
         elif isinstance(inject, InjectTokenizers):
             tokenizers = get_tokenizers_from_context(context)
             parameter_dict[injectable_parameter.parameter_name] = tokenizers
+        elif isinstance(inject, InjectDictionaries):
+            dictionaries = get_dictionaries_from_context(context)
+            parameter_dict[injectable_parameter.parameter_name] = dictionaries
         elif isinstance(inject, InjectVocabularySize):
             tokenizer_to_use = inject.feature_name
             tokenizer = context.get(get_tokenizer_key_for_voc(tokenizer_to_use))

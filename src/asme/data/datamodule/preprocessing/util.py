@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import List
 
 from asme.data.base.reader import CsvDatasetIndex, CsvDatasetReader
-from asme.data.datasets.sequence import MetaInformation, PlainSequenceDataset, ItemSessionParser
+from asme.data.datasets.sequence import PlainSequenceDataset, ItemSessionParser, MetaInformation
 from asme.data.utils.csv import create_indexed_header, read_csv_header
 
 

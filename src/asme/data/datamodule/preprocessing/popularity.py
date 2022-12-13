@@ -11,7 +11,7 @@ from asme.data.base.reader import CsvDatasetIndex, CsvDatasetReader
 from asme.data.datamodule.preprocessing.action import PreprocessingAction, MAIN_FILE_KEY, OUTPUT_DIR_KEY, \
     DELIMITER_KEY, PREFIXES_KEY, SESSION_INDEX_KEY
 from asme.data.datamodule.preprocessing.util import format_prefix
-from asme.data.datasets.sequence import MetaInformation, ItemSessionParser, PlainSequenceDataset, ItemSequenceDataset
+from asme.data.datasets.sequence import ItemSessionParser, PlainSequenceDataset, ItemSequenceDataset, MetaInformation
 from asme.data.utils.csv import create_indexed_header, read_csv_header
 
 

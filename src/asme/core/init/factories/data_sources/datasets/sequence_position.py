@@ -2,16 +2,17 @@ from pathlib import Path
 from typing import List
 
 from asme.core.init.factories import BuildContext
+from asme.core.init.factories.data_sources.datasets.dataset_factory import DatasetFactory
+from asme.core.init.factories.data_sources.datasets.plain_session import PlainSessionDatasetFactory
 from asme.core.init.factories.data_sources.datasets.processor.last_item_mask import get_sequence_feature_names
-from asme.data.datasets.sequence_position import SequencePositionIndex
-from asme.data.datasets.sequence_position import SequencePositionDataset
+from asme.core.init.factories.util import require_config_field_equal
+from asme.core.init.factories.util import require_config_keys
+from asme.core.init.object_factory import CanBuildResult
+from asme.core.init.object_factory import CanBuildResultType
 from asme.data.datasets.processors.processor import Processor
 from asme.data.datasets.sequence import ItemSessionParser
-from asme.core.init.factories.data_sources.datasets.plain_session import PlainSessionDatasetFactory
-from asme.core.init.factories.util import require_config_field_equal, require_config_keys, can_build_with_subsection, \
-    build_with_subsection
-from asme.core.init.object_factory import CanBuildResult, CanBuildResultType
-from asme.core.init.factories.data_sources.datasets.dataset_factory import DatasetFactory
+from asme.data.datasets.sequence_position import SequencePositionDataset
+from asme.data.datasets.sequence_position import SequencePositionIndex
 
 
 class SequencePositionDatasetFactory(DatasetFactory):

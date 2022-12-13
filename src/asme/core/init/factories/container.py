@@ -8,6 +8,7 @@ from asme.core.init.factories.common.dependencies_factory import DependenciesFac
 from asme.core.init.factories.data_sources.datamodule import DataModuleFactory
 from asme.core.init.factories.features.features_factory import FeaturesFactory
 from asme.core.init.factories.features.tokenizer_factory import TOKENIZERS_PREFIX
+from asme.core.init.factories.features.vector_dictionary_factory import DICTIONARIES_PREFIX
 from asme.core.init.factories.include.import_factory import ImportFactory
 from asme.core.init.factories.trainer import TrainerBuilderFactory
 from asme.core.init.factories.evaluation.evaluation import EvaluationFactory
@@ -39,6 +40,10 @@ class ContainerFactory(ObjectFactory):
                   ) -> CanBuildResult:
 
         can_build_result = can_build_with_subsection(self.import_factory, build_context)
+        if can_build_result.type != CanBuildResultType.CAN_BUILD:
+            return can_build_result
+
+        can_build_result = can_build_with_subsection(self.features_factory, build_context)
         if can_build_result.type != CanBuildResultType.CAN_BUILD:
             return can_build_result
 
@@ -75,6 +80,8 @@ class ContainerFactory(ObjectFactory):
             for info in meta_information:
                 if info.tokenizer is not None:
                     build_context.get_context().set([TOKENIZERS_PREFIX, info.feature_name], info.tokenizer)
+                if info.dictionary is not None:
+                    build_context.get_context().set([DICTIONARIES_PREFIX, info.feature_name], info.dictionary)
 
         build_with_subsection(self.features_factory, build_context, build_metainformation)
 

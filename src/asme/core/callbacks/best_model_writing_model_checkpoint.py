@@ -28,8 +28,10 @@ class BestModelWritingModelCheckpoint(ModelCheckpoint):
                  every_n_train_steps: Optional[int] = None,
                  train_time_interval: Optional[timedelta] = None,
                  every_n_epochs: Optional[int] = None,
-                 save_on_train_epoch_end: Optional[bool] = None
+                 save_on_train_epoch_end: Optional[bool] = None,
+                 skip_best: bool = False
                  ):
+        self.skip_best = skip_best
         super().__init__(dirpath,
                          filename,
                          monitor,
@@ -64,12 +66,12 @@ class BestModelWritingModelCheckpoint(ModelCheckpoint):
 
     def _should_skip_saving_best_checkpoint(self, trainer: "pl.Trainer") -> bool:
         from pytorch_lightning.trainer.states import TrainerFn
-
         return (
                 trainer.fast_dev_run  # disable checkpointing with fast_dev_run
                 or trainer.state.fn != TrainerFn.FITTING  # don't save anything during non-fit
                 or trainer.sanity_checking  # don't save anything during sanity check
                 or self.last_best_model_path == self.best_model_path
+                or self.skip_best
         )
 
     def _save_best_model_checkpoint_symlink(self):

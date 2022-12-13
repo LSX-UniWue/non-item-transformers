@@ -8,7 +8,9 @@ from util_test_tokenizer import create_tokenizer
 
 def test_positive_negative_sampler_processor():
     seed_everything(42)
-    pos_neg_sampler = PositiveNegativeSamplerProcessor(create_tokenizer())
+    tokenizers = {}
+    tokenizers[ITEM_SEQ_ENTRY_NAME] = create_tokenizer()
+    pos_neg_sampler = PositiveNegativeSamplerProcessor(tokenizers)
 
     parsed_sequence = {
         ITEM_SEQ_ENTRY_NAME: [5, 8, 9, 7, 3, 4]
@@ -23,7 +25,9 @@ def test_positive_negative_sampler_processor():
 
 def test_positive_negative_sampler_processor_basket_recommendation():
     seed_everything(42)
-    pos_neg_sampler = PositiveNegativeSamplerProcessor(create_tokenizer())
+    tokenizers = {}
+    tokenizers[ITEM_SEQ_ENTRY_NAME] = create_tokenizer()
+    pos_neg_sampler = PositiveNegativeSamplerProcessor(tokenizers)
 
     parsed_sequence = {
         ITEM_SEQ_ENTRY_NAME: [[5, 3], [8], [9], [7, 5], [3], [4]]

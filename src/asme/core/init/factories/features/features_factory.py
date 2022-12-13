@@ -6,6 +6,7 @@ from asme.core.init.factories import BuildContext
 from asme.core.init.factories.common.dependencies_factory import DependenciesFactory
 from asme.core.init.factories.common.list_elements_factory import NamedListElementsFactory
 from asme.core.init.factories.features.tokenizer_factory import TokenizerFactory
+from asme.core.init.factories.features.vector_dictionary_factory import ItemDictionaryFactory
 from asme.core.init.factories.util import infer_whole_path, can_build_with_subsection, build_with_subsection
 from asme.core.init.object_factory import ObjectFactory, CanBuildResult, CanBuildResultType
 from asme.data import CURRENT_SPLIT_PATH_CONTEXT_KEY, DATASET_PREFIX_CONTEXT_KEY
@@ -19,10 +20,11 @@ class MetaInformationFactory(ObjectFactory):
     """
     KEY = "meta_information"
 
-    CONFIG_KEYS = ['type', 'sequence', 'column_name', "tokenizer"]
+    CONFIG_KEYS = ['type', 'sequence', 'column_name', "tokenizer", "dictionary"]
 
     def __init__(self,
-                 dependencies=DependenciesFactory([TokenizerFactory()])
+                 dependencies=DependenciesFactory([TokenizerFactory(), ItemDictionaryFactory()],
+                                                  optional_based_on_path=True)
                  ):
         super().__init__()
         self._dependencies = dependencies
@@ -41,6 +43,7 @@ class MetaInformationFactory(ObjectFactory):
         column_name = config.get('column_name')
         sequence_length = config.get('sequence_length')
         run_tokenization = config.get_or_default('run_tokenization', True)
+        dictionary = config.get_or_default('dictionary', False)
 
         feature_config = {}
 
@@ -54,11 +57,17 @@ class MetaInformationFactory(ObjectFactory):
         else:
             tokenizer = None
 
+        if dictionary:
+            dictionary = build_with_subsection(self._dependencies, build_context)["dictionary"]
+        else:
+            dictionary = None
+
         for key in config.get_keys():
             if key not in self.CONFIG_KEYS:
                 feature_config[key] = config.get(key)
         return MetaInformation(feature_name, feature_type, tokenizer=tokenizer, is_sequence=feature_is_sequence,
-                               column_name=column_name, configs=feature_config, sequence_length=sequence_length)
+                               column_name=column_name, configs=feature_config, sequence_length=sequence_length,
+                               dictionary=dictionary)
 
     def is_required(self, build_context: BuildContext) -> bool:
         return True

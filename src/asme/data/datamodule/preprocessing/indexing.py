@@ -10,7 +10,7 @@ from asme.data.datamodule.preprocessing.action import PreprocessingAction, MAIN_
     SESSION_INDEX_KEY, OUTPUT_DIR_KEY, PREFIXES_KEY
 from asme.data.datamodule.preprocessing.util import format_prefix
 from asme.data.datasets.index_builder import SequencePositionIndexBuilder
-from asme.data.datasets.sequence import MetaInformation, ItemSessionParser, ItemSequenceDataset, PlainSequenceDataset
+from asme.data.datasets.sequence import ItemSessionParser, ItemSequenceDataset, PlainSequenceDataset, MetaInformation
 from asme.data.utils.csv import create_indexed_header, read_csv_header
 
 

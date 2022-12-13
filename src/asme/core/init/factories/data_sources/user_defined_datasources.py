@@ -1,5 +1,7 @@
 import copy
-from typing import List, Any, Dict
+from typing import Any
+from typing import Dict
+from typing import List
 
 from asme.core.init.config import Config
 from asme.core.init.context import Context
@@ -7,10 +9,18 @@ from asme.core.init.factories import BuildContext
 from asme.core.init.factories.data_sources.common import build_default_loader_config
 from asme.core.init.factories.data_sources.loader import LoaderFactory
 from asme.core.init.factories.util import build_with_subsection
-from asme.core.init.object_factory import ObjectFactory, CanBuildResult, CanBuildResultType
-from asme.core.init.templating.datasources.datasources import Stage, DatasetSplit, NextPositionDatasetBuilder, \
-    SequenceDatasetRatioSplitBuilder, NextPositionWindowDatasetBuilder, LeaveOneOutSessionDatasetBuilder, \
-    LeaveOneOutSequenceWindowDatasetBuilder, LeaveOneOutNextPositionDatasetBuilder
+from asme.core.init.object_factory import CanBuildResult
+from asme.core.init.object_factory import CanBuildResultType
+from asme.core.init.object_factory import ObjectFactory
+from asme.core.init.templating.datasources.datasources import DatasetSplit
+from asme.core.init.templating.datasources.datasources import LeaveOneOutNextPositionDatasetBuilder
+from asme.core.init.templating.datasources.datasources import LeaveOneOutSequenceWindowDatasetBuilder
+from asme.core.init.templating.datasources.datasources import LeaveOneOutSessionDatasetBuilder
+from asme.core.init.templating.datasources.datasources import NextPositionDatasetBuilder
+from asme.core.init.templating.datasources.datasources import NextPositionWindowDatasetBuilder
+from asme.core.init.templating.datasources.datasources import PlaceholderDatasetBuilder
+from asme.core.init.templating.datasources.datasources import SequenceDatasetRatioSplitBuilder
+from asme.core.init.templating.datasources.datasources import Stage
 from asme.data import CURRENT_SPLIT_PATH_CONTEXT_KEY
 
 
@@ -19,12 +29,14 @@ class UserDefinedDataSourcesFactory(ObjectFactory):
         DatasetSplit.RATIO_SPLIT: {
             "next_item": NextPositionDatasetBuilder(),
             "session": SequenceDatasetRatioSplitBuilder(),
-            "window": NextPositionWindowDatasetBuilder()
+            "window": NextPositionWindowDatasetBuilder(),
+            "placeholder": PlaceholderDatasetBuilder()
         },
         DatasetSplit.LEAVE_ONE_OUT: {
             "next_item": LeaveOneOutNextPositionDatasetBuilder(),
             "session": LeaveOneOutSessionDatasetBuilder(),
-            "window": LeaveOneOutSequenceWindowDatasetBuilder()
+            "window": LeaveOneOutSequenceWindowDatasetBuilder(),
+            "placeholder": PlaceholderDatasetBuilder()
         }
     }
 

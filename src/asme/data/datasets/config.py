@@ -110,10 +110,11 @@ def get_ml_1m_preprocessing_config(
 
     columns = [MetaInformation("rating", type="int", run_tokenization=False),
                MetaInformation("gender", type="str"),
-               MetaInformation("age", type="int", run_tokenization=False),
+               MetaInformation("age", type="str"),
                MetaInformation("occupation", type="str"),
                MetaInformation("zip", type="str"),
                MetaInformation("title", type="str"),
+               MetaInformation("user_all", type="list", configs={"delimiter": "|", "element_type":"str"}),
                MetaInformation("year", type="str", run_tokenization=False),
                MetaInformation("genres", type="str", configs={"delimiter": "|"})]
 
@@ -904,7 +905,8 @@ def get_example_preprocessing_config(
                # TODO (AD) find out why setting type to int prevents correct vocabulary creation (vocabulary is not saved with consecutive ids)
                MetaInformation("user_id", column_name="user_id", type="str"),
                MetaInformation("session_id", column_name="session_id", type="str"),
-               MetaInformation("attr_one", column_name="attr_one", type="str")]
+               MetaInformation("attr_one", column_name="attr_one", type="str")
+               ]
 
     min_item_feedback_column = "item_id"
     min_sequence_length_column = "session_id"

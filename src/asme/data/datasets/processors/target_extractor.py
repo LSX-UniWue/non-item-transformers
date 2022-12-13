@@ -14,13 +14,15 @@ class TargetExtractorProcessor(Processor):
     """
     This processor extracts the last item in the sequence as target for the training or evaluation process.
     If `parallel` is set to `True` targets for every sequence position will be extracted.
+    `keep_input` preserves the original input
 
     e.g. if the session is [5, 4, 3, 7] the processor sets the list to [5, 4, 3] and adds a TARGET_ENTRY_NAME to 7
     """
-    def __init__(self, features: Optional[List[MetaInformation]] = None, parallel: bool = False):
+    def __init__(self, features: Optional[List[MetaInformation]] = None, parallel: bool = False, first_target: bool = False):
         super().__init__()
         self.features = features
         self.parallel = parallel
+        self.first_target = first_target
 
     def is_sequence(self, feature_name: str) -> bool:
         """
@@ -49,10 +51,17 @@ class TargetExtractorProcessor(Processor):
                 sub_sequence = value[:last_pos]
 
                 if self.parallel:
-                    target = value[1:]
+                    if self.first_target:
+                        target = value
+                        sub_sequence = [sub_sequence[0]] + sub_sequence
+                    else:
+                        target = value[1:]
                 else:
-                    target = value[last_pos]
-
+                    if self.first_target:
+                        sub_sequence = [sub_sequence[0]] + sub_sequence
+                        target = value[last_pos]
+                    else:
+                        target = value[last_pos]
                 processed_information[key] = sub_sequence
                 processed_information[key + TARGET_SUFFIX] = target
             else:

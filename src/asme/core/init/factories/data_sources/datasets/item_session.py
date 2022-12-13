@@ -1,12 +1,15 @@
-from typing import Any, List
+from typing import Any
+from typing import List
 
 from asme.core.init.factories import BuildContext
-from asme.data.datasets.processors.processor import Processor
-from asme.data.datasets.sequence import ItemSessionParser, ItemSequenceDataset
+from asme.core.init.factories.data_sources.datasets.dataset_factory import DatasetFactory
 from asme.core.init.factories.data_sources.datasets.plain_session import PlainSessionDatasetFactory
 from asme.core.init.factories.util import require_config_field_equal
-from asme.core.init.object_factory import CanBuildResult, CanBuildResultType
-from asme.core.init.factories.data_sources.datasets.dataset_factory import DatasetFactory
+from asme.core.init.object_factory import CanBuildResult
+from asme.core.init.object_factory import CanBuildResultType
+from asme.data.datasets.processors.processor import Processor
+from asme.data.datasets.sequence import ItemSequenceDataset
+from asme.data.datasets.sequence import ItemSessionParser
 
 
 class ItemSessionDatasetFactory(DatasetFactory):

@@ -3,8 +3,10 @@ from dataclasses import dataclass
 from typing import Optional, Any, List, Callable, Dict
 
 from asme.core.init.context import Context
+from asme.core.init.factories.features.vector_dictionary_factory import DICTIONARIES_PREFIX
 from asme.core.init.factories.modules import TOKENIZER_SUFFIX, VOCAB_SIZE_SUFFIX
 from asme.core.tokenization.tokenizer import Tokenizer
+from asme.core.tokenization.item_dictionary import ItemDictionary
 
 
 @dataclass
@@ -44,6 +46,14 @@ def get_tokenizers_from_context(context: Context) -> Dict[str, Tokenizer]:
             tokenizers[key.replace(TOKENIZER_SUFFIX, '')] = item
 
     return tokenizers
+
+def get_dictionaries_from_context(context: Context) -> Dict[str, ItemDictionary]:
+    dictionaries = {}
+    for key, item in context.as_dict().items():
+        if isinstance(item, ItemDictionary):
+            dictionaries[key.replace(DICTIONARIES_PREFIX+".", '')] = item
+
+    return dictionaries
 
 
 def get_config_required_config_params(parameters: List[ParameterInfo]) -> List[str]:

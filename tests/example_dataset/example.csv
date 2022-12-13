@@ -1,4 +1,4 @@
-session_id	item_id	user_id	attr_one
+session_id	item_id	user_id attr_one
 1	Item 1	1	attr_value_1
 1	Item 14	1	attr_value_2
 1	Item 12	1	attr_value_0

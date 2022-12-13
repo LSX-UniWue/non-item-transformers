@@ -123,7 +123,7 @@ class Movielens1MConverter(CsvConverter):
             by=[Movielens1MConverter.RATING_USER_COLUMN_NAME, Movielens1MConverter.RATING_TIMESTAMP_COLUMN_NAME])
 
         os.makedirs(output_file.parent, exist_ok=True)
-
+        merged_df["user_all"] = merged_df["gender"].astype(str)+"|"+merged_df["age"].astype(str)+"age|"+merged_df["occupation"].astype(str)+"occupation"
         merged_df.to_csv(output_file, sep=self.delimiter, index=False)
 
 

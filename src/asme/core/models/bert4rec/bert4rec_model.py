@@ -30,13 +30,14 @@ class BERT4RecModel(TransformerEncoderModel):
                  transformer_dropout: float,
                  project_layer_type: str = 'transpose_embedding',
                  embedding_pooling_type: str = None,
+                 positional_embedding: bool = True,
                  initializer_range: float = 0.02,
                  transformer_intermediate_size: int = None,
                  transformer_attention_dropout: float = None,
                  ):
         modification_layer = FFNSequenceRepresentationModifierComponent(transformer_hidden_size)
         embedding_layer = TransformerEmbedding(item_vocab_size, max_seq_length, transformer_hidden_size,
-                                               transformer_dropout, embedding_pooling_type)
+                                               transformer_dropout, positional_embedding, embedding_pooling_type)
         projection_layer = build_projection_layer(project_layer_type, transformer_hidden_size, item_vocab_size,
                                                   embedding_layer.item_embedding.embedding)
         super().__init__(

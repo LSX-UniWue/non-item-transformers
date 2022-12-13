@@ -1,44 +1,21 @@
 import copy
-import datetime
-import functools
 import io
 import random
-from typing import Dict, List, Any, Callable, Optional
+from dataclasses import dataclass, field
+from typing import Dict, List, Any, Optional, Callable
 import csv
 
-from dataclasses import dataclass, field
+from torch.utils.data import Dataset
 
 from asme.core.tokenization.tokenizer import Tokenizer
-from torch.utils.data import Dataset
+from asme.core.tokenization.item_dictionary import ItemDictionary
 
 from asme.data.base.reader import CsvDatasetReader
 from asme.data.datasets import SAMPLE_IDS
 from asme.data.datasets.processors.processor import Processor
 from asme.data.example_logging import ExampleLogger, Example
 from asme.data.multi_processing import MultiProcessSupport
-
-
-def _parse_boolean(text: str
-                   ) -> bool:
-    return text == 'True'
-
-
-def _parse_timestamp(text: str,
-                     date_format: str
-                     ) -> datetime.datetime:
-    return datetime.datetime.strptime(text, date_format)
-
-
-def _parse_list(text: str,
-                converter: Callable[[str],Any],
-                delimiter: str) -> List[str]:
-    return list(map(converter, text.split(sep=delimiter)))
-
-
-def _identity(text: str
-              ) -> str:
-    return text
-
+from asme.data.utils.converter_utils import build_converter
 
 @dataclass
 class MetaInformation:
@@ -52,37 +29,17 @@ class MetaInformation:
     is_generated: bool = False  # True iff the feature will be generated based on other features
     column_name: Optional[str] = None
     configs: Dict[str, Any] = field(default_factory=dict)
+    dictionary: Optional[ItemDictionary] = None
 
     def get_config(self, config_key: str) -> Optional[Any]:
         return self.configs.get(config_key, None)
 
 
-# TODO: move to provider utils?
-def _build_converter(info: MetaInformation
-                     ) -> Callable[[str], Any]:
+def build_converter_from_metainformation(info: MetaInformation
+                                         ) -> Callable[[str], Any]:
     feature_type = info.type
-    if feature_type == 'int':
-        return int
-
-    if feature_type == 'str':
-        return _identity
-
-    if feature_type == 'bool':
-        return _parse_boolean
-
-    if feature_type == 'timestamp':
-        return functools.partial(_parse_timestamp, date_format=info.get_config('format'))
-
-    if feature_type == 'list':
-        element_type = info.get_config("element_type")
-        delimiter = info.get_config('delimiter')
-        element_info = copy.deepcopy(info)
-        element_info.type = element_type
-        converter = _build_converter(element_info)
-        return functools.partial(_parse_list, delimiter=delimiter, converter=converter)
-
-    raise KeyError(f'{feature_type} not supported. Currently only bool, timestamp and int are supported. '
-                   f'See documentation for more details')
+    configs = info.configs
+    return build_converter(feature_type, configs)
 
 
 class SequenceParser:
@@ -118,6 +75,7 @@ class ItemSessionParser(SequenceParser):
                 feature = [self._get_feature(entry, feature_column_name, meta_info) for entry in entries]
             else:
                 feature = self._get_feature(entries[0], feature_column_name, meta_info)
+
             parsed_data[feature_key] = feature
 
         return parsed_data
@@ -127,7 +85,7 @@ class ItemSessionParser(SequenceParser):
                      feature_key: str,
                      info: MetaInformation
                      ) -> Any:
-        converter = _build_converter(info)
+        converter = build_converter_from_metainformation(info)
         feature_idx = self._indexed_headers[feature_key]
         return converter(entry[feature_idx])
 

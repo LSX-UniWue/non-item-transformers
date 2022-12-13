@@ -23,16 +23,19 @@ class TransformerEmbedding(SequenceElementsRepresentationLayer):
                  max_seq_len: int,
                  embedding_size: int,
                  dropout: float,
+                 positional_embedding: bool = True,
                  embedding_pooling_type: str = None,
                  norm_embedding: bool = True):
         super().__init__()
 
         self.embedding_size = embedding_size
+        self.positional_embedding_active = positional_embedding
 
         self.item_embedding = SequenceElementsEmbeddingLayer(item_voc_size=item_voc_size,
                                                              embedding_size=embedding_size,
                                                              embedding_pooling_type=embedding_pooling_type)
-        self.position_embedding = nn.Embedding(max_seq_len, self.embedding_size)
+        if self.positional_embedding_active:
+            self.position_embedding = nn.Embedding(max_seq_len, self.embedding_size)
         self.embedding_norm = nn.LayerNorm(self.embedding_size) if norm_embedding else nn.Identity()
         self.dropout = nn.Dropout(p=dropout)
 
@@ -60,13 +63,16 @@ class TransformerEmbedding(SequenceElementsRepresentationLayer):
         seq_tensor = sequence.sequence
 
         # generate the position ids if not provided
-        if not sequence.has_attribute("position_ids"):
-            position_ids = generate_position_ids(seq_tensor.size(), device=seq_tensor.device)
-        else:
-            position_ids = sequence.has_attribute("position_ids")
+        if self.positional_embedding_active:
+            if not sequence.has_attribute("position_ids"):
+                position_ids = generate_position_ids(seq_tensor.size(), device=seq_tensor.device)
+            else:
+                position_ids = sequence.has_attribute("position_ids")
 
         seq_tensor = self.item_embedding(seq_tensor)
-        seq_tensor = seq_tensor + self.position_embedding(position_ids)
+
+        if self.positional_embedding_active:
+            seq_tensor = seq_tensor + self.position_embedding(position_ids)
         seq_tensor = self.embedding_norm(seq_tensor)
 
         seq_tensor = self.dropout(seq_tensor)
