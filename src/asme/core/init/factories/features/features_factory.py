@@ -15,7 +15,7 @@ from asme.data.datasets.sequence import MetaInformation
 
 class MetaInformationFactory(ObjectFactory):
     """
-    Builds a single meta information containing the required informations of the feature for later
+    Builds a single meta information containing the required information of the feature for later
     parsing, padding,
     """
     KEY = "meta_information"

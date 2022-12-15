@@ -10,22 +10,15 @@ Welcome to The-Jane-Doe-Framework's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   user_guide
    project_overview
+   user_guide
    hyperparameter_search
    developer_guide
    configuration
    formats/vocabulary_file
-   dataset/dataset_cli
+   formats/popularity_file
+   formats/train_file
    dataset/indices
-   dataset/refactoring_notes_dataset_cli
-   configuration/datasources
-   configuration/module
-   configuration/tokenizer
-   configuration/trainer
-
-
-
 
 Indices and tables
 ==================

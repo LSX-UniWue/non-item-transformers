@@ -1,8 +1,10 @@
+.. _hyperparameter_search:
+
 Hyperparameter Search
 =====================
 
 We use Optuna to optimize the hyperparameters of the models in the
-framework. Optional you can use MLFlow to track your current parameter
+framework. Optionally, you can use MLFlow to track your current parameter
 search.
 
 1. Step: Setup Infrastructure
