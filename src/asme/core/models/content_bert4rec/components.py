@@ -273,7 +273,7 @@ class PrependedTransformerSequenceRepresentationComponent(SequenceRepresentation
         sequence_length = sequence.size()[1]
 
         if padding_mask is not None:
-            if len(self.user_attributes):
+            if self.user_attributes is not None:
                 pad_user = torch.ones((padding_mask.shape[0], 1), device=sequence.device)
                 padding_mask = torch.cat([pad_user, padding_mask], dim=1)
 

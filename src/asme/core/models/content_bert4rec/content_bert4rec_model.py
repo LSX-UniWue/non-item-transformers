@@ -54,10 +54,9 @@ class ContentBERT4RecModel(SequenceRecommenderModel):
         self.add_keys_to_metadata(sequence_attributes, self.item_metadata_keys)
         self.add_keys_to_metadata(sequence_attributes, self.sequence_metadata_keys)
 
-
-        prefusion_attributes = item_attributes.get(prefusion, None)
-        postfusion_attributes = item_attributes.get(postfusion, None)
-        prepend_attributes = sequence_attributes.get(sequence_prepend, None)
+        prefusion_attributes = None if item_attributes is None else item_attributes.get(prefusion, None)
+        postfusion_attributes = None if item_attributes is None else item_attributes.get(postfusion, None)
+        prepend_attributes = None if sequence_attributes is None else sequence_attributes.get(sequence_prepend, None)
 
         # embedding will be normed and dropout after all embeddings are added to the representation
         sequence_embedding = TransformerEmbedding(len(item_tokenizer), max_seq_length, transformer_hidden_size, 0.0,

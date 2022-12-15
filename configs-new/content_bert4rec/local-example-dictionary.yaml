@@ -28,8 +28,8 @@ datamodule:
         - type: "target_extractor"
         - type: "last_item_mask"
   preprocessing:
-    input_file_path: "/Users/lisa/recommender/example_data/example.csv"
-    output_directory: "/Users/lisa/recommender/example_data/"
+    input_file_path: "/Users/lisa/recommender/tests/example_dataset/example.csv"
+    output_directory: "/Users/lisa/recommender/tests/example_dataset"
 templates:
   unified_output:
     path: "/Users/lisa/recommender/tmp/example/kebert4rec"
