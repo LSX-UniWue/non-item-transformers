@@ -43,13 +43,17 @@ The following models and corresponding parameters are implemented:
 |              | transformer_intermediate_size (optional),  |
 |              | transformer_attention_dropout (optional)   |
 +--------------+--------------------------------------------+
-| kebert4rec   | transformer_hidden_size,                   |
-|              | num_transformer_heads,                     |
+| content-     | transformer_hidden_size,                   |
+| bert4rec     | num_transformer_heads,                     |
 |              | num_transformer_layers,                    |
 |              | item_vocab_size,                           |
 |              | max_seq_length,                            |
 |              | transformer_dropout,                       |
-|              | additional_attributes,                     |
+|              | item_attributes (optional),                |
+|              | sequence_attributes (optional),            |
+|              | vector_dictionaries (optional),            |
+|              | positional_embedding (optional),           |
+|              | segment_embedding (optional),              |
 |              | embedding_pooling_type (optional),         |
 |              | initializer_range (optional),              |
 |              | transformer_intermediate_size (optional),  |
@@ -82,6 +86,34 @@ The following models and corresponding parameters are implemented:
 |              | max_seq_length,                            |
 |              | transformer_dropout,                       |
 |              | embedding_pooling_type (optional),         |
+|              | transformer_intermediate_size (optional),  |
+|              | transformer_attention_dropout (optional)   |
++--------------+--------------------------------------------+
+| sasrec-cross | transformer_hidden_size,                   |
+|              | num_transformer_heads,                     |
+|              | num_transformer_layers,                    |
+|              | item_vocab_size,                           |
+|              | max_seq_length,                            |
+|              | transformer_dropout,                       |
+|              | mode = "full",                             |
+|              | embedding_pooling_type (optional),         |
+|              | transformer_intermediate_size (optional),  |
+|              | transformer_attention_dropout (optional)   |
++--------------+--------------------------------------------+
+| sasrec-      | transformer_hidden_size,                   |
+| bert4rec     | num_transformer_heads,                     |
+|              | num_transformer_layers,                    |
+|              | item_vocab_size,                           |
+|              | max_seq_length,                            |
+|              | transformer_dropout,                       |
+|              | mode = "full",                             |
+|              | item_attributes (optional),                |
+|              | sequence_attributes (optional),            |
+|              | vector_dictionaries (optional),            |
+|              | positional_embedding (optional),           |
+|              | segment_embedding (optional),              |
+|              | embedding_pooling_type (optional),         |
+|              | initializer_range (optional),              |
 |              | transformer_intermediate_size (optional),  |
 |              | transformer_attention_dropout (optional)   |
 +--------------+--------------------------------------------+
