@@ -7,8 +7,9 @@ from asme.core.init.factories.common.conditional_based_factory import Conditiona
 from asme.core.init.factories.common.dependencies_factory import DependenciesFactory
 from asme.core.init.factories.data_sources.datamodule import DataModuleFactory
 from asme.core.init.factories.features.features_factory import FeaturesFactory
+from asme.core.init.factories.features.special_values_feature_factory import SPECIAL_VALUES_PREFIX
 from asme.core.init.factories.features.tokenizer_factory import TOKENIZERS_PREFIX
-from asme.core.init.factories.features.vector_dictionary_factory import DICTIONARIES_PREFIX
+from asme.core.init.factories.features.item_dictionary_factory import DICTIONARIES_PREFIX
 from asme.core.init.factories.include.import_factory import ImportFactory
 from asme.core.init.factories.trainer import TrainerBuilderFactory
 from asme.core.init.factories.evaluation.evaluation import EvaluationFactory
@@ -80,8 +81,8 @@ class ContainerFactory(ObjectFactory):
             for info in meta_information:
                 if info.tokenizer is not None:
                     build_context.get_context().set([TOKENIZERS_PREFIX, info.feature_name], info.tokenizer)
-                if info.dictionary is not None:
-                    build_context.get_context().set([DICTIONARIES_PREFIX, info.feature_name], info.dictionary)
+                if info.special_values is not None:
+                    build_context.get_context().set([SPECIAL_VALUES_PREFIX, info.feature_name], info.special_values)
 
         build_with_subsection(self.features_factory, build_context, build_metainformation)
 

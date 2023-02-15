@@ -10,7 +10,7 @@ from asme.core.models.common.layers.transformer_layers import TransformerEmbeddi
 from asme.core.models.content_bert4rec.layers import LinearUpscaler
 from torch import nn
 
-from asme.core.tokenization.item_dictionary import ItemDictionary
+from asme.core.tokenization.item_dictionary import SpecialValues
 from asme.core.utils.hyperparameter_utils import save_hyperparameters
 from asme.data.datasets.processors.tokenizer import Tokenizer
 
@@ -62,7 +62,7 @@ class ContextSequenceElementsRepresentationComponent(SequenceElementsRepresentat
                  prefusion_attributes: Dict[str, Dict[str, Any]],
                  sequence_attributes: Dict[str, Dict[str, Any]],
                  attribute_tokenizers: Dict[str, Tokenizer],
-                 vector_dictionaries: Dict[str, ItemDictionary],
+                 vector_dictionaries: Dict[str, SpecialValues],
                  dropout: float = 0.0,
                  segment_embedding_active: bool = False
                  ):
@@ -106,7 +106,7 @@ class ContextSequenceElementsRepresentationComponent(SequenceElementsRepresentat
                     vocab_size=vocab_size,
                     hidden_size=transformer_hidden_size)
             elif embedding == "vector":
-                vector_dict = vector_dictionaries[attribute_name]
+                vector_dict = vector_dictionaries["special_values."+attribute_name]
                 default = vector_dict.unk_value
                 attribute_embeddings[attribute_name] = ContentVectorMaskAndScale(len(default),
                                                                                  transformer_hidden_size,
@@ -172,7 +172,7 @@ class ContextSequenceRepresentationModifierComponent(SequenceRepresentationModif
                  postfusion_attributes: Dict[str, Dict[str, Any]],
                  sequence_attributes: Dict[str, Dict[str, Any]],
                  attribute_tokenizers: Dict[str, Tokenizer],
-                 vector_dictionaries: Dict[str, ItemDictionary],
+                 vector_dictionaries: Dict[str, SpecialValues],
                  use_transform_layer: bool = True
                  ):
         super().__init__()
@@ -193,7 +193,7 @@ class ContextSequenceRepresentationModifierComponent(SequenceRepresentationModif
                         vocab_size=vocab_size,
                         hidden_size=feature_size)
                 elif embedding == "vector":
-                    vector_dict = vector_dictionaries[attribute_name]
+                    vector_dict = vector_dictionaries["special_values."+attribute_name]
                     default = vector_dict.unk_value
                     postfusion_attribute_embeddings[attribute_name] = ContentVectorMaskAndScale(len(default),
                                                                                                 feature_size,

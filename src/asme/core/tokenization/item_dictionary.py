@@ -3,29 +3,21 @@ from typing import Dict, Any, Optional
 import pandas as pd
 import csv
 
+from asme.core.tokenization.special_values import SpecialValues
 from asme.data.utils.converter_utils import build_converter
 
 
 
-class ItemDictionary:
+class SpecialValues(SpecialValues):
     """
     TODO: add docu
     """
 
-    def __init__(self,
-                 dict_path: str,
-                 type: str,
-                 delimiter: str,
-                 element_type: str,
-                 pad_value: str,
-                 mask_value: str,
-                 unk_value: str,
-                 ):
-        super().__init__()
+    def __init__(self, dict_path: str, type: str, delimiter: str, element_type: str, pad_value: str, mask_value: str,
+                 unk_value: str):
+        super().__init__(type=type, element_type=element_type)
         self.path = dict_path
         self.delimiter = delimiter
-        self.type = type
-        self.element_type = element_type
 
         configs = {"element_type": self.element_type}
         converter = build_converter(self.type, configs)

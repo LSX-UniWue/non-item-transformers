@@ -1,6 +1,7 @@
 from typing import Dict, Any, List
 
-from asme.core.tokenization.item_dictionary import ItemDictionary
+from asme.core.tokenization.item_dictionary import SpecialValues
+from asme.core.tokenization.special_values import SpecialValues
 from asme.data.datasets import ITEM_SEQ_ENTRY_NAME
 from asme.data.datasets.processors.processor import Processor
 from asme.core.tokenization.tokenizer import Tokenizer
@@ -23,7 +24,7 @@ class LastItemMaskProcessor(Processor):
 
     def __init__(self,
                  tokenizers: Dict[str, Tokenizer],
-                 dictionaries: Dict[str, ItemDictionary],
+                 special_values: Dict[str, SpecialValues],
                  masking_targets: List[str] = None
                  ):
         super().__init__()
@@ -32,7 +33,7 @@ class LastItemMaskProcessor(Processor):
             masking_targets = [ITEM_SEQ_ENTRY_NAME]
 
         self.tokenizers = tokenizers
-        self.vector_dictionary = dictionaries
+        self.special_values = special_values
         self.masking_targets = masking_targets
 
     def process(self,
@@ -41,7 +42,7 @@ class LastItemMaskProcessor(Processor):
 
         for target in self.masking_targets:
             sequence = parsed_sequence[target]
-            mask_token = get_mask_value(self.tokenizers, self.vector_dictionary, target, sequence)
+            mask_token = get_mask_value(self.tokenizers, self.special_values, target, sequence)
             sequence.append(mask_token)
 
         return parsed_sequence

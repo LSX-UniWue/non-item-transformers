@@ -1,13 +1,13 @@
 from typing import Dict, Any
 
-from asme.core.tokenization.item_dictionary import ItemDictionary
+from asme.core.tokenization.item_dictionary import SpecialValues
 from asme.data.datasets.processors.processor import Processor
 
 
 class InputDictionaryProcessor(Processor):
 
     def __init__(self,
-                 dictionary_map: Dict[str, ItemDictionary]
+                 dictionary_map: Dict[str, SpecialValues]
                  ):
         super().__init__()
         self.item_dictionary = dictionary_map

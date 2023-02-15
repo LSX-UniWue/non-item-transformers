@@ -1,15 +1,16 @@
 from typing import Dict, Union, List
 
 import torch
+
+from asme.core.init.factories.features.special_values_feature_factory import get_dict_key_for_attribute
 from asme.core.init.factories.features.tokenizer_factory import ITEM_TOKENIZER_ID, get_tokenizer_key_for_voc
-from asme.core.init.factories.features.vector_dictionary_factory import get_dict_key_for_attribute
 from asme.core.tokenization.tokenizer import Tokenizer
-from asme.core.tokenization.item_dictionary import ItemDictionary
+from asme.core.tokenization.item_dictionary import SpecialValues
 from asme.data.datasets import ITEM_SEQ_ENTRY_NAME
 
 
 def get_mask_value(tokenizers: Dict[str, Tokenizer],
-                   dictionaries: Dict[str, ItemDictionary],
+                   special_values: Dict[str, SpecialValues],
                    target: str,
                    sequence: Union[List[int], List[List[int]]]
                    ) -> Union[int, List[int]]:
@@ -17,13 +18,9 @@ def get_mask_value(tokenizers: Dict[str, Tokenizer],
     if tokenizer is not None:
         mask_value = tokenizer.mask_token_id
         return [mask_value] if isinstance(sequence[0], list) else mask_value
-    dictionary = dictionaries.get(get_dict_key_for_attribute(target), None)
-    if dictionary is not None:
-        mask_value = dictionary.mask_value
-        return mask_value
-
-
-
+    special_values = special_values.get(get_dict_key_for_attribute(target), None)
+    if special_values is not None:
+        return special_values.get_mask_value()
 
 def get_tokenizer(tokenizers: Dict[str, Tokenizer],
                   target: str

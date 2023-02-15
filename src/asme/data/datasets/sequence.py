@@ -7,8 +7,9 @@ import csv
 
 from torch.utils.data import Dataset
 
+from asme.core.tokenization.special_values import SpecialValues
 from asme.core.tokenization.tokenizer import Tokenizer
-from asme.core.tokenization.item_dictionary import ItemDictionary
+from asme.core.tokenization.item_dictionary import SpecialValues
 
 from asme.data.base.reader import CsvDatasetReader
 from asme.data.datasets import SAMPLE_IDS
@@ -29,11 +30,11 @@ class MetaInformation:
     is_generated: bool = False  # True iff the feature will be generated based on other features
     column_name: Optional[str] = None
     configs: Dict[str, Any] = field(default_factory=dict)
-    dictionary: Optional[ItemDictionary] = None
+    dictionary: Optional[SpecialValues] = None
+    special_values: Optional[SpecialValues] = None
 
     def get_config(self, config_key: str) -> Optional[Any]:
         return self.configs.get(config_key, None)
-
 
 def build_converter_from_metainformation(info: MetaInformation
                                          ) -> Callable[[str], Any]:
