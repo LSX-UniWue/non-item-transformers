@@ -1,6 +1,4 @@
-import ast, json
-from typing import Dict, Any, Optional
-import pandas as pd
+from typing import Dict, Any
 import csv
 
 from asme.core.tokenization.special_values import SpecialValues
@@ -8,7 +6,7 @@ from asme.data.utils.converter_utils import build_converter
 
 
 
-class SpecialValues(SpecialValues):
+class ItemDictionary(SpecialValues):
     """
     TODO: add docu
     """

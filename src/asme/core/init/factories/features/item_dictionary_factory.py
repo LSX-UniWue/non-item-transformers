@@ -4,8 +4,7 @@ from asme.core.init.factories import BuildContext
 
 from asme.core.init.factories.util import require_config_keys
 from asme.core.init.object_factory import ObjectFactory, CanBuildResult
-from asme.core.tokenization.item_dictionary import SpecialValues
-
+from asme.core.tokenization.item_dictionary import SpecialValues, ItemDictionary
 
 
 class ItemDictionaryFactory(ObjectFactory):
@@ -20,7 +19,7 @@ class ItemDictionaryFactory(ObjectFactory):
     def can_build(self, build_context: BuildContext) -> CanBuildResult:
         return require_config_keys(build_context.get_current_config_section(), self.REQUIRED_KEYS)
 
-    def build(self, build_context: BuildContext) -> SpecialValues:
+    def build(self, build_context: BuildContext) -> ItemDictionary:
 
         config = build_context.get_current_config_section()
 
@@ -32,7 +31,7 @@ class ItemDictionaryFactory(ObjectFactory):
         unk_value = config.get_or_default("unk_value", "average")
         mask_value = config.get_or_default("mask_value", "average")
 
-        return SpecialValues(dict_path=dict_path, delimiter=delimiter, type=type, pad_value=pad_value,
+        return ItemDictionary(dict_path=dict_path, delimiter=delimiter, type=type, pad_value=pad_value,
                              mask_value=mask_value, unk_value=unk_value, element_type=element_type)
 
 

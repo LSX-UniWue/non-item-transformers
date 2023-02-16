@@ -40,6 +40,7 @@ class MetaInformationFactory(ObjectFactory):
         context = build_context.get_context()
         feature_name = config.base_path[-1]
         feature_type = config.get_or_default('type', 'str')
+        element_feature_type = config.get_or_default('element_type', None)
         feature_is_sequence = config.get_or_default('sequence', True)
         column_name = config.get('column_name')
         sequence_length = config.get('sequence_length')
@@ -64,8 +65,9 @@ class MetaInformationFactory(ObjectFactory):
             special_values = dictionary
 
         if special_values_config:
+            config.set_if_absent("special_values.type", feature_type)
+            config.set_if_absent("special_values.element_type", element_feature_type)
             special_values = build_with_subsection(self._dependencies, build_context)["special_values"]
-
 
         for key in config.get_keys():
             if key not in self.CONFIG_KEYS:

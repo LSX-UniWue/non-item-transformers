@@ -18,9 +18,9 @@ def get_mask_value(tokenizers: Dict[str, Tokenizer],
     if tokenizer is not None:
         mask_value = tokenizer.mask_token_id
         return [mask_value] if isinstance(sequence[0], list) else mask_value
-    special_values = special_values.get(get_dict_key_for_attribute(target), None)
-    if special_values is not None:
-        return special_values.get_mask_value()
+    special_value = special_values.get(get_dict_key_for_attribute(target), None)
+    if special_value is not None:
+        return special_value.get_mask_value()
 
 def get_tokenizer(tokenizers: Dict[str, Tokenizer],
                   target: str
