@@ -88,7 +88,12 @@ class ItemSessionParser(SequenceParser):
                      ) -> Any:
         converter = build_converter_from_metainformation(info)
         feature_idx = self._indexed_headers[feature_key]
-        return converter(entry[feature_idx])
+        try:
+            return converter(entry[feature_idx])
+        except IndexError:
+            raise IndexError(
+                f"List {entry} index out of range. Trying to access list index {feature_idx} for feature_key {feature_key}.")
+
 
 
 class PlainSequenceDataset(Dataset, MultiProcessSupport):

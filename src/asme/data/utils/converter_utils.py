@@ -33,7 +33,7 @@ def build_converter(feature_type: str,
         converter = build_converter(element_type, configs)
         return functools.partial(_parse_pd_array, converter=converter)
 
-    raise KeyError(f'{feature_type} not supported. Currently only bool, timestamp and int are supported. '
+    raise KeyError(f'{feature_type} not supported. Currently bool, str, float, timestamp, int, pd.array and list are supported. '
                    f'See documentation for more details')
 
 
