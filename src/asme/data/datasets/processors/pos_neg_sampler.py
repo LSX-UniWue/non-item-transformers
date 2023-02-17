@@ -6,7 +6,8 @@ from asme.data.datasets.sequence import MetaInformation
 from asme.core.init.factories.features.tokenizer_factory import get_tokenizer_key_for_voc, \
     ITEM_TOKENIZER_ID
 
-from asme.data.datasets import ITEM_SEQ_ENTRY_NAME, SAMPLE_IDS, POSITIVE_SAMPLES_ENTRY_NAME, NEGATIVE_SAMPLES_ENTRY_NAME
+from asme.data.datasets import ITEM_SEQ_ENTRY_NAME, SAMPLE_IDS, POSITIVE_SAMPLES_ENTRY_NAME, \
+    NEGATIVE_SAMPLES_ENTRY_NAME, KEY_DELIMITER
 from asme.data.datasets.processors.processor import Processor
 from asme.core.tokenization.tokenizer import Tokenizer
 
@@ -99,16 +100,15 @@ class PositiveNegativeSamplerProcessor(Processor):
         pos = sequence[1:]
         neg = self._sample_negative_target(sequence, self.tokenizers[get_tokenizer_key_for_voc(ITEM_TOKENIZER_ID)])
 
-        parsed_sequence[ITEM_SEQ_ENTRY_NAME] = x
-        parsed_sequence[POSITIVE_SAMPLES_ENTRY_NAME] = pos
-        parsed_sequence[NEGATIVE_SAMPLES_ENTRY_NAME] = neg
-
-
         for key in list(parsed_sequence.keys()):
             value = parsed_sequence[key]
             if key != ITEM_SEQ_ENTRY_NAME and isinstance(value, list) and self.is_sequence(key):
                 tokenizer = self.tokenizers[get_tokenizer_key_for_voc(key)]
                 parsed_sequence[key] = parsed_sequence[key][:-1]
-                parsed_sequence[POSITIVE_SAMPLES_ENTRY_NAME+"."+key] = value[1:]
-                parsed_sequence[NEGATIVE_SAMPLES_ENTRY_NAME+"."+key] = self._sample_negative_target(value, tokenizer)
+                parsed_sequence[POSITIVE_SAMPLES_ENTRY_NAME+KEY_DELIMITER+key] = value[1:]
+                parsed_sequence[NEGATIVE_SAMPLES_ENTRY_NAME+KEY_DELIMITER+key] = self._sample_negative_target(value, tokenizer)
+
+        parsed_sequence[ITEM_SEQ_ENTRY_NAME] = x
+        parsed_sequence[POSITIVE_SAMPLES_ENTRY_NAME] = pos
+        parsed_sequence[NEGATIVE_SAMPLES_ENTRY_NAME] = neg
         return parsed_sequence
