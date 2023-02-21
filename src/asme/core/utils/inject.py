@@ -10,6 +10,7 @@ from dataclasses_json import dataclass_json
 from asme.core.init.config import Config
 from asme.core.init.context import Context
 from asme.core.init.factories import GLOBAL_ASME_INJECTION_CONTEXT, BuildContext
+from asme.core.init.factories.features.special_values_feature_factory import get_special_value_key_for_attribute
 from asme.core.init.factories.features.tokenizer_factory import get_tokenizer_key_for_voc
 from asme.core.init.factories.modules.modules import GenericModelFactory
 from asme.core.init.factories.modules.util import ParameterInfo, get_init_parameters, get_tokenizers_from_context, \
@@ -25,6 +26,9 @@ class InjectTokenizer(Inject):
     def __init__(self, feature_name: str):
         self.feature_name = feature_name
 
+class InjectSpecialValue(Inject):
+    def __init__(self, feature_name: str):
+        self.feature_name = feature_name
 
 class InjectTokenizers(Inject):
     pass
@@ -185,7 +189,6 @@ def _handle_injects(injectable_parameters: List[ParameterInfo],
         if isinstance(inject, InjectTokenizer):
             tokenizer_to_use = inject.feature_name
             tokenizer = context.get(get_tokenizer_key_for_voc(tokenizer_to_use))
-
             if tokenizer is None:
                 if injectable_parameter.default_value == inspect._empty:
                     raise KeyError(f'No tokenizer with id "{tokenizer_to_use}" configured and no default value set.')
@@ -195,6 +198,15 @@ def _handle_injects(injectable_parameters: List[ParameterInfo],
         elif isinstance(inject, InjectTokenizers):
             tokenizers = get_tokenizers_from_context(context)
             parameter_dict[injectable_parameter.parameter_name] = tokenizers
+        elif isinstance(inject, InjectSpecialValue):
+            special_value_to_use = inject.feature_name
+            special_value_to_use = context.get(get_special_value_key_for_attribute(special_value_to_use))
+            if special_value_to_use is None:
+                if injectable_parameter.default_value == inspect._empty:
+                    raise KeyError(f'No special value with id "{special_value_to_use}" configured and no default value set.')
+                else:
+                    special_value_to_use = injectable_parameter.default_value
+            parameter_dict[injectable_parameter.parameter_name] = special_value_to_use
         elif isinstance(inject, InjectDictionaries):
             dictionaries = get_dictionaries_from_context(context)
             parameter_dict[injectable_parameter.parameter_name] = dictionaries
