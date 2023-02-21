@@ -44,5 +44,5 @@ class SpecialValuesFeatureFactory(ObjectFactory):
 SPECIAL_VALUES_PREFIX = 'special_values'
 
 
-def get_dict_key_for_attribute(special_value_id: str) -> str:
+def get_special_value_key_for_attribute(special_value_id: str) -> str:
     return f'{SPECIAL_VALUES_PREFIX}.{special_value_id}'
