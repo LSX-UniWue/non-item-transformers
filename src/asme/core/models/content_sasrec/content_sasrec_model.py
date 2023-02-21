@@ -45,8 +45,7 @@ class ContentSASRecModel(SequenceRecommenderModel):
                  segment_embedding: bool = False,
                  embedding_pooling_type: str = None,
                  transformer_intermediate_size: int = None,
-                 transformer_attention_dropout: float = None,
-                 mode: str = "full",
+                 transformer_attention_dropout: float = None
                  ):
 
 
@@ -71,17 +70,7 @@ class ContentSASRecModel(SequenceRecommenderModel):
             positional_embedding=positional_embedding
         )
 
-        self.mode = mode
-
-        if mode == "neg_sampling":
-            #  use positive / negative sampling for training and evaluation as described in the original paper
-            raise Exception(f"{mode} is not supported yet, only <full>")
-        elif mode == "full":
-            # compute a full ranking over all items as necessary with cross-entropy loss
-            projection_layer = LinearProjectionLayer(transformer_hidden_size, len(item_tokenizer))
-        else:
-            raise Exception(f"{mode} is an unknown projection mode. Choose either <full> or <neg_sampling>.")
-
+        projection_layer = LinearProjectionLayer(transformer_hidden_size, len(item_tokenizer))
 
         element_representation = ContextSequenceElementsRepresentationComponent(embedding_layer,
                                                                                 transformer_hidden_size,
