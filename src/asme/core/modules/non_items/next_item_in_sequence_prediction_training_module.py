@@ -185,6 +185,7 @@ class NextItemInSequencePredictionTrainingModule(BaseNextItemPredictionTrainingM
 
 class ItemCategoryMixedLoss(nn.Module):
 
+    @save_hyperparameters
     def __init__(self, item_tokenizer, cat_tokenizer, reduction: str = DEFAULT_REDUCTION):
         super().__init__()
         self.reduction = reduction
