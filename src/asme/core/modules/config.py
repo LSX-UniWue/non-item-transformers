@@ -10,6 +10,7 @@ from asme.core.models.cosrec.cosrec_model import CosRecModel
 from asme.core.models.hgn.hgn_model import HGNModel
 from asme.core.models.content_bert4rec.content_bert4rec_model import ContentBERT4RecModel
 from asme.core.models.narm.narm_model import NarmModel
+from asme.core.models.non_item_sasrec.non_item_sasrec_model import NonItemSASRecModel
 from asme.core.models.rnn.rnn_model import RNNModel
 from asme.core.models.sasrec.sasrec_model import SASRecModel
 from asme.core.models.content_sasrec.content_sasrec_model import ContentSASRecModel
@@ -18,6 +19,8 @@ from asme.core.modules.baselines.markov_module import MarkovModule
 from asme.core.modules.baselines.pop_module import PopModule
 from asme.core.modules.baselines.session_pop_module import SessionPopModule
 from asme.core.modules.masked_training_module import MaskedTrainingModule
+from asme.core.modules.non_items.next_item_in_sequence_prediction_training_module import \
+    NextItemInSequencePredictionTrainingModule
 from asme.core.modules.prepend_content.user_masked_training_module import SequenceContentMaskedTrainingModule
 from asme.core.modules.prepend_content.user_next_item_prediction_training_module import UserNextItemPredictionTrainingModule
 from asme.core.modules.next_item_prediction_training_module import NextItemPredictionTrainingModule, \
@@ -44,6 +47,9 @@ register_module("sasrec-neg", ModuleConfig(GenericModuleFactory, SequenceNextIte
 register_module("content-sasrec-full", ModuleConfig(GenericModuleFactory, UserNextItemPredictionTrainingModule, {
     "model_cls": ContentSASRecModel,
     "loss_function": SASRecFullSequenceCrossEntropyLoss}))
+
+register_module("non-items-sasrec-cross", ModuleConfig(GenericModuleFactory, NextItemInSequencePredictionTrainingModule, {
+    "model_cls": NonItemSASRecModel}))
 
 register_module("sasrec-cross", ModuleConfig(GenericModuleFactory, NextItemPredictionTrainingModule, {
     "model_cls": SASRecModel,
