@@ -2,7 +2,7 @@ from typing import Dict, Union, List
 
 import torch
 
-from asme.core.init.factories.features.special_values_feature_factory import get_dict_key_for_attribute
+from asme.core.init.factories.features.special_values_feature_factory import get_special_value_key_for_attribute
 from asme.core.init.factories.features.tokenizer_factory import ITEM_TOKENIZER_ID, get_tokenizer_key_for_voc
 from asme.core.tokenization.tokenizer import Tokenizer
 from asme.core.tokenization.item_dictionary import SpecialValues
@@ -18,7 +18,7 @@ def get_mask_value(tokenizers: Dict[str, Tokenizer],
     if tokenizer is not None:
         mask_value = tokenizer.mask_token_id
         return [mask_value] if isinstance(sequence[0], list) else mask_value
-    special_value = special_values.get(get_dict_key_for_attribute(target), None)
+    special_value = special_values.get(get_special_value_key_for_attribute(target), None)
     if special_value is not None:
         return special_value.get_mask_value()
 
