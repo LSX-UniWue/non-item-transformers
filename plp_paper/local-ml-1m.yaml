@@ -1,0 +1,89 @@
+datamodule:
+  dataset: "ml-1m"
+  data_sources:
+    num_workers: 4
+    batch_size: 64
+    max_seq_length: 5
+    #mask_probability: 0.2
+    #mask_seed: 42
+    split: "ratio_split"
+    file_prefix: "ml-1m"
+    train:
+      type: "session"
+      processors:
+        - type: "cloze"
+          mask_probability: 0.2
+          only_last_item_mask_prob: 0.1
+    validation:
+      type: "session"
+      processors:
+        - type: "target_extractor"
+        - type: "last_item_mask"
+    test:
+      type: "session"
+      processors:
+        - type: "target_extractor"
+        - type: "last_item_mask"
+  preprocessing:
+    extraction_directory: "/Users/lisa/recommender/datasets/ml-1m/ml-1m/preprocessed"
+    output_directory: "/Users/lisa/recommender/datasets/ml-1m/ml-1m"
+    create_loo: false
+    create_lpo: false
+templates:
+  unified_output:
+    path: "/Users/lisa/recommender/tmp/ml-1m/bert4rec"
+module:
+  type: "bert4rec"
+  metrics:
+    full:
+      metrics:
+        mrr: [1, 5, 10]
+        recall: [1, 5, 10]
+        ndcg: [1, 5, 10]
+  model:
+    max_seq_length: 5
+    num_transformer_heads: 1
+    num_transformer_layers: 1
+    transformer_hidden_size: 4
+    transformer_dropout: 0.2
+features:
+  item:
+    column_name: "title"
+    sequence_length: 5
+    tokenizer:
+      special_tokens:
+        pad_token: "<PAD>"
+        mask_token: "<MASK>"
+        unk_token: "<UNK>"
+      vocabulary:
+        # Inferred by the datamodule
+trainer:
+  loggers:
+    tensorboard:
+    mlflow:
+  checkpoint:
+    monitor: "recall@10"
+    save_top_k: 3
+    mode: 'max'
+  early_stopping:
+    min_delta: 0.001
+    mode: "max"
+    monitor: "recall@10"
+    patience: 100
+  gpus: 0
+  max_epochs: 2
+  check_val_every_n_epoch: 1
+evaluation:
+  evaluators:
+      - type: "sid"
+        use_session_id: false
+      - type: "recommendation"
+      - type: "metrics"
+      - type: "input"
+      - type: "scores"
+      - type: "target"
+  #filter_items:
+  #  file: "/Users/lisa/recommender/configs/selected_items.csv"
+  number_predictions: 5
+  writer:
+    type: "csv-single-line"

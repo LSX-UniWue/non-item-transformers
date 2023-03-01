@@ -31,7 +31,9 @@ templates:
   unified_output:
     path: "/Users/lisa/recommender/tmp/example/kebert4rec"
 module:
-  type: "content-sasrec-full"
+  type: "non-items-sasrec-cross"
+  loss_category: "attr_one"
+  loss_factor: 0.5
   metrics:
     full:
       metrics:
@@ -44,7 +46,11 @@ module:
     num_transformer_layers: 1
     transformer_hidden_size: 4
     transformer_dropout: 0.2
-    mode: "full"
+    loss_category: "attr_one"
+    item_id_type_settings:
+      name: "item_id_type"
+      extra_embbedding: true
+      merge: "add"
     sequence_attributes:
       prepend:
         attr_one:
@@ -61,7 +67,6 @@ module:
           embedding: "vector"
           embedding_type: 'linear_upscale'
           merge_function: "multiply"
-
 features:
   item:
     column_name: "item_id"
@@ -72,17 +77,37 @@ features:
         mask_token: "<MASK>"
         unk_token: "<UNK>"
       vocabulary:
+  np_cat:
+    column_name: "np_cat"
+    sequence_length: 7
+    tokenizer:
+      special_tokens:
+        pad_token: "<PAD>"
+        mask_token: "<MASK>"
+        unk_token: "<UNK>"
+      vocabulary:
+  item_id_type:
+    column_name: "item_id_type"
+    sequence_length: 7
+    type: "int"
+    run_tokenization: false
+    special_values:
+      pad_value: "0"
+      mask_value: "0"
+      unk_value: "0"
   item_map:
     column_name: "item_id"
     sequence_length: 7
     max_sequence_step_length: 2
     run_tokenization: false
     dictionary:
-      dict_path: "/Users/lisa/recommender/example_data/image_vectors.csv"
-      delimiter: ","
       type: "pd.array"
       element_type: "float"
-
+      dict_path: "/Users/lisa/recommender/example_data/image_vectors.csv"
+      delimiter: ","
+      pad_value: "[0.1,0.1]"
+      mask_value: "[0.1,0.1]"
+      unk_value: "[0.1,0.1]"
   attr_one:
     column_name: "attr_one"
     sequence_length: 7
@@ -95,7 +120,6 @@ features:
         pad_token: "<PAD>"
         mask_token: "<MASK>"
         unk_token: "<UNK>"
-      # Inferred by the datamodule
 trainer:
   loggers:
     tensorboard:
