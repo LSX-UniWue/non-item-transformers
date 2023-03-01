@@ -92,8 +92,8 @@ class NextItemInSequencePredictionTrainingModule(BaseNextItemPredictionTrainingM
         overall_loss = self.loss_factor * item_loss + (1 - self.loss_factor) * cat_loss
 
         self.log(LOG_KEY_TRAINING_LOSS, overall_loss)
-        self.log("item_" + LOG_KEY_TRAINING_LOSS, item_loss)
-        self.log("cat_" + LOG_KEY_TRAINING_LOSS, cat_loss)
+        self.log("item_" + LOG_KEY_TRAINING_LOSS, item_loss, prog_bar=True)
+        self.log("cat_" + LOG_KEY_TRAINING_LOSS, cat_loss, prog_bar=True)
         return {
             "loss": overall_loss
         }
@@ -145,8 +145,8 @@ class NextItemInSequencePredictionTrainingModule(BaseNextItemPredictionTrainingM
 
         overall_loss = self.loss_factor * item_loss + (1 - self.loss_factor) * cat_loss
         self.log(LOG_KEY_VALIDATION_LOSS, overall_loss, prog_bar=True)
-        self.log("item_" + LOG_KEY_VALIDATION_LOSS, item_loss)
-        self.log("cat_" + LOG_KEY_VALIDATION_LOSS, cat_loss)
+        self.log("item_" + LOG_KEY_VALIDATION_LOSS, item_loss,prog_bar=True)
+        self.log("cat_" + LOG_KEY_VALIDATION_LOSS, cat_loss,prog_bar=True)
 
         if self.validation_on_item:
             mask = None if len(item_target.size()) == 1 else ~ item_target.eq(self.item_tokenizer.pad_token_id)
