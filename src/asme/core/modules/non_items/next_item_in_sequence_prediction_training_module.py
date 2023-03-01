@@ -36,6 +36,7 @@ class NextItemInSequencePredictionTrainingModule(BaseNextItemPredictionTrainingM
                  weight_decay: float = 0,
                  loss_category: str = None,
                  loss_factor: float = 0.5,
+                 loss_category_epochs: int = None,
                  validation_on_item: bool = True,
                  first_item: bool = False
                  ):
@@ -51,6 +52,7 @@ class NextItemInSequencePredictionTrainingModule(BaseNextItemPredictionTrainingM
         self.cat_tokenizer = cat_tokenizer
         self.loss_factor = loss_factor
         self.validation_on_item = validation_on_item
+        self.loss_category_epochs = loss_category_epochs
 
     def forward(self,
                 batch: Dict[str, torch.Tensor],
@@ -59,6 +61,11 @@ class NextItemInSequencePredictionTrainingModule(BaseNextItemPredictionTrainingM
         input_data = build_model_input(self.model, self.item_tokenizer, batch)
         # call the model
         return self.model(input_data)
+
+
+    def on_train_epoch_start(self):
+        if self.loss_category_epochs is not None and self.current_epoch >= self.loss_category_epochs:
+            self.loss_factor = 1
 
     def training_step(self,
                       batch: Dict[str, torch.Tensor],
@@ -89,14 +96,18 @@ class NextItemInSequencePredictionTrainingModule(BaseNextItemPredictionTrainingM
         item_loss = self.loss.item_forward(item_target, item_logits)
         cat_loss = self.loss.cat_forward(cat_target, cat_logits)
 
-        overall_loss = self.loss_factor * item_loss + (1 - self.loss_factor) * cat_loss
+        overall_loss = self.combine_losses(cat_loss, item_loss)
 
         self.log(LOG_KEY_TRAINING_LOSS, overall_loss)
+        self.log("unsmoothed_" + LOG_KEY_TRAINING_LOSS, overall_loss, prog_bar=True)
         self.log("item_" + LOG_KEY_TRAINING_LOSS, item_loss, prog_bar=True)
         self.log("cat_" + LOG_KEY_TRAINING_LOSS, cat_loss, prog_bar=True)
         return {
             "loss": overall_loss
         }
+
+    def combine_losses(self, cat_loss, item_loss):
+        return item_loss + (1 - self.loss_factor) * cat_loss
 
     def predict_step(self,
                      batch: Dict[str, torch.Tensor],
@@ -143,8 +154,9 @@ class NextItemInSequencePredictionTrainingModule(BaseNextItemPredictionTrainingM
         item_loss = self.loss.item_forward(item_target, item_target_logits)
         cat_loss = self.loss.cat_forward(cat_target, cat_target_logits)
 
-        overall_loss = self.loss_factor * item_loss + (1 - self.loss_factor) * cat_loss
+        overall_loss = self.combine_losses(cat_loss, item_loss)
         self.log(LOG_KEY_VALIDATION_LOSS, overall_loss, prog_bar=True)
+        self.log("unsmoothed_" + LOG_KEY_TRAINING_LOSS, overall_loss, prog_bar=True)
         self.log("item_" + LOG_KEY_VALIDATION_LOSS, item_loss,prog_bar=True)
         self.log("cat_" + LOG_KEY_VALIDATION_LOSS, cat_loss,prog_bar=True)
 
