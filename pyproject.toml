@@ -30,7 +30,7 @@ redis3 = "^3.5.2.3"
 dataclasses-json = "^0.5.7"
 flatten-dict = "^0.4.2"
 loguru = "^0.6.0"
-aim = "^3.9.4"
+aim = "3.9.4"
 torchmetrics = "0.6.0"
 psycopg2 = ">2.0.0"
 
