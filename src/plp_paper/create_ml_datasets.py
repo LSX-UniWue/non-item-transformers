@@ -27,7 +27,7 @@ def create_extended_movielens_data(input_dir, output_dir, name, stage):
     page_df_mod = item_df.copy()
     page_df_mod["old_title"] = page_df_mod["title"]
     page_df_mod["title"] = "OVERVIEW-PAGE"
-    page_df_mod["cat_title"] = page_df_mod["genres"]
+    page_df_mod["cat_title"] = page_df_mod["genres"]+page_df_mod["year"].map(str)
     page_df_mod["item_id_type"] = 0
     page_df_mod["rating"] = -1
     page_df_mod["year"] = 0
