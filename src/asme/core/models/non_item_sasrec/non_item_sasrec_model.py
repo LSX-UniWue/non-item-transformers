@@ -48,7 +48,6 @@ class NonItemSASRecModel(SequenceRecommenderModel):
                  segment_embedding: bool = False, embedding_pooling_type: str = None,
                  transformer_intermediate_size: int = None, transformer_attention_dropout: float = None):
 
-
         # save for later call by the training module
         self.item_metadata_keys = []
         self.sequence_metadata_keys = []
@@ -57,9 +56,9 @@ class NonItemSASRecModel(SequenceRecommenderModel):
         self.add_keys_to_metadata(sequence_attributes, self.sequence_metadata_keys)
         self.item_metadata_keys.append(item_id_type_settings["name"])
 
-        prefusion_attributes = item_attributes.get(prefusion, None)
-        postfusion_attributes = item_attributes.get(postfusion, None)
-        prepend_attributes = sequence_attributes.get(sequence_prepend, None)
+        prefusion_attributes = get_attributes(item_attributes, prefusion)
+        postfusion_attributes = get_attributes(item_attributes, postfusion)
+        prepend_attributes = get_attributes(sequence_attributes, sequence_prepend)
 
         # embedding will be normed and dropout after all embeddings are added to the representation
         embedding_layer = TransformerEmbedding(
@@ -72,7 +71,8 @@ class NonItemSASRecModel(SequenceRecommenderModel):
         )
 
         projection_layer = CategoryAndItemProjectionLayer(transformer_hidden_size, len(item_tokenizer),
-                                                          len(attribute_tokenizers.get(TOKENIZERS_PREFIX+"."+loss_category)))
+                                                          len(attribute_tokenizers.get(
+                                                              TOKENIZERS_PREFIX + "." + loss_category)))
 
         element_representation = NonItemSequenceElementsRepresentationComponent(embedding_layer,
                                                                                 transformer_hidden_size,
@@ -92,7 +92,7 @@ class NonItemSASRecModel(SequenceRecommenderModel):
                                                                                       sequence_attributes,
                                                                                       bidirectional=False,
                                                                                       transformer_attention_dropout=transformer_attention_dropout,
-                                                                                      transformer_intermediate_size=transformer_intermediate_size,)
+                                                                                      transformer_intermediate_size=transformer_intermediate_size, )
 
         if postfusion_attributes is not None:
             modifier_layer = ContextSequenceRepresentationModifierComponent(transformer_hidden_size,
@@ -103,7 +103,6 @@ class NonItemSASRecModel(SequenceRecommenderModel):
                                                                             vector_dictionaries)
         else:
             modifier_layer = IdentitySequenceRepresentationModifierLayer()
-
 
         super().__init__(element_representation, sequence_representation, modifier_layer, projection_layer)
 
@@ -137,7 +136,6 @@ class NonItemSASRecModel(SequenceRecommenderModel):
                 metadata_keys.extend(list(dictionary[sequence_prepend].keys()))
 
 
-
 class CategoryAndItemProjectionLayer(ProjectionLayer):
 
     @save_hyperparameters
@@ -155,3 +153,10 @@ class CategoryAndItemProjectionLayer(ProjectionLayer):
                 ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
         representation = modified_sequence_representation.modified_encoded_sequence
         return self.item_linear(representation), self.category_linear(representation)
+
+
+def get_attributes(attributes_dictionary, type):
+    if attributes_dictionary is not None:
+        return attributes_dictionary.get(type, None)
+    else:
+        return None

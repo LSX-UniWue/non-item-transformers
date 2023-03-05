@@ -11,27 +11,28 @@ datamodule:
     train:
       type: "session"
       processors:
-        - type: "cloze"
-          mask_probability: 0.2
-          only_last_item_mask_prob: 0.1
+        - type: "target_extractor"
+          parallel: true
     validation:
       type: "session"
       processors:
         - type: "target_extractor"
-        - type: "last_item_mask"
     test:
       type: "session"
       processors:
         - type: "target_extractor"
-        - type: "last_item_mask"
   preprocessing:
     extraction_directory: "/Users/lisa/recommender/datasets/ml-1m/ml-1m-overview/ratio_split-0.8_0.1_0.1"
     output_directory: "/Users/lisa/recommender/datasets/ml-1m/ml-1m-overview/ratio_split-0.8_0.1_0.1"
 templates:
   unified_output:
-    path: "/Users/lisa/recommender/tmp/ml-1m/bert4rec"
+    path: "/Users/lisa/recommender/tmp/ml-1m/sasrecplp"
 module:
-  type: "bert4rec"
+  type: "non-items-sasrec-cross"
+  loss_category: "genres"
+  loss_category_epochs: 1
+  loss_factor: 0.5
+  item_type_id:  "item_id_type"
   metrics:
     full:
       metrics:
@@ -39,15 +40,26 @@ module:
         recall: [1, 5, 10]
         ndcg: [1, 5, 10]
   model:
-    max_seq_length: 5
+    max_seq_length: 200
     num_transformer_heads: 1
     num_transformer_layers: 1
     transformer_hidden_size: 4
     transformer_dropout: 0.2
+    loss_category: "genres"
+    item_id_type_settings:
+      name: "item_id_type"
+      extra_embbedding: false
+      merge: "add"
+    item_attributes:
+      prefusion:
+        genres:
+          embedding: "keys"
+          embedding_type: 'linear_upscale'
+          merge_function: "add"
 features:
   item:
     column_name: "title"
-    sequence_length: 5
+    sequence_length: 200
     tokenizer:
       special_tokens:
         pad_token: "<PAD>"
@@ -55,6 +67,38 @@ features:
         unk_token: "<UNK>"
       vocabulary:
         # Inferred by the datamodule
+  cat_title:
+    column_name: "cat_title"
+    sequence_length: 200
+    tokenizer:
+      special_tokens:
+        pad_token: "<PAD>"
+        mask_token: "<MASK>"
+        unk_token: "<UNK>"
+      vocabulary:
+  item_id_type:
+    column_name: "item_id_type"
+    sequence_length: 200
+    type: "int"
+    run_tokenization: false
+    special_values:
+      pad_value: "0"
+      mask_value: "0"
+      unk_value: "0"
+  genres:
+    column_name: "genres"
+    sequence_length: 200
+    type: "list"
+    delimiter: "|"
+    element_type: "str"
+    max_sequence_step_length: 3
+    tokenizer:
+      special_tokens:
+        pad_token: "<PAD>"
+        mask_token: "<MASK>"
+        unk_token: "<UNK>"
+      vocabulary:
+        file: "ml-1m-extended.vocabulary.genres-split.txt"
 trainer:
   loggers:
     tensorboard:
@@ -80,8 +124,8 @@ evaluation:
       - type: "input"
       - type: "scores"
       - type: "target"
-  #filter_items:
-  #  file: "/Users/lisa/recommender/configs/selected_items.csv"
+  filter_items:
+    file: "/Users/lisa/recommender/configs/selected_items.csv"
   number_predictions: 5
   writer:
     type: "csv-single-line"

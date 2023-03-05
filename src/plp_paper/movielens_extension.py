@@ -40,6 +40,7 @@ def get_movielens_extended_preprocessing_config(
                MetaInformation("occupation", type="str"),
                #MetaInformation("zip", type="str"),
                MetaInformation("title", type="str"),
+               MetaInformation("cat_title", type="str"),
                MetaInformation("user_all", type="list", configs={"delimiter": "|", "element_type": "str"}),
                MetaInformation("year", type="str", run_tokenization=False),
                MetaInformation("genres", type="str", configs={"delimiter": "|"})]
