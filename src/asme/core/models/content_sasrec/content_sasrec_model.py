@@ -56,9 +56,9 @@ class ContentSASRecModel(SequenceRecommenderModel):
         self.add_keys_to_metadata(sequence_attributes, self.item_metadata_keys)
         self.add_keys_to_metadata(sequence_attributes, self.sequence_metadata_keys)
 
-        prefusion_attributes = item_attributes.get(prefusion, None)
-        postfusion_attributes = item_attributes.get(postfusion, None)
-        prepend_attributes = sequence_attributes.get(sequence_prepend, None)
+        prefusion_attributes = get_attributes(item_attributes, prefusion)
+        postfusion_attributes = get_attributes(item_attributes, postfusion)
+        prepend_attributes = get_attributes(sequence_attributes, sequence_prepend)
 
         # embedding will be normed and dropout after all embeddings are added to the representation
         embedding_layer = TransformerEmbedding(
@@ -133,3 +133,8 @@ class ContentSASRecModel(SequenceRecommenderModel):
             if dictionary.get(sequence_prepend):
                 metadata_keys.extend(list(dictionary[sequence_prepend].keys()))
 
+def get_attributes(attributes_dictionary, type):
+    if attributes_dictionary is not None:
+        return attributes_dictionary.get(type, None)
+    else:
+        return None
