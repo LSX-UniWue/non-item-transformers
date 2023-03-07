@@ -148,7 +148,8 @@ def _build_wandb_logger(parameters: Dict[str, Any]) -> LightningLoggerBase:
 def _build_aim_logger(parameters: Dict[str, Any]) -> LightningLoggerBase:
     return AimLogger(
         repo=parameters['repo'],
-        experiment=parameters.get('experiment')
+        experiment=parameters.get('experiment'),
+        log_system_params = False
     )
 
 
