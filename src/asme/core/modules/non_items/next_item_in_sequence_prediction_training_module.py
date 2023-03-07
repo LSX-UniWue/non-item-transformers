@@ -35,7 +35,7 @@ class NextItemInSequencePredictionTrainingModule(BaseNextItemPredictionTrainingM
                  beta_2: float = 0.998,
                  weight_decay: float = 0,
                  loss_category: str = None,
-                 loss_factor: float = 0.5,
+                 loss_factor: float = 1,
                  loss_category_epochs: int = None,
                  item_type_id: str = None,
                  validation_on_item: bool = True,
@@ -68,7 +68,7 @@ class NextItemInSequencePredictionTrainingModule(BaseNextItemPredictionTrainingM
 
     def on_train_epoch_start(self):
         if self.loss_category_epochs is not None and self.current_epoch >= self.loss_category_epochs:
-            self.loss_factor = 1
+            self.loss_factor = 0
 
     def training_step(self,
                       batch: Dict[str, torch.Tensor],
@@ -99,7 +99,7 @@ class NextItemInSequencePredictionTrainingModule(BaseNextItemPredictionTrainingM
         #Set item target to padding id for nonitems to exclude them from the gradient
         if self.item_type_id is not None:
             item_type_id = batch[self.item_type_id]
-            item_target = torch.where(item_type_id == 1, item_target,self.item_tokenizer.pad_token_id )
+            item_target = torch.where(item_type_id == 1, item_target, self.item_tokenizer.pad_token_id)
 
         item_loss = self.loss.item_forward(item_target, item_logits)
         cat_loss = self.loss.cat_forward(cat_target, cat_logits)
@@ -115,7 +115,7 @@ class NextItemInSequencePredictionTrainingModule(BaseNextItemPredictionTrainingM
         }
 
     def combine_losses(self, cat_loss, item_loss):
-        return item_loss + (1 - self.loss_factor) * cat_loss
+        return item_loss + self.loss_factor * cat_loss
 
     def predict_step(self,
                      batch: Dict[str, torch.Tensor],
