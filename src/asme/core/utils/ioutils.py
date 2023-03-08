@@ -1,5 +1,7 @@
 import json
 import os
+
+import pandas as pd
 import yaml
 
 from pathlib import Path
@@ -139,15 +141,19 @@ def find_all_files(base_path: Path,
     return all_files
 
 
-def load_file_with_item_ids(path: Path) -> List[int]:
+def load_filtered_vocabulary(path: Path) -> List[int]:
     """
-    loads a file containing item ids into a list
-    :param path: the path of the file
-    :return:
+    loads a vocabulary file containing a selection of the original vocabulary
+    :param path: the path of the restricted vocabulary file
+    :return: the list of selected item ids
     """
-    items = _load_file_line_my_line(path, int)
-    sorted(items)
-    return items
+
+    selected_vocabulary = pd.read_csv(path, header=None, sep="\t")
+    return selected_vocabulary[1].astype(int).values.tolist()
+
+    #items = _load_file_line_my_line(path, int)
+    #sorted(items)
+    #return items
 
 
 def _load_file_line_my_line(path: Path, line_converter: Callable[[str], Any]) -> List[Any]:

@@ -9,7 +9,7 @@ from asme.core.init.factories.util import require_config_keys, infer_base_path, 
 from asme.core.init.object_factory import ObjectFactory, CanBuildResult
 from asme.core.metrics.container.metrics_sampler import FixedItemsSampler
 from asme.core.metrics.container.metrics_container import RankingMetricsContainer
-from asme.core.utils.ioutils import load_file_with_item_ids
+from asme.core.utils.ioutils import load_filtered_vocabulary
 from asme.data import CURRENT_SPLIT_PATH_CONTEXT_KEY
 
 
@@ -35,7 +35,7 @@ class FixedItemsMetricsFactory(ObjectFactory):
         split_path = build_context.get_context().get(CURRENT_SPLIT_PATH_CONTEXT_KEY)
         current_config_section = build_context.get_current_config_section()
         infer_base_path(current_config_section, "item_file", split_path)
-        items = load_file_with_item_ids(Path(current_config_section.get("item_file")))
+        items = load_filtered_vocabulary(Path(current_config_section.get("item_file")))
 
         sampler = FixedItemsSampler(items)
         return RankingMetricsContainer(metrics, sampler)

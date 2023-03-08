@@ -10,7 +10,7 @@ from torch.utils.data.dataset import T_co, Dataset
 from asme.core.metrics.metric import MetricStorageMode
 from asme.core.modules.metrics_trait import MetricsTrait
 import numpy as np
-from asme.core.utils.ioutils import load_file_with_item_ids
+from asme.core.utils.ioutils import load_filtered_vocabulary
 
 
 def get_positive_item_mask(targets: torch.Tensor, num_classes: int) -> torch.Tensor:
@@ -60,7 +60,7 @@ def _extract_sample_metrics(module: MetricsTrait) -> List[Tuple[str, torch.Tenso
 def _selected_file_and_filter(selected_items_file: Path) -> Tuple[List[int], Callable[[List[int]], Any]]:
     selected_items = None
     if selected_items_file is not None:
-        selected_items = load_file_with_item_ids(selected_items_file)
+        selected_items = load_filtered_vocabulary(selected_items_file)
         selected_items_tensor = torch.tensor(selected_items, dtype=torch.int32)
 
         def _selected_items_filter(sample_predictions):
