@@ -40,6 +40,7 @@ class UserNextItemPredictionTrainingModule(BaseNextItemPredictionTrainingModule)
                          weight_decay=weight_decay,loss_function=loss_function)
         self.user_key_len = len(model.optional_metadata_keys())
         self.first_item = first_item
+        self.save_hyperparameters(self.hyperparameters)
 
 
     def training_step(self,
@@ -124,6 +125,7 @@ class UserNextItemPredictionTrainingModule(BaseNextItemPredictionTrainingModule)
         self.log(LOG_KEY_VALIDATION_LOSS, loss, prog_bar=True)
 
         mask = None if len(target.size()) == 1 else ~ target.eq(self.item_tokenizer.pad_token_id)
+
         return build_eval_step_return_dict(input_seq, target_logits, target, mask=mask)
 
     def _extract_target_logits(self, input_seq: torch.Tensor, logits: torch.Tensor) -> torch.Tensor:
@@ -144,17 +146,6 @@ class UserNextItemPredictionTrainingModule(BaseNextItemPredictionTrainingModule)
         # select only the outputs at the last step of each sequence
         target_logits = logits[batch_index, seq_length]  # [BS, I]
 
-        return target_logits
-
-    def predict_step(self,
-                     batch: Dict[str, torch.Tensor],
-                     batch_idx: int,
-                     dataloader_idx: Optional[int] = None
-                     ) -> torch.Tensor:
-
-        input_seq = batch[ITEM_SEQ_ENTRY_NAME]     # BS x S
-        logits = self(batch, batch_idx)  # BS x S x I
-        target_logits = self._extract_target_logits(input_seq, logits)
         return target_logits
 
 
