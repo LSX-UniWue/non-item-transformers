@@ -55,20 +55,4 @@ def _extract_sample_metrics(module: MetricsTrait) -> List[Tuple[str, torch.Tenso
 
 
 
-def _selected_file_and_filter(selected_items_file: Path) -> Tuple[List[int], Callable[[List[int]], Any]]:
-    selected_items = None
-    if selected_items_file is not None:
-        selected_items = load_filtered_vocabulary(selected_items_file)
-        selected_items_tensor = torch.tensor(selected_items, dtype=torch.int32)
 
-        def _selected_items_filter(sample_predictions):
-            return torch.index_select(sample_predictions, 1, selected_items_tensor)
-
-        filter_predictions = _selected_items_filter
-    else:
-        def _noop_filter(sample_predictions: np.ndarray):
-            return sample_predictions
-
-        filter_predictions = _noop_filter
-
-    return selected_items, filter_predictions
