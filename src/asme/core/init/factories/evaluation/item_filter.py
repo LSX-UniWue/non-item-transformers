@@ -19,7 +19,8 @@ class FilterPredictionItemsFactory(ObjectFactory):
     def build(self, build_context: BuildContext) -> FilterPredictionItems:
         config = build_context.get_current_config_section()
         filter_file = config.get_or_default("file", None)
-        return FilterPredictionItems(selected_items_file=filter_file)
+        original_vocabulary_path = build_context.get_config().get_config(["features","item","tokenizer","vocabulary"]).get_or_raise("file", "No item vocab")
+        return FilterPredictionItems(selected_items_file=filter_file, original_vocabulary_path= original_vocabulary_path)
 
     def is_required(self, context: Context) -> bool:
         return False

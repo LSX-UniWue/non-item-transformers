@@ -35,7 +35,8 @@ class FixedItemsMetricsFactory(ObjectFactory):
         split_path = build_context.get_context().get(CURRENT_SPLIT_PATH_CONTEXT_KEY)
         current_config_section = build_context.get_current_config_section()
         infer_base_path(current_config_section, "item_file", split_path)
-        items = load_filtered_vocabulary(Path(current_config_section.get("item_file")))
+        original_vocabulary = build_context.get_config().get_config(["features","item","tokenizer","vocabulary"]).get_or_raise("file", "No item vocab")
+        items = load_filtered_vocabulary(Path(current_config_section.get("item_file")), Path(original_vocabulary))
 
         sampler = FixedItemsSampler(items)
         return RankingMetricsContainer(metrics, sampler)

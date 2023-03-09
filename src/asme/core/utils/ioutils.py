@@ -141,15 +141,18 @@ def find_all_files(base_path: Path,
     return all_files
 
 
-def load_filtered_vocabulary(path: Path) -> List[int]:
+def load_filtered_vocabulary(vocab_file_reduced: Path, vocab_file_original: Path) -> List[int]:
     """
-    loads a vocabulary file containing a selection of the original vocabulary
-    :param path: the path of the restricted vocabulary file
-    :return: the list of selected item ids
+    Loads a restricted and the original vocabulary file.
+    :param vocab_file_reduced: vocabulary file containing a reduced set
+    :param vocab_file_original: original vocabulary file
+    :return: a list of the item ids in the original vocabulary file which are also present in the reduced vocabulary
     """
+    reduced_vocabulary = pd.read_csv(vocab_file_reduced, header= None, sep="\t")
+    full_vocabulary = pd.read_csv(vocab_file_original, header= None, sep="\t")
 
-    selected_vocabulary = pd.read_csv(path, header=None, sep="\t")
-    return selected_vocabulary[1].astype(int).values.tolist()
+    selected_vocabulary = full_vocabulary.merge(reduced_vocabulary, on=0, how='inner')
+    return selected_vocabulary["1_x"].astype(int).tolist()
 
     #items = _load_file_line_my_line(path, int)
     #sorted(items)
