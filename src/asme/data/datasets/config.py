@@ -117,6 +117,7 @@ def get_ml_1m_preprocessing_config(
                MetaInformation("occupation", type="str"),
                MetaInformation("zip", type="str"),
                MetaInformation("title", type="str"),
+               MetaInformation("userId", type="str"),
                MetaInformation("user_all", type="list", configs={"delimiter": "|", "element_type":"str"}),
                MetaInformation("year", type="str", run_tokenization=False),
                MetaInformation("genres", type="str", configs={"delimiter": "|"})]
@@ -198,6 +199,7 @@ def get_ml_20m_preprocessing_config(
         output_directory: str,
         extraction_directory: str,
         # Ratio split parameters
+        create_ratio: bool,
         ratio_split_min_item_feedback: int,
         ratio_split_min_sequence_length: int,
         ratio_split_train_percentage: float,
@@ -207,9 +209,11 @@ def get_ml_20m_preprocessing_config(
         ratio_split_window_target_length: int,
         ratio_split_session_end_offset: int,
         # Leave one out split parameters
+        create_loo: bool,
         loo_split_min_item_feedback: int,
         loo_split_min_sequence_length: int,
         # Leave percentage out split parameters
+        create_lpo: bool,
         lpo_split_min_item_feedback: int,
         lpo_split_min_sequence_length: int,
         lpo_split_train_percentage: float,
@@ -229,6 +233,7 @@ def get_ml_20m_preprocessing_config(
     columns = [MetaInformation("rating", type="int", run_tokenization=False),
                MetaInformation("timestamp", type="str"),
                MetaInformation("title", type="str"),
+               MetaInformation("userId", type="str"),
                MetaInformation("genres", type="str", configs={"delimiter": "|"})]
 
     item_column = MetaInformation("item", column_name="title", type="str")
@@ -236,33 +241,36 @@ def get_ml_20m_preprocessing_config(
     min_sequence_length_column = "userId"
     session_key = ["userId"]
 
-    ratio_split_action = build_ratio_split(columns, prefix, ratio_split_min_item_feedback, min_item_feedback_column,
-                                           ratio_split_min_sequence_length, min_sequence_length_column,
-                                           session_key, [item_column], ratio_split_train_percentage,
-                                           ratio_split_validation_percentage, ratio_split_test_percentage,
-                                           ratio_split_window_markov_length, ratio_split_window_target_length,
-                                           ratio_split_session_end_offset)
 
-    leave_one_out_split_action = build_leave_one_out_split(columns, prefix, loo_split_min_item_feedback,
-                                                           min_item_feedback_column,
-                                                           loo_split_min_sequence_length, min_sequence_length_column,
-                                                           session_key, item_column, [item_column])
+    preprocessing_actions = [ConvertToCsv(Movielens20MConverter())]
 
-    leave_percentage_out_split_action = build_leave_percentage_out_split(columns, prefix, lpo_split_min_item_feedback,
-                                                                         min_item_feedback_column,
-                                                                         lpo_split_min_sequence_length,
-                                                                         min_sequence_length_column,
-                                                                         session_key, item_column, [item_column],
-                                                                         lpo_split_train_percentage,
-                                                                         lpo_split_validation_percentage,
-                                                                         lpo_split_test_percentage,
-                                                                         lpo_split_min_train_length,
-                                                                         lpo_split_min_validation_length,
-                                                                         lpo_split_min_test_length)
+    if create_ratio:
+        preprocessing_actions.append(build_ratio_split(columns, prefix, ratio_split_min_item_feedback, min_item_feedback_column,
+                                                       ratio_split_min_sequence_length, min_sequence_length_column,
+                                                       session_key, [item_column], ratio_split_train_percentage,
+                                                       ratio_split_validation_percentage, ratio_split_test_percentage,
+                                                       ratio_split_window_markov_length, ratio_split_window_target_length,
+                                                       ratio_split_session_end_offset))
+    if create_loo:
+        preprocessing_actions.append(build_leave_one_out_split(columns, prefix, loo_split_min_item_feedback,
+                                                               min_item_feedback_column,
+                                                               loo_split_min_sequence_length, min_sequence_length_column,
+                                                               session_key, item_column, [item_column]))
 
-    preprocessing_actions = [ConvertToCsv(Movielens20MConverter()),
-                             ratio_split_action, leave_one_out_split_action,
-                             leave_percentage_out_split_action]
+    if create_lpo:
+        preprocessing_actions.append(build_leave_percentage_out_split(columns, prefix, lpo_split_min_item_feedback,
+                                                                      min_item_feedback_column,
+                                                                      lpo_split_min_sequence_length,
+                                                                      min_sequence_length_column,
+                                                                      session_key, item_column, [item_column],
+                                                                      lpo_split_train_percentage,
+                                                                      lpo_split_validation_percentage,
+                                                                      lpo_split_test_percentage,
+                                                                      lpo_split_min_train_length,
+                                                                      lpo_split_min_validation_length,
+                                                                      lpo_split_min_test_length))
+
+
     return DatasetPreprocessingConfig(prefix,
                                       "http://files.grouplens.org/datasets/movielens/ml-20m.zip",
                                       Path(output_directory),
@@ -275,6 +283,7 @@ register_preprocessing_config_provider("ml-20m",
                                        PreprocessingConfigProvider(get_ml_20m_preprocessing_config,
                                                                    output_directory="./ml-20m",
                                                                    extraction_directory="./tmp/ml-20m",
+                                                                   create_ratio=True,
                                                                    ratio_split_min_item_feedback=4,
                                                                    ratio_split_min_sequence_length=4,
                                                                    ratio_split_train_percentage=0.8,
@@ -284,9 +293,11 @@ register_preprocessing_config_provider("ml-20m",
                                                                    ratio_split_window_target_length=3,
                                                                    ratio_split_session_end_offset=0,
                                                                    # Leave one out split parameters
+                                                                   create_loo=True,
                                                                    loo_split_min_item_feedback=4,
                                                                    loo_split_min_sequence_length=4,
                                                                    # Leave percentage out split parameters
+                                                                   create_lpo=True,
                                                                    lpo_split_min_item_feedback=4,
                                                                    lpo_split_min_sequence_length=4,
                                                                    lpo_split_train_percentage=0.8,
