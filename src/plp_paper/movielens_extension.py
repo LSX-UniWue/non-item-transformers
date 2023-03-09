@@ -3,15 +3,12 @@ from pathlib import Path
 from asme.core.init.context import Context
 from asme.core.init.templating.datasources.datasources import DatasetSplit
 from asme.data import CURRENT_SPLIT_PATH_CONTEXT_KEY
-from asme.data.datamodule.config import DatasetPreprocessingConfig, PreprocessingConfigProvider
+from asme.data.datamodule.config import DatasetPreprocessingConfig
 from asme.data.datamodule.preprocessing.action import PREFIXES_KEY, DELIMITER_KEY, INPUT_DIR_KEY, OUTPUT_DIR_KEY
-from asme.data.datamodule.preprocessing.csv import UseExistingCsv
 from asme.data.datamodule.preprocessing.indexing import CreateSessionIndex
 from asme.data.datamodule.preprocessing.popularity import CreatePopularity
 from asme.data.datamodule.preprocessing.split import UseExistingSplit
 from asme.data.datamodule.preprocessing.vocabulary import CreateVocabulary
-from asme.data.datamodule.registry import register_preprocessing_config_provider
-from asme.data.datamodule.unpacker import Unzipper
 from asme.data.datasets.sequence import MetaInformation
 
 
@@ -38,8 +35,9 @@ def get_movielens_extended_preprocessing_config(
                MetaInformation("gender", type="str"),
                MetaInformation("age", type="str"),
                MetaInformation("occupation", type="str"),
-               #MetaInformation("zip", type="str"),
+               MetaInformation("zip", type="str"),
                MetaInformation("title", type="str"),
+               MetaInformation("userId", type="str"),
                MetaInformation("cat_title", type="str"),
                MetaInformation("user_all", type="list", configs={"delimiter": "|", "element_type": "str"}),
                MetaInformation("year", type="str", run_tokenization=False),

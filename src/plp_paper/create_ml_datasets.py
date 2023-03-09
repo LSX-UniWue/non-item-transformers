@@ -27,7 +27,7 @@ def create_extended_movielens_data(input_dir, output_dir, name, stage):
     page_df_mod = item_df.copy()
     page_df_mod["old_title"] = page_df_mod["title"]
     page_df_mod["title"] = "OVERVIEW-PAGE"
-    page_df_mod["cat_title"] = page_df_mod["genres"]+page_df_mod["year"].map(str)
+    page_df_mod["cat_title"] = page_df_mod["genres"]+page_df_mod["userId"].map(str)
     page_df_mod["item_id_type"] = 0
     page_df_mod["rating"] = -1
     page_df_mod["year"] = 0
@@ -35,8 +35,11 @@ def create_extended_movielens_data(input_dir, output_dir, name, stage):
     page_df_mod['original_order'] = page_df_mod.groupby(['userId', 'timestamp']).cumcount() + 1
     item_df = pd.concat([item_df,page_df_mod], ignore_index=True)
     item_df = item_df.sort_values(["userId","timestamp","original_order","item_id_type"])
-    item_df = item_df[['userId', 'rating', 'timestamp', 'gender', 'age',
+    if name == "ml-1m":
+        item_df = item_df[['userId', 'rating', 'timestamp', 'gender', 'age',
                        'occupation', 'title', 'genres', 'year', 'user_all', 'cat_title', 'item_id_type']]
+    else:
+        item_df = item_df[['userId', 'rating', 'timestamp', 'title', 'genres', 'year', 'cat_title', 'item_id_type']]
     os.makedirs(output_dir, exist_ok=True)
     item_df.to_csv(f'{output_dir}/{name+"-extended"}.{stage}{file_type}', sep=delimiter, index=False)
 
@@ -52,7 +55,7 @@ def create_original_data(config_file: Path = typer.Argument(..., help='the path 
 @app.command()
 def create(base_config: Path = typer.Argument(..., help='the path to the config file', exists=True),
            output_dir: Path = typer.Argument(..., help='the path to the config file', exists=False),
-           name: str = "ml-1m"):
+           name: str = typer.Option("ml-1m")):
     container = create_original_data(Path(base_config))
     input_dir = container._objects["current_split_path"]
 
