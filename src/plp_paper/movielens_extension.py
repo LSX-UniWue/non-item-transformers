@@ -36,12 +36,14 @@ def get_movielens_extended_preprocessing_config(
                MetaInformation("age", type="str"),
                MetaInformation("occupation", type="str"),
                MetaInformation("zip", type="str"),
-               MetaInformation("title", type="str"),
+               MetaInformation("title_genres", type="str"),
+               MetaInformation("title_uid", type="str"),
                MetaInformation("userId", type="str"),
                MetaInformation("cat_title", type="str"),
                MetaInformation("user_all", type="list", configs={"delimiter": "|", "element_type": "str"}),
                MetaInformation("year", type="str", run_tokenization=False),
                MetaInformation("genres", type="str", configs={"delimiter": "|"})]
+
 
     item_column = MetaInformation("item", column_name="title", type="str")
     min_item_feedback_column = "movieId"
