@@ -3,9 +3,9 @@ datamodule:
   data_sources:
     num_workers: 4
     batch_size: 64
-    max_seq_length: 5
-    #mask_probability: 0.2
-    #mask_seed: 42
+    max_seq_length: 200
+    mask_probability: 0.2
+    mask_seed: 42
     split: "ratio_split"
     file_prefix: "ml-1m-extended"
     train:
@@ -31,7 +31,7 @@ module:
   type: "non-items-sasrec-cross"
   loss_category: "genres"
   loss_category_epochs: 1
-  loss_factor: 0.5
+  loss_factor: 2
   item_type_id:  "item_id_type"
   metrics:
     full:
@@ -39,6 +39,12 @@ module:
         mrr: [1, 5, 10]
         recall: [1, 5, 10]
         ndcg: [1, 5, 10]
+    fixed:
+      item_file: "/Users/lisa/recommender/tests/example_dataset_plp/ratio_split-0.7_0.1_0.2/example.vocabulary.item_id.txt"
+      metrics:
+        mrr: [ 1, 5, 10 ]
+        recall: [ 1, 5, 10 ]
+        ndcg: [ 1, 5, 10 ]
   model:
     max_seq_length: 200
     num_transformer_heads: 1
@@ -124,8 +130,8 @@ evaluation:
       - type: "input"
       - type: "scores"
       - type: "target"
-  filter_items:
-    file: "/Users/lisa/recommender/configs/selected_items.csv"
+ # filter_items:
+  #  file: "/Users/lisa/recommender/configs/selected_items.csv"
   number_predictions: 5
   writer:
     type: "csv-single-line"

@@ -21,13 +21,15 @@ def create_extended_movielens_data(input_dir, output_dir, name, stage):
     encoding = "latin-1"
     delimiter = "\t"
     item_df = read_csv(input_dir, f'{name}.{stage}', file_type, "\t", header=0, encoding=encoding)
-    item_df["cat_title"] = item_df["title"]
+    item_df["title_genres"] = item_df["title"]
+    item_df["title_uid"] = item_df["title"]
     item_df["old_title"] = item_df["title"]
     item_df["item_id_type"] = 1
     page_df_mod = item_df.copy()
     page_df_mod["old_title"] = page_df_mod["title"]
     page_df_mod["title"] = "OVERVIEW-PAGE"
-    page_df_mod["cat_title"] = page_df_mod["genres"]+page_df_mod["userId"].map(str)
+    page_df_mod["title_genres"] = page_df_mod["genres"]
+    page_df_mod["title_uid"] = page_df_mod["userId"]
     page_df_mod["item_id_type"] = 0
     page_df_mod["rating"] = -1
     page_df_mod["year"] = 0
@@ -37,9 +39,9 @@ def create_extended_movielens_data(input_dir, output_dir, name, stage):
     item_df = item_df.sort_values(["userId","timestamp","original_order","item_id_type"])
     if name == "ml-1m":
         item_df = item_df[['userId', 'rating', 'timestamp', 'gender', 'age',
-                       'occupation', 'title', 'genres', 'year', 'user_all', 'cat_title', 'item_id_type']]
+                       'occupation', 'title', 'genres', 'year', 'user_all', 'title_genres', 'title_uid', 'item_id_type', 'zip']]
     else:
-        item_df = item_df[['userId', 'rating', 'timestamp', 'title', 'genres', 'year', 'cat_title', 'item_id_type']]
+        item_df = item_df[['userId', 'rating', 'timestamp', 'title', 'genres', 'year', 'title_genres', 'title_uid', 'item_id_type', 'zip']]
     os.makedirs(output_dir, exist_ok=True)
     item_df.to_csv(f'{output_dir}/{name+"-extended"}.{stage}{file_type}', sep=delimiter, index=False)
 
