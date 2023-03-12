@@ -35,6 +35,7 @@ def get_movielens_extended_preprocessing_config(
                MetaInformation("gender", type="str"),
                MetaInformation("age", type="str"),
                MetaInformation("occupation", type="str"),
+               MetaInformation("title", type="str"),
                MetaInformation("zip", type="str"),
                MetaInformation("title_genres", type="str"),
                MetaInformation("title_uid", type="str"),
