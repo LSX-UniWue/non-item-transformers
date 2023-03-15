@@ -44,6 +44,7 @@ class ContentBERT4RecModel(SequenceRecommenderModel):
                  segment_embedding: bool = False,
                  embedding_pooling_type: str = None,
                  initializer_range: float = 0.02,
+                 project_layer_type: str = 'transpose_embedding',
                  transformer_intermediate_size: Optional[int] = None,
                  transformer_attention_dropout: Optional[float] = None):
 
@@ -94,7 +95,7 @@ class ContentBERT4RecModel(SequenceRecommenderModel):
         else:
             modifier_layer = FFNSequenceRepresentationModifierComponent(transformer_hidden_size)
 
-        projection_layer = build_projection_layer(PROJECT_TYPE_LINEAR, transformer_hidden_size, len(item_tokenizer),
+        projection_layer = build_projection_layer(project_layer_type, transformer_hidden_size, len(item_tokenizer),
                                                   sequence_embedding.item_embedding.embedding)
 
 

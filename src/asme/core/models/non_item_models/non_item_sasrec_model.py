@@ -1,3 +1,4 @@
+import math
 import torch
 from torch import nn
 
@@ -153,6 +154,44 @@ class CategoryAndItemProjectionLayer(ProjectionLayer):
                 ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
         representation = modified_sequence_representation.modified_encoded_sequence
         return self.item_linear(representation), self.category_linear(representation)
+
+class CategoryAndItemReuseProjectionLayer(ProjectionLayer):
+
+    @save_hyperparameters
+    def __init__(self,
+                 item_embedding: nn.Embedding,
+                 category_embedding: nn.Embedding,
+                 item_vocab_size: int,
+                 category_vocab_size: int):
+        super().__init__()
+
+        self.item_embedding = item_embedding
+        self.category_embedding = category_embedding
+        self.item_vocab_size = item_vocab_size
+        self.category_vocab_size = category_vocab_size
+        self.output_bias_item = nn.Parameter(torch.Tensor(item_vocab_size))
+        self.output_bias_category = nn.Parameter(torch.Tensor(category_vocab_size))
+
+        self.init_weights()
+
+    def init_weights(self):
+        item_bound = 1 / math.sqrt(self.item_vocab_size)
+        nn.init.uniform_(self.output_bias_item, -item_bound, item_bound)
+        cat_bound = 1 / math.sqrt(self.category_vocab_size)
+        nn.init.uniform_(self.output_bias_category, -item_bound, item_bound)
+
+    def forward(self,
+                modified_sequence_representation: ModifiedSequenceRepresentation
+                ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
+
+        representation = modified_sequence_representation.modified_encoded_sequence
+        item_rep = torch.matmul(representation, self.item_embedding.weight.transpose(0, 1))  # (S, N, I)
+        item_rep = item_rep + self.output_bias_item
+        cat_rep = torch.matmul(representation, self.cat_embedding.weight.transpose(0, 1))  # (S, N, I)
+        cat_rep = cat_rep + self.output_bias_category
+
+        return item_rep, cat_rep
+
 
 
 def get_attributes(attributes_dictionary, type):

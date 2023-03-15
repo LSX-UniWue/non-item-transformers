@@ -1,27 +1,32 @@
 import functools
 from typing import Dict, Any, Optional
 
+from torch import nn
+
+from asme.core.init.factories.features.tokenizer_factory import TOKENIZERS_PREFIX
 from asme.core.models.bert4rec.bert4rec_model import normal_initialize_weights
 
 from asme.core.models.common.components.representation_modifier.ffn_modifier import \
     FFNSequenceRepresentationModifierComponent
-from asme.core.models.common.layers.layers import PROJECT_TYPE_LINEAR, build_projection_layer
+from asme.core.models.common.layers.layers import PROJECT_TYPE_LINEAR, build_projection_layer, ProjectionLayer
 from asme.core.models.common.layers.transformer_layers import TransformerEmbedding
 from asme.core.models.content_bert4rec.components import ContextSequenceRepresentationModifierComponent, \
     ContextSequenceElementsRepresentationComponent, PrependedTransformerSequenceRepresentationComponent
+from asme.core.models.non_item_models.non_item_sasrec_model import CategoryAndItemProjectionLayer, \
+    CategoryAndItemReuseProjectionLayer
 from asme.core.models.sequence_recommendation_model import SequenceRecommenderModel
 from asme.core.tokenization.tokenizer import Tokenizer
 from asme.core.tokenization.item_dictionary import SpecialValues
 from asme.core.utils.hyperparameter_utils import save_hyperparameters
 from asme.core.utils.inject import InjectTokenizers, inject, InjectDictionaries, InjectTokenizer
-from asme.data.datasets import ITEM_SEQ_ENTRY_NAME
+from asme.data.datasets import ITEM_SEQ_ENTRY_NAME, KEY_DELIMITER
 
 prefusion = "prefusion"
 postfusion = "postfusion"
 sequence_prepend = "prepend"
 
 
-class ContentBERT4RecModel(SequenceRecommenderModel):
+class NonItemBERT4RecModel(SequenceRecommenderModel):
 
     @inject(
         item_tokenizer=InjectTokenizer(ITEM_SEQ_ENTRY_NAME),
@@ -40,9 +45,12 @@ class ContentBERT4RecModel(SequenceRecommenderModel):
                  sequence_attributes: Dict[str, Dict[str, Any]] = None,
                  attribute_tokenizers: Dict[str, Tokenizer] = None,
                  vector_dictionaries: Dict[str, SpecialValues] = None,
+                 loss_category: str = None,
+                 item_id_type_settings: Dict[str, Any] = None,
                  positional_embedding: bool = True,
                  segment_embedding: bool = False,
                  embedding_pooling_type: str = None,
+                 project_layer_type: str = 'linear',
                  initializer_range: float = 0.02,
                  transformer_intermediate_size: Optional[int] = None,
                  transformer_attention_dropout: Optional[float] = None):
@@ -53,6 +61,7 @@ class ContentBERT4RecModel(SequenceRecommenderModel):
         self.add_keys_to_metadata(item_attributes, self.item_metadata_keys)
         self.add_keys_to_metadata(sequence_attributes, self.item_metadata_keys)
         self.add_keys_to_metadata(sequence_attributes, self.sequence_metadata_keys)
+        self.item_metadata_keys.append(item_id_type_settings["name"])
 
         prefusion_attributes = None if item_attributes is None else item_attributes.get(prefusion, None)
         postfusion_attributes = None if item_attributes is None else item_attributes.get(postfusion, None)
@@ -62,7 +71,6 @@ class ContentBERT4RecModel(SequenceRecommenderModel):
         sequence_embedding = TransformerEmbedding(len(item_tokenizer), max_seq_length, transformer_hidden_size, 0.0,
                                                   embedding_pooling_type=embedding_pooling_type,
                                                   norm_embedding=False, positional_embedding=positional_embedding)
-
 
         element_representation = ContextSequenceElementsRepresentationComponent(sequence_embedding,
                                                                                 transformer_hidden_size,
@@ -75,29 +83,29 @@ class ContentBERT4RecModel(SequenceRecommenderModel):
                                                                                 segment_embedding_active=segment_embedding)
 
         sequence_representation = PrependedTransformerSequenceRepresentationComponent(transformer_hidden_size,
-                                                                                 num_transformer_heads,
-                                                                                 num_transformer_layers,
-                                                                                 transformer_dropout,
-                                                                                 sequence_attributes,
-                                                                                 bidirectional=False,
-                                                                                 transformer_attention_dropout=transformer_attention_dropout,
-                                                                                 transformer_intermediate_size=transformer_intermediate_size,)
-
+                                                                                      num_transformer_heads,
+                                                                                      num_transformer_layers,
+                                                                                      transformer_dropout,
+                                                                                      sequence_attributes,
+                                                                                      bidirectional=False,
+                                                                                      transformer_attention_dropout=transformer_attention_dropout,
+                                                                                      transformer_intermediate_size=transformer_intermediate_size, )
 
         if postfusion_attributes is not None:
-                modifier_layer = ContextSequenceRepresentationModifierComponent(transformer_hidden_size,
-                                                                                item_tokenizer,
-                                                                                postfusion_attributes,
-                                                                                sequence_attributes,
-                                                                                attribute_tokenizers,
-                                                                                vector_dictionaries)
+            modifier_layer = ContextSequenceRepresentationModifierComponent(transformer_hidden_size,
+                                                                            item_tokenizer,
+                                                                            postfusion_attributes,
+                                                                            sequence_attributes,
+                                                                            attribute_tokenizers,
+                                                                            vector_dictionaries)
         else:
             modifier_layer = FFNSequenceRepresentationModifierComponent(transformer_hidden_size)
 
-        projection_layer = build_projection_layer(PROJECT_TYPE_LINEAR, transformer_hidden_size, len(item_tokenizer),
-                                                  sequence_embedding.item_embedding.embedding)
-
-
+        cat_embedding = element_representation.prefusion_attribute_embeddings["genres"]
+        projection_layer = build_projection_layer(project_layer_type, transformer_hidden_size, len(item_tokenizer),
+                                                  sequence_embedding.item_embedding.embedding,
+                                                  len(attribute_tokenizers.get(TOKENIZERS_PREFIX+KEY_DELIMITER+loss_category)),
+                                                  cat_embedding)
 
         super().__init__(element_representation, sequence_representation, modifier_layer, projection_layer)
 
@@ -123,3 +131,17 @@ class ContentBERT4RecModel(SequenceRecommenderModel):
                 metadata_keys.extend(list(dictionary[sequence_prepend].keys()))
 
 
+def build_projection_layer(project_type: str,
+                           transformer_hidden_size: int,
+                           item_voc_size: int,
+                           item_embedding: nn.Embedding,
+                           cat_voc_size: int,
+                           cat_embedding: nn.Embedding
+                           ) -> ProjectionLayer:
+    if project_type == PROJECT_TYPE_LINEAR:
+        return CategoryAndItemProjectionLayer(transformer_hidden_size, item_voc_size, cat_voc_size)
+
+    if project_type == 'transpose_embedding':
+        return CategoryAndItemReuseProjectionLayer(item_embedding, cat_embedding, item_voc_size, cat_voc_size)
+
+    raise KeyError(f'{project_type} invalid projection layer')
