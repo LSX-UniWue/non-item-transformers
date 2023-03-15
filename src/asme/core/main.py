@@ -100,13 +100,16 @@ def search(template_file: Path = typer.Argument(..., help='the path to the confi
            study_direction: str = typer.Option(default="maximize", help="minimize / maximize"),
            num_trials: int = typer.Option(default=20, help='the number of trials to execute')
            ) -> None:
+
     # check if objective_metric is defined
     test_config = load_config(template_file)
-    test_metrics_config = test_config.get_config(['module', 'metrics'])
-
     metrics_factory = MetricsContainerFactory()
-    build_context = BuildContext(context=Context(), config=test_metrics_config)
+
+    build_context = BuildContext(test_config, Context())
+    build_context.enter_sections(["module","metrics"])
+    #build_context.leave_sections(sub_section)
     test_metrics_container = metrics_factory.build(build_context)
+    test = test_metrics_container.get_metric_names()
     if objective_metric not in test_metrics_container.get_metric_names():
         raise ValueError(f'{objective_metric} not configured. '
                          f'Can not optimize hyperparameters using the specified objective')
