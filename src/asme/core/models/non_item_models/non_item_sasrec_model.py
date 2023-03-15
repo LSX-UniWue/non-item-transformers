@@ -8,7 +8,7 @@ from asme.core.models.common.layers.layers import IdentitySequenceRepresentation
 from asme.core.models.common.layers.transformer_layers import TransformerEmbedding
 from asme.core.models.content_bert4rec.components import ContextSequenceElementsRepresentationComponent, \
     PrependedTransformerSequenceRepresentationComponent, ContextSequenceRepresentationModifierComponent
-from asme.core.models.non_item_sasrec.components import NonItemSequenceElementsRepresentationComponent
+from asme.core.models.non_item_models.components import NonItemSequenceElementsRepresentationComponent
 from asme.core.models.sequence_recommendation_model import SequenceRecommenderModel
 from asme.core.tokenization.tokenizer import Tokenizer
 from asme.core.tokenization.item_dictionary import SpecialValues

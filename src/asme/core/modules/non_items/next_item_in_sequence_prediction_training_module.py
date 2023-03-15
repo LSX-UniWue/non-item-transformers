@@ -166,7 +166,7 @@ class NextItemInSequencePredictionTrainingModule(BaseNextItemPredictionTrainingM
 
         overall_loss = self.combine_losses(cat_loss, item_loss)
         self.log(LOG_KEY_VALIDATION_LOSS, overall_loss, prog_bar=True)
-        self.log("unsmoothed_" + LOG_KEY_TRAINING_LOSS, overall_loss, prog_bar=True)
+        self.log("unsmoothed_" + LOG_KEY_VALIDATION_LOSS, overall_loss, prog_bar=True)
         self.log("item_" + LOG_KEY_VALIDATION_LOSS, item_loss,prog_bar=True)
         self.log("cat_" + LOG_KEY_VALIDATION_LOSS, cat_loss,prog_bar=True)
 
