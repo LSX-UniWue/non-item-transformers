@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Any, Dict, Union, Iterable, Optional
 
+from aim.sdk.adapters.pytorch_lightning import AimLogger
 from pytorch_lightning import Trainer, Callback
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import LightningLoggerBase, TensorBoardLogger, MLFlowLogger, WandbLogger
@@ -143,11 +144,19 @@ def _build_wandb_logger(parameters: Dict[str, Any]) -> LightningLoggerBase:
         log_model=parameters.get('log_model', False)
     )
 
+def _build_aim_logger(parameters: Dict[str, Any]) -> LightningLoggerBase:
+    return AimLogger(
+        repo=parameters['repo'],
+        experiment=parameters.get('experiment'),
+        log_system_params = False
+    )
+
 
 LOGGER_REGISTRY = {
     'tensorboard': _build_tensorboard_logger,
     'mlflow': _build_mlflow_logger,
-    'wandb': _build_wandb_logger
+    'wandb': _build_wandb_logger,
+    'aim': _build_aim_logger
 }
 
 
