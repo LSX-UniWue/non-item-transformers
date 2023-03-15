@@ -25,8 +25,8 @@ datamodule:
         - type: "input_dictionaries"
         - type: "target_extractor"
   preprocessing:
-    input_file_path: "/Users/lisa/recommender/example_data/example.csv"
-    output_directory: "/Users/lisa/recommender/example_data/"
+    input_file_path: "/Users/lisa/recommender/tests/example_dataset_plp/example.csv"
+    output_directory: "/Users/lisa/recommender/tests/example_dataset_plp"
 templates:
   unified_output:
     path: "/Users/lisa/recommender/tmp/example/kebert4rec"

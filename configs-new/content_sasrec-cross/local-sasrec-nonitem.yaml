@@ -33,7 +33,9 @@ templates:
 module:
   type: "non-items-sasrec-cross"
   loss_category: "attr_one"
+  loss_category_epochs: 1
   loss_factor: 0.5
+  item_type_id:  "item_id_type"
   metrics:
     full:
       metrics:

@@ -28,8 +28,8 @@ datamodule:
         - type: "target_extractor"
         - type: "last_item_mask"
   preprocessing:
-    input_file_path: "/Users/lisa/recommender/tests/example_dataset/example.csv"
-    output_directory: "/Users/lisa/recommender/tests/example_dataset"
+    input_file_path: "/Users/lisa/recommender/tests/example_dataset_plp/example.csv"
+    output_directory: "/Users/lisa/recommender/tests/example_dataset_plp"
 templates:
   unified_output:
     path: "/Users/lisa/recommender/tmp/example/kebert4rec"
@@ -74,16 +74,34 @@ features:
         mask_token: "<MASK>"
         unk_token: "<UNK>"
       vocabulary:
+  np_cat:
+    column_name: "np_cat"
+    sequence_length: 7
+    tokenizer:
+      special_tokens:
+        pad_token: "<PAD>"
+        mask_token: "<MASK>"
+        unk_token: "<UNK>"
+      vocabulary:
+  item_id_type:
+    column_name: "item_id_type"
+    sequence_length: 7
+    type: "int"
+    run_tokenization: false
+    special_values:
+      pad_value: "2"
+      mask_value: "2"
+      unk_value: "2"
   item_map:
     column_name: "item_id"
     sequence_length: 7
     max_sequence_step_length: 2
     run_tokenization: false
     dictionary:
-      dict_path: "/Users/lisa/recommender/example_data/image_vectors.csv"
-      delimiter: ","
       type: "pd.array"
       element_type: "float"
+      dict_path: "/Users/lisa/recommender/example_data/image_vectors.csv"
+      delimiter: ","
       pad_value: "average"
       mask_value: "average"
       unk_value: "average"
