@@ -25,6 +25,7 @@ from tqdm import tqdm
 from jinja2 import Template
 
 from asme.core.init.context import Context
+from asme.core.init.factories import BuildContext
 from asme.core.init.factories.metrics.metrics_container import MetricsContainerFactory
 from asme.core.init.templating.search.configuration import SearchConfigurationTemplateProcessor
 from asme.core.utils.run_utils import load_config, create_container, OBJECTIVE_METRIC_KEY, TRIAL_BASE_PATH, \
@@ -239,7 +240,8 @@ def search(template_file: Path = typer.Argument(..., help='the path to the confi
     test_metrics_config = test_config.get_config(['module', 'metrics'])
 
     metrics_factory = MetricsContainerFactory()
-    test_metrics_container = metrics_factory.build(test_metrics_config, Context())
+    build_context = BuildContext(context=Context(), config=test_metrics_config)
+    test_metrics_container = metrics_factory.build(build_context)
     if objective_metric not in test_metrics_container.get_metric_names():
         raise ValueError(f'{objective_metric} not configured. '
                          f'Can not optimize hyperparameters using the specified objective')
@@ -337,8 +339,8 @@ def search(template_file: Path = typer.Argument(..., help='the path to the confi
         save_mlflow_id(trainer, log_dir)
 
         trainer.fit(
-            module,
-            train_dataloader=container.train_dataloader(),
+            datamodule=module,
+            train_dataloaders=container.train_dataloader(),
             val_dataloaders=container.validation_dataloader()
         )
         save_finished_flag(log_dir)
