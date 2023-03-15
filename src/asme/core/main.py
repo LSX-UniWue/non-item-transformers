@@ -203,11 +203,11 @@ def search(template_file: Path = typer.Argument(..., help='the path to the confi
                             id_file.write(f"experiment:{experiment}\nversion:{version}")
 
         # save config of current run to its log dir
-        save_config(model_config, log_dir)
+        save_config(model_config, template_file, log_dir)
         save_mlflow_id(trainer, log_dir)
 
         trainer.fit(
-            datamodule=module,
+            model=module,
             train_dataloaders=container.train_dataloader(),
             val_dataloaders=container.validation_dataloader()
         )
