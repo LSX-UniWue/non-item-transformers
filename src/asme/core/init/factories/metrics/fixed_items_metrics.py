@@ -34,9 +34,12 @@ class FixedItemsMetricsFactory(ObjectFactory):
         # Try to infer the item_file base_path if it was not absolute
         split_path = build_context.get_context().get(CURRENT_SPLIT_PATH_CONTEXT_KEY)
         current_config_section = build_context.get_current_config_section()
-        infer_base_path(current_config_section, "item_file", split_path)
-        original_vocabulary = build_context.get_config().get_config(["features","item","tokenizer","vocabulary"]).get_or_raise("file", "No item vocab")
-        items = load_filtered_vocabulary(Path(current_config_section.get("item_file")), Path(original_vocabulary))
+        #infer_base_path(current_config_section, "item_file", split_path)
+        original_vocabulary = build_context.get_config().get_config(["features","item","tokenizer","vocabulary"]).get_or_default("file", None)
+        if original_vocabulary is None:
+            original_vocabulary = current_config_section.get_or_raise("model_vocabulary", "Please add the models vocabulary file as 'model_vocabulary' for fixed metric caluctlations manually for studies.")
+        filter_file = current_config_section.get_or_raise("item_file", "Please set 'item_file' to the reduced vocabulary file.")
+        items = load_filtered_vocabulary(Path(filter_file), Path(original_vocabulary))
 
         sampler = FixedItemsSampler(items)
         return RankingMetricsContainer(metrics, sampler)
