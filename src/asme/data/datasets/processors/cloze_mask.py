@@ -1,14 +1,11 @@
 from typing import Dict, Any, List
 
-from asme.core.init.factories.features.item_dictionary_factory import get_dict_key_for_attribute
 from asme.core.tokenization.item_dictionary import SpecialValues
-from asme.data.datasets import ITEM_SEQ_ENTRY_NAME, TARGET_ENTRY_NAME, TARGET_SUFFIX
+from asme.data.datasets import ITEM_SEQ_ENTRY_NAME, TARGET_SUFFIX
 from asme.data.datasets.processors.processor import Processor
-from asme.core.init.factories.features.tokenizer_factory import get_tokenizer_key_for_voc, \
-    ITEM_TOKENIZER_ID
 from asme.core.tokenization.tokenizer import Tokenizer
-from asme.data.datasets.processors.utils import random_uniform, random_, get_tokenizer, get_mask_value
-import random
+from asme.data.datasets.processors.utils import random_uniform, random_, get_tokenizer, get_mask_value, \
+    get_padding_value
 
 
 class ClozeMaskProcessor(Processor):
@@ -59,7 +56,6 @@ class ClozeMaskProcessor(Processor):
                 ) -> Dict[str, Any]:
         sequence = parsed_sequence[ITEM_SEQ_ENTRY_NAME]
 
-
         sequences = {
             mask_target: parsed_sequence[mask_target] for mask_target in self.masking_targets
         }
@@ -70,41 +66,40 @@ class ClozeMaskProcessor(Processor):
         # first we decide if we only mask the last item
         mask_last_item_prob = random_uniform()
         if mask_last_item_prob <= self.only_last_item_mask_prob:
-            for mask_target, sequence in sequences.items():
-                target = targets[mask_target]
-                tokenizer = get_tokenizer(self.tokenizers, mask_target)
+            for mask_attr, attr_sequence in sequences.items():
+                target = targets[mask_attr]
+                tokenizer = get_tokenizer(self.tokenizers, mask_attr)
 
-                last_item = len(sequence) - 1
-                sequence[last_item] = get_mask_value(self.tokenizers, self.special_values, mask_target, sequence)
+                last_item = len(attr_sequence) - 1
+                attr_sequence[last_item] = get_mask_value(self.tokenizers, self.special_values, mask_attr,
+                                                          attr_sequence)
 
                 # if it is the original sequence, update the target and set it to the pad token id
-                if mask_target == ITEM_SEQ_ENTRY_NAME:
-                    padding_mask = tokenizer.pad_token_id
-                else:
-                    padding_mask = self.tokenizers[mask_target].pad_token_id
+                padding_mask = get_padding_value(self.tokenizers, self.special_values, mask_attr, attr_sequence)
                 target[:last_item] = [padding_mask] * last_item
         else:
             for index in range(0, len(sequence)):
-                prob = random_uniform()
-                for mask_target, sequence in sequences.items():
-                    target = targets[mask_target]
-                    if prob < self.mask_prob:
-                        prob = prob / self.mask_prob
+                mask_prob = random_uniform()
+                for mask_attr, attr_sequence in sequences.items():
+                    target = targets[mask_attr]
+                    if mask_prob < self.mask_prob:
+                        prob = mask_prob / self.mask_prob
 
                         if prob < 0.8:
-                            sequence[index] = get_mask_value(self.tokenizers, self.special_values, mask_target, sequence)
+                            attr_sequence[index] = get_mask_value(self.tokenizers, self.special_values, mask_attr,
+                                                                  attr_sequence)
                         elif prob < 0.9:
-                            tokenizer = get_tokenizer(self.tokenizers, mask_target)
+                            tokenizer = get_tokenizer(self.tokenizers, mask_attr)
                             if tokenizer:
-                                random_index = random_(0, len(get_tokenizer(self.tokenizers, mask_target)) - 1)
-                                sequence[index] = [random_index] if isinstance(sequence[0], list) else random_index
+                                random_index = random_(0, len(get_tokenizer(self.tokenizers, mask_attr)) - 1)
+                                attr_sequence[index] = [random_index] if isinstance(attr_sequence[0],
+                                                                                    list) else random_index
                     else:
                         # we use the padding token for masking the cross entropy loss
-                        loss_mask = self.tokenizers[get_tokenizer_key_for_voc(ITEM_TOKENIZER_ID)].pad_token_id
-                        target[index] = [loss_mask] if isinstance(sequence[0], list) else loss_mask
+                        loss_mask = get_padding_value(self.tokenizers, self.special_values, mask_attr, attr_sequence)
+                        target[index] = loss_mask
 
-
-        for mask_target, sequence in sequences.items():
-            parsed_sequence[mask_target+TARGET_SUFFIX] = targets[mask_target]
+        for mask_attr, attr_sequence in sequences.items():
+            parsed_sequence[mask_attr + TARGET_SUFFIX] = targets[mask_attr]
 
         return parsed_sequence

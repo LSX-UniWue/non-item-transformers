@@ -22,6 +22,19 @@ def get_mask_value(tokenizers: Dict[str, Tokenizer],
     if special_value is not None:
         return special_value.get_mask_value()
 
+def get_padding_value(tokenizers: Dict[str, Tokenizer],
+                   special_values: Dict[str, SpecialValues],
+                   target: str,
+                   sequence: Union[List[int], List[List[int]]]
+                   ) -> Union[int, List[int]]:
+    tokenizer = get_tokenizer(tokenizers, target)
+    if tokenizer is not None:
+        mask_value = tokenizer.pad_token_id
+        return [mask_value] if isinstance(sequence[0], list) else mask_value
+    special_value = special_values.get(get_special_value_key_for_attribute(target), None)
+    if special_value is not None:
+        return special_value.get_pad_value()
+
 def get_tokenizer(tokenizers: Dict[str, Tokenizer],
                   target: str
                   ) -> Tokenizer:
