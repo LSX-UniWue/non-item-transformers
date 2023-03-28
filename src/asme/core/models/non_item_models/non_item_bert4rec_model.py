@@ -101,7 +101,7 @@ class NonItemBERT4RecModel(SequenceRecommenderModel):
         else:
             modifier_layer = FFNSequenceRepresentationModifierComponent(transformer_hidden_size)
 
-        cat_embedding = element_representation.prefusion_attribute_embeddings["genres"]
+        cat_embedding = element_representation.prefusion_attribute_embeddings[loss_category]
         projection_layer = build_projection_layer(project_layer_type, transformer_hidden_size, len(item_tokenizer),
                                                   sequence_embedding.item_embedding.embedding,
                                                   len(attribute_tokenizers.get(TOKENIZERS_PREFIX+KEY_DELIMITER+loss_category)),
