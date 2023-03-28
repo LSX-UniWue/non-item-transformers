@@ -37,9 +37,11 @@ class ClozeProcessorFactory(ObjectFactory):
         special_values = get_all_feature_special_values_from_context(context)
 
         mask_probability = config.get('mask_probability')
+        exclude_features = config.get_or_default('exclude_features',list())
         only_last_item_mask_prob = config.get('only_last_item_mask_prob')
 
         masking_targets = get_sequence_feature_names(config, context)
+        masking_targets = [masking_target for masking_target in masking_targets if masking_target not in exclude_features]
 
         return ClozeMaskProcessor(tokenizers, special_values, mask_probability, only_last_item_mask_prob, masking_targets)
 
