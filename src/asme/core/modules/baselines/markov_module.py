@@ -7,7 +7,7 @@ from pytorch_lightning.utilities import rank_zero_warn
 from torch.nn.parameter import Parameter
 
 from asme.core.utils.hyperparameter_utils import save_hyperparameters
-from asme.core.utils.inject import InjectTokenizer
+from asme.core.utils.inject import InjectTokenizer, inject
 from asme.data.datasets import ITEM_SEQ_ENTRY_NAME, TARGET_ENTRY_NAME
 from asme.core.metrics.container.metrics_container import MetricsContainer
 from asme.core.modules.metrics_trait import MetricsTrait
@@ -33,9 +33,10 @@ def last_item_in_sequence(input_sequence: torch.tensor) -> torch.Tensor:
 
 class MarkovModule(MetricsTrait, pl.LightningModule):
 
+    @inject(item_tokenizer=InjectTokenizer("item"))
     @save_hyperparameters
     def __init__(self,
-                 item_tokenizer: InjectTokenizer("item"),
+                 item_tokenizer: Tokenizer,
                  metrics: MetricsContainer):
 
         super().__init__()
