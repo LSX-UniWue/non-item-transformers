@@ -16,6 +16,7 @@ from asme.core.models.rnn.rnn_model import RNNModel
 from asme.core.models.sasrec.sasrec_model import SASRecModel
 from asme.core.models.content_sasrec.content_sasrec_model import ContentSASRecModel
 from asme.core.modules.baselines.bpr_module import BprModule
+from asme.core.modules.baselines.genre_pop_module import GenrePopModule
 from asme.core.modules.baselines.markov_module import MarkovModule
 from asme.core.modules.baselines.pop_module import PopModule
 from asme.core.modules.baselines.session_pop_module import SessionPopModule
@@ -80,6 +81,8 @@ register_module("nnrec", ModuleConfig(GenericModuleFactory, NextItemPredictionTr
     "model_cls": NNRecModel}))
 
 register_module("pop", ModuleConfig(GenericModuleFactory, PopModule))
+
+register_module("attribute_pop", ModuleConfig(GenericModuleFactory, GenrePopModule))
 
 register_module("session_pop", ModuleConfig(GenericModuleFactory, SessionPopModule))
 
