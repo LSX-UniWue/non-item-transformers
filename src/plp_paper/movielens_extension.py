@@ -30,19 +30,27 @@ def get_movielens_extended_preprocessing_config(
     context.set(OUTPUT_DIR_KEY, Path(output_directory))
     context.set(CURRENT_SPLIT_PATH_CONTEXT_KEY, Path(extraction_directory))
 
-
-    columns = [MetaInformation("rating", type="int", run_tokenization=False),
-               MetaInformation("gender", type="str"),
-               MetaInformation("age", type="str"),
-               MetaInformation("occupation", type="str"),
-               MetaInformation("title", type="str"),
-               MetaInformation("zip", type="str"),
-               MetaInformation("title_genres", type="str"),
-               MetaInformation("title_uid", type="str"),
-               MetaInformation("userId", type="str"),
-               MetaInformation("user_all", type="list", configs={"delimiter": "|", "element_type": "str"}),
-               MetaInformation("year", type="str", run_tokenization=False),
-               MetaInformation("genres", type="str", configs={"delimiter": "|"})]
+    if prefix == "ml-1m-extended":
+        columns = [MetaInformation("rating", type="int", run_tokenization=False),
+                   MetaInformation("gender", type="str"),
+                   MetaInformation("age", type="str"),
+                   MetaInformation("occupation", type="str"),
+                   MetaInformation("title", type="str"),
+                   MetaInformation("zip", type="str"),
+                   MetaInformation("title_genres", type="str"),
+                   MetaInformation("title_uid", type="str"),
+                   MetaInformation("userId", type="str"),
+                   MetaInformation("user_all", type="list", configs={"delimiter": "|", "element_type": "str"}),
+                   MetaInformation("year", type="str", run_tokenization=False),
+                   MetaInformation("genres", type="str", configs={"delimiter": "|"})]
+    else:
+        columns = [MetaInformation("rating", type="int", run_tokenization=False),
+                   MetaInformation("title", type="str"),
+                   MetaInformation("title_genres", type="str"),
+                   MetaInformation("title_uid", type="str"),
+                   MetaInformation("userId", type="str"),
+                   MetaInformation("year", type="str", run_tokenization=False),
+                   MetaInformation("genres", type="str", configs={"delimiter": "|"})]
 
 
     item_column = MetaInformation("item", column_name="title", type="str")
