@@ -242,7 +242,8 @@ def get_ml_20m_preprocessing_config(
                MetaInformation("timestamp", type="str"),
                MetaInformation("title", type="str"),
                MetaInformation("userId", type="str"),
-               MetaInformation("genres", type="str", configs={"delimiter": "|"})]
+               MetaInformation("genres", type="str", column_name="genres"),
+               MetaInformation("genres_split", column_name="genres", type="list", configs={"delimiter": "|", "element_type":"str"})]
 
     item_column = MetaInformation("item", column_name="title", type="str")
     min_item_feedback_column = "movieId"
