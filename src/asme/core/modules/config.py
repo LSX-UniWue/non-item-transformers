@@ -23,7 +23,7 @@ from asme.core.modules.baselines.session_pop_module import SessionPopModule
 from asme.core.modules.masked_training_module import MaskedTrainingModule
 from asme.core.modules.non_items.next_item_in_sequence_prediction_training_module import \
     NextItemInSequencePredictionTrainingModule
-from asme.core.modules.non_items.non_item_masked_training_module import NonItemMaskedTrainingModule
+# from asme.core.modules.non_items.non_item_masked_training_module import NonItemMaskedTrainingModule
 from asme.core.modules.prepend_content.user_masked_training_module import SequenceContentMaskedTrainingModule
 from asme.core.modules.prepend_content.user_next_item_prediction_training_module import UserNextItemPredictionTrainingModule
 from asme.core.modules.next_item_prediction_training_module import NextItemPredictionTrainingModule, \

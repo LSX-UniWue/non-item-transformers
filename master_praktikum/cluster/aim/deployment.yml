@@ -1,0 +1,68 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: aim
+  name: aim-grpc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aim
+  template:
+    metadata:
+      labels:
+        app: aim
+    spec:
+      containers:
+        - name: aim-grpc
+          env:
+            - name: AIM_MODE
+              value: "grpc"
+          image: gitlab2.informatik.uni-wuerzburg.de:4567/dmir/dallmann/recommender/aim:3.6.3
+          imagePullPolicy: Always
+          ports:
+          - containerPort: 53800
+            protocol: TCP
+          resources:
+            limits:
+              cpu: "2"
+              memory: 1Gi
+            requests:
+              cpu: "2"
+              memory: 1Gi
+          volumeMounts:
+          - mountPath: /aim
+            name: data-dir
+        - name: aim-web
+          env:
+            - name: AIM_MODE
+              value: "web"
+          image: gitlab2.informatik.uni-wuerzburg.de:4567/dmir/dallmann/recommender/aim:3.6.3
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 43800
+              protocol: TCP
+          resources:
+            limits:
+              cpu: "2"
+              memory: 1Gi
+            requests:
+              cpu: "2"
+              memory: 1Gi
+          volumeMounts:
+            - mountPath: /aim
+              name: data-dir
+      imagePullSecrets:
+      - name: gitlab-registry
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: data-dir
+        cephfs:
+            monitors:
+              - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
+            user: studbonda
+            path: "/home/stud/bonda/model_logging/aim"
+            secretRef:
+              name: ceph-secret

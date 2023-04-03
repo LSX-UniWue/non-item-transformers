@@ -1,0 +1,75 @@
+datamodule:
+  dataset: "coveo"
+  data_sources:
+    num_workers: 32
+    batch_size: 64
+    split: "ratio_split"
+    file_prefix: "coveo"
+    train:
+      type: "session"
+      processors:
+        - type: "target_extractor"
+          parallel: true
+    validation:
+      type: "session"
+      processors:
+        - type: "target_extractor"
+    test:
+      type: "session"
+      processors:
+        - type: "target_extractor"
+  preprocessing:
+    output_directory: "/ssd/coveo_dataset" #"/home/stud/bonda/master_praktikum/datasets/coveo_dataset/output"
+    input_directory: "/home/stud/bonda/master_praktikum/datasets/coveo_dataset/raw_data"
+    perform_convert_to_csv: false
+templates:
+  unified_output:
+    path: "/home/stud/bonda/master_praktikum/experiments/sasrec-cross/coveo/optuna"
+module:
+  type: "sasrec-cross"
+  metrics:
+    full:
+      metrics:
+        mrr: [1, 5, 10, 20]
+        recall: [1, 5, 10, 20]
+        ndcg: [1, 5, 10, 20]
+  model:
+    max_seq_length: 30
+    num_transformer_heads: 2
+    num_transformer_layers: 2
+    transformer_hidden_size: 8
+    transformer_dropout: 0.2
+    mode: "full"
+features:
+  item:
+    column_name: "product_sku_hash"
+    sequence_length: 30
+    tokenizer:
+      special_tokens:
+        pad_token: "<PAD>"
+        mask_token: "<MASK>"
+        unk_token: "<UNK>"
+trainer:
+  loggers:
+    tensorboard:
+      name: sasrec-cross-coveo-study
+      save_dir: /home/stud/bonda/master_praktikum/experiments/sasrec-cross/coveo/optuna
+    #csv:
+    aim:
+      experiment: "sasrec-cross-coveo-study"
+      repo: "/home/stud/bonda/model_logging/aim/"
+    #mlflow:
+    #  experiment_name: "teststudy"
+    #  tracking_uri: "file:/home/stud/bonda/model_logging/mlflow/"
+  checkpoint:
+    monitor: "recall@10"
+    save_top_k: 5
+    mode: 'max'
+  early_stopping:
+    min_delta: 0.001
+    mode: "max"
+    monitor: "recall@10"
+    patience: 20
+  gpus: 1
+  max_epochs: 5
+  check_val_every_n_epoch: 1

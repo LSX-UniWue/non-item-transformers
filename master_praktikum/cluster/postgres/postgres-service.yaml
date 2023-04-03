@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: optuna-postgres
+spec:
+  type: ClusterIP
+  selector:
+    app: optuna-postgres
+  ports:
+    - port: 5432

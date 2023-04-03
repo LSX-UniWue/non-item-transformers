@@ -1,0 +1,80 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: sasrec-cross-hm-study- # ändern für versch. Jobs
+  labels:
+    app: ds4rec
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      #nodeSelector:
+      #  gputype: "rtx8000"
+      containers:
+        - name: ds4rec
+          image: gitlab2.informatik.uni-wuerzburg.de:4567/dmir/dallmann/recommender/asme-dev:latest
+          imagePullPolicy: "Always"
+          resources:
+            requests: &resources
+              cpu: "32"
+              memory: "128Gi"
+              nvidia.com/gpu: 1
+            limits: *resources
+          envFrom:
+            - secretRef:
+                name: optuna-postgres-secrets
+          env:
+            - name: HOME
+              value: /home/stud/bonda
+            - name: PROJECT_DIR
+              value: /home/stud/bonda/master_praktikum/git/
+            - name: REPO_USER
+              value: s369347
+            - name: REPO_BRANCH
+              value: bonda_masterpraktikum
+            - name: PREPARE_SCRIPT # rausnehmen für lokales abspeichern von vocab und index files
+              value: /home/stud/bonda/master_praktikum/setup/copy_to_cache_hm.sh
+            - name: GIT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  key: token
+                  name: gitlab-token
+          args: ["search", "/home/stud/bonda/master_praktikum/cluster_jobs/sasrec-cross/hm/optuna/hm_config.yaml", "/home/stud/bonda/master_praktikum/cluster_jobs/sasrec-cross/hm/optuna/hyperopt.jsonnet", "sasrec_cross-hm-study", "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@optuna-postgres:5432/${POSTGRES_DB}", "recall@10"]
+          volumeMounts:
+            - mountPath: /home/stud/bonda
+              name: home
+#            - mountPath: /scratch
+#              name: scratch
+            - mountPath: /dev/shm
+              name: dshm
+            - mountPath: /ssd
+              name: cache
+      imagePullSecrets:
+        - name: gitlab-registry
+      restartPolicy: "Never"
+      priorityClassName: research-low
+      volumes:
+        - name: home
+          cephfs:
+            monitors:
+              - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
+            user: studbonda
+            path: "/home/stud/bonda"
+            secretRef:
+              name: ceph-secret
+#        - name: scratch
+#          cephfs:
+#            monitors:
+#              - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
+#            user: studbonda
+#            path: "/scratch"
+#            secretRef:
+#              name: ceph-secret
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: "4Gi"
+        - name: cache
+          emptyDir:
+            medium: Memory
+            sizeLimit: "100Gi"

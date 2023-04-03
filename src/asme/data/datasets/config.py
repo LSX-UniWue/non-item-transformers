@@ -1,13 +1,20 @@
 from pathlib import Path
 
 from asme.core.init.context import Context
+from asme.core.init.templating.datasources.datasources import DatasetSplit
+from asme.data import CURRENT_SPLIT_PATH_CONTEXT_KEY
 from asme.data.datamodule.config import DatasetPreprocessingConfig, PreprocessingConfigProvider
 from asme.data.datamodule.converters import YooChooseConverter, Movielens1MConverter, ExampleConverter, \
-    Movielens20MConverter, AmazonConverter, SteamConverter, SpotifyConverter, MelonConverter
+    Movielens20MConverter, AmazonConverter, SteamConverter, SpotifyConverter, MelonConverter, CoveoConverter, \
+    HMConverter
+from asme.data.datamodule.extractors import RemainingSessionPositionExtractor
 from asme.data.datamodule.preprocessing.action import PREFIXES_KEY, DELIMITER_KEY, INPUT_DIR_KEY, OUTPUT_DIR_KEY
-from asme.data.datamodule.preprocessing.csv import ConvertToCsv
+from asme.data.datamodule.preprocessing.csv import ConvertToCsv, GroupAndFilter, GroupedFilter
+from asme.data.datamodule.preprocessing.indexing import CreateSessionIndex, CreateNextItemIndex
+from asme.data.datamodule.preprocessing.split import UseExistingSplit
 from asme.data.datamodule.preprocessing.template import build_ratio_split, build_leave_one_out_split, \
     build_leave_percentage_out_split
+from asme.data.datamodule.preprocessing.vocabulary import CreateVocabulary
 from asme.data.datamodule.registry import register_preprocessing_config_provider
 from asme.data.datamodule.unpacker import Unzipper
 from asme.data.datasets.sequence import MetaInformation
@@ -994,3 +1001,150 @@ register_preprocessing_config_provider("example",
                                                                    lpo_split_min_validation_length=1,
                                                                    lpo_split_min_test_length=1
                                                                    ))
+
+
+def get_coveo_preprocessing_config(output_directory: str,
+                                   input_directory: str,
+                                   perform_convert_to_csv: bool = True,
+                                   end_of_train: int = 1552138259347,  # 1552145314852 (with search clicks)
+                                   end_of_validation: int = 1553704815974,  # 1553710162865 (with search clicks)
+                                   min_sequence_length: int = 2,
+                                   min_item_feedback: int = 5,
+                                   include_pageviews: bool = False
+                                   ) -> DatasetPreprocessingConfig:
+    prefix = "coveo"
+    context = Context()
+    context.set(PREFIXES_KEY, [prefix])
+    context.set(DELIMITER_KEY, "\t")
+    context.set(OUTPUT_DIR_KEY, Path(output_directory))
+    context.set(INPUT_DIR_KEY, Path(input_directory))
+    context.set(CURRENT_SPLIT_PATH_CONTEXT_KEY, Path(output_directory))
+
+    columns = [MetaInformation("session_id_hash", column_name="session_id_hash", type="str"),
+               MetaInformation("event_type", column_name="event_type", type="str"),
+               MetaInformation("product_action", column_name="product_action", type="str"),
+               MetaInformation("product_sku_hash", column_name="product_sku_hash", type="str"),
+               MetaInformation("server_timestamp_epoch_ms", column_name="server_timestamp_epoch_ms", type="timestamp",
+                               run_tokenization=False),
+               MetaInformation("hashed_url", column_name="hashed_url", type="str"),
+               MetaInformation("category_hash", column_name="category_hash", type="str"),
+               MetaInformation("price_bucket", column_name="price_bucket", type="str")]
+
+    item_column = MetaInformation("item", column_name="product_sku_hash", type="str")
+    min_item_feedback_column = "product_sku_hash"
+    min_sequence_length_column = "session_id_hash"
+    session_key = ["session_id_hash"]
+
+    convert_to_csv = ConvertToCsv(CoveoConverter(end_of_train=end_of_train,
+                                                 end_of_validation=end_of_validation,
+                                                 include_pageviews=include_pageviews,
+                                                 min_item_feedback=min_item_feedback,
+                                                 min_sequence_length=min_sequence_length))
+    use_existing_split = UseExistingSplit(
+        split_names=["train", "validation", "test"],
+        split_type=DatasetSplit.RATIO_SPLIT,
+        per_split_actions=
+        [
+            CreateSessionIndex(session_key),
+            CreateNextItemIndex(
+                [item_column],
+                RemainingSessionPositionExtractor(min_sequence_length)
+            )
+        ],
+        complete_split_actions=
+        [
+            CreateVocabulary(columns, prefixes=[prefix]),
+        ])
+    preprocessing_actions = [convert_to_csv, use_existing_split] if perform_convert_to_csv else [use_existing_split]
+
+    return DatasetPreprocessingConfig(prefix,
+                                      None,
+                                      Path(output_directory),
+                                      None,
+                                      preprocessing_actions,
+                                      context)
+
+
+register_preprocessing_config_provider("coveo",
+                                       PreprocessingConfigProvider(get_coveo_preprocessing_config,
+                                                                   output_directory="/home/yannik/Bachelorarbeit/lehrstuhl_framework/recommender/master_praktikum/local_tests/coveo",
+                                                                   input_directory="/home/yannik/Bachelorarbeit/lehrstuhl_framework/recommender/master_praktikum/coveo_sample_data"))
+
+
+def get_hm_preprocessing_config(output_directory: str,
+                                input_directory: str,
+                                perform_convert_to_csv: bool = True,
+                                end_of_train: int = 1581379200,
+                                end_of_validation: int = 1591660800,
+                                min_sequence_length: int = 2,
+                                min_item_feedback: int = 5
+                                ) -> DatasetPreprocessingConfig:
+    prefix = "hm"
+    context = Context()
+    context.set(PREFIXES_KEY, [prefix])
+    context.set(DELIMITER_KEY, "\t")
+    context.set(OUTPUT_DIR_KEY, Path(output_directory))
+    context.set(INPUT_DIR_KEY, Path(input_directory))
+    context.set(CURRENT_SPLIT_PATH_CONTEXT_KEY, Path(output_directory))
+
+    columns = [MetaInformation("t_dat", column_name="t_dat", type="timestamp", run_tokenization=False),
+               MetaInformation("customer_id", column_name="customer_id", type="str"),
+               MetaInformation("article_id", column_name="article_id", type="str"),
+               MetaInformation("price", column_name="price", type="float", run_tokenization=False),
+               MetaInformation("sales_channel_id", column_name="sales_channel_id", type="float",
+                               run_tokenization=False),
+               MetaInformation("FN", column_name="FN", type="float", run_tokenization=False),
+               MetaInformation("Active", column_name="Active", type="float", run_tokenization=False),
+               MetaInformation("club_member_status", column_name="club_member_status", type="str"),
+               MetaInformation("fashion_news_frequency", column_name="fashion_news_frequency", type="str"),
+               MetaInformation("age", column_name="age", type="float", run_tokenization=False),
+               MetaInformation("postal_code", column_name="postal_code", type="str"),
+               MetaInformation("prod_name", column_name="prod_name", type="str"),
+               MetaInformation("product_type_name", column_name="product_type_name", type="str"),
+               MetaInformation("product_group_name", column_name="product_group_name", type="str"),
+               MetaInformation("graphical_appearance_name", column_name="graphical_appearance_name", type="str"),
+               MetaInformation("colour_group_name", column_name="colour_group_name", type="str"),
+               MetaInformation("perceived_colour_value_name", column_name="perceived_colour_value_name", type="str"),
+               MetaInformation("perceived_colour_master_name", column_name="perceived_colour_master_name", type="str"),
+               MetaInformation("department_name", column_name="department_name", type="str"),
+               MetaInformation("index_name", column_name="index_name", type="str"),
+               MetaInformation("index_group_name", column_name="index_group_name", type="str"),
+               MetaInformation("section_name", column_name="section_name", type="str"),
+               MetaInformation("garment_group_name", column_name="garment_group_name", type="str"),
+               MetaInformation("detail_desc", column_name="detail_desc", type="str", run_tokenization=False)]
+
+    item_column = MetaInformation("item", column_name="article_id", type="str")
+    min_item_feedback_column = "article_id"
+    min_sequence_length_column = "customer_id"
+    session_key = ["customer_id"]
+
+    convert_to_csv = ConvertToCsv(HMConverter(end_of_train, end_of_validation, min_item_feedback, min_sequence_length))
+    use_existing_split = UseExistingSplit(
+        split_names=["train", "validation", "test"],
+        split_type=DatasetSplit.RATIO_SPLIT,
+        per_split_actions=
+        [
+            CreateSessionIndex(session_key),
+            CreateNextItemIndex(
+                [item_column],
+                RemainingSessionPositionExtractor(min_sequence_length)
+            )
+        ],
+        complete_split_actions=
+        [
+            CreateVocabulary(columns, prefixes=[prefix]),
+        ])
+    preprocessing_actions = [convert_to_csv, use_existing_split] if perform_convert_to_csv else [use_existing_split]
+
+    return DatasetPreprocessingConfig(prefix,
+                                      None,
+                                      Path(output_directory),
+                                      None,
+                                      preprocessing_actions,
+                                      context)
+
+
+register_preprocessing_config_provider("hm",
+                                       PreprocessingConfigProvider(get_hm_preprocessing_config,
+                                                                   output_directory="/home/yannik/Bachelorarbeit/lehrstuhl_framework/recommender/master_praktikum/local_tests/hm",
+                                                                   input_directory="/home/yannik/Bachelorarbeit/lehrstuhl_framework/recommender/master_praktikum/hm_sample_data"))

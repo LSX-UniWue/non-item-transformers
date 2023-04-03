@@ -1,0 +1,75 @@
+datamodule:
+  dataset: "hm"
+  data_sources:
+    num_workers: 32
+    batch_size: 32
+    split: "ratio_split"
+    file_prefix: "hm"
+    train:
+      type: "session"
+      processors:
+        - type: "cloze"
+          mask_probability: 0.4
+          only_last_item_mask_prob: 0.1
+    validation:
+      type: "session"
+      processors:
+        - type: "target_extractor"
+        - type: "last_item_mask"
+    test:
+      type: "session"
+      processors:
+        - type: "target_extractor"
+        - type: "last_item_mask"
+  preprocessing:
+    output_directory: "/ssd/hm_dataset" #"/home/stud/bonda/master_praktikum/datasets/hm_dataset/output"
+    input_directory: "/home/stud/bonda/master_praktikum/datasets/hm_dataset/raw_data"
+    perform_convert_to_csv: false
+templates:
+  unified_output:
+    path: "/home/stud/bonda/master_praktikum/experiments/test/hm"
+module:
+  type: "bert4rec"
+  metrics:
+    full:
+      metrics:
+        mrr: [1, 5, 10, 20]
+        recall: [1, 5, 10, 20]
+        ndcg: [1, 5, 10, 20]
+  model:
+    max_seq_length: 250
+    num_transformer_heads: 4
+    num_transformer_layers: 4
+    transformer_hidden_size: 32
+    transformer_dropout: 0.5
+features:
+  item:
+    column_name: "article_id"
+    sequence_length: 250
+    tokenizer:
+      special_tokens:
+        pad_token: "<PAD>"
+        mask_token: "<MASK>"
+        unk_token: "<UNK>"
+trainer:
+  accumulate_grad_batches: 2
+  loggers:
+    tensorboard:
+      name: bert4rec-hm-test
+      save_dir: /home/stud/bonda/master_praktikum/experiments/test/hm
+    #csv:
+    aim:
+      experiment: "teststudy"
+      repo: "/home/stud/bonda/model_logging/aim/"
+  checkpoint:
+    monitor: "recall@10"
+    save_top_k: 5
+    mode: 'max'
+  early_stopping:
+    min_delta: 0.001
+    mode: "max"
+    monitor: "recall@10"
+    patience: 100
+  gpus: 1
+  max_epochs: 5
+  check_val_every_n_epoch: 1

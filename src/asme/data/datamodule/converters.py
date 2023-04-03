@@ -1,3 +1,4 @@
+import ast
 import os
 import shutil
 from abc import abstractmethod
@@ -5,13 +6,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Any, Dict
 from tqdm import tqdm
+import time
 
 import numpy as np
 import pandas as pd
 
-from asme.data.datamodule.util import read_csv, read_json
+from asme.data.datamodule.util import read_csv
 import json
-import csv
 import gzip
 
 
@@ -123,7 +124,8 @@ class Movielens1MConverter(CsvConverter):
             by=[Movielens1MConverter.RATING_USER_COLUMN_NAME, Movielens1MConverter.RATING_TIMESTAMP_COLUMN_NAME])
 
         os.makedirs(output_file.parent, exist_ok=True)
-        merged_df["user_all"] = merged_df["gender"].astype(str)+"|"+merged_df["age"].astype(str)+"age|"+merged_df["occupation"].astype(str)+"occupation"
+        merged_df["user_all"] = merged_df["gender"].astype(str) + "|" + merged_df["age"].astype(str) + "age|" + \
+                                merged_df["occupation"].astype(str) + "occupation"
         merged_df.to_csv(output_file, sep=self.delimiter, index=False)
 
 
@@ -191,6 +193,7 @@ class Track:
     def __getitem__(self, key):
         return getattr(self, key)
 
+
 class SpotifyConverter(CsvConverter):
     RAW_TRACKS_KEY = "tracks"
     RAW_TIMESTAMP_KEY = "modified_at"
@@ -240,13 +243,16 @@ class SpotifyConverter(CsvConverter):
 
         # Write data to CSV
         spotify_dataframe = pd.DataFrame(data=dataset,
-                                         #index=index,
-                                         columns=[self.SPOTIFY_SESSION_ID, self._SPOTIFY_TIME_COLUMN, self.SPOTIFY_ITEM_ID, self.SPOTIFY_ALBUM_NAME_KEY, self.SPOTIFY_ARTIST_NAME_KEY]
-                                        )
-        #spotify_dataframe.index.name = self.SPOTIFY_SESSION_ID
+                                         # index=index,
+                                         columns=[self.SPOTIFY_SESSION_ID, self._SPOTIFY_TIME_COLUMN,
+                                                  self.SPOTIFY_ITEM_ID, self.SPOTIFY_ALBUM_NAME_KEY,
+                                                  self.SPOTIFY_ARTIST_NAME_KEY]
+                                         )
+        # spotify_dataframe.index.name = self.SPOTIFY_SESSION_ID
         if not os.path.exists(output_file):
             output_file.parent.mkdir(parents=True, exist_ok=True)
         spotify_dataframe.to_csv(output_file, sep=self.delimiter, index=False)
+
 
 class MelonConverter(CsvConverter):
     RAW_TRACKS_KEY = "songs"
@@ -261,6 +267,7 @@ class MelonConverter(CsvConverter):
     MELON_ALBUM_NAME_KEY = "album_name"
     MELON_ARTIST_NAME_KEY = "artist_name"
     MELON_GENRE_KEY = "genre"
+
     # song_gn_dtl_basket (subgenres), issue_date
 
     def __init__(self, delimiter="\t"):
@@ -299,7 +306,7 @@ class MelonConverter(CsvConverter):
                         genre_name = trackdict[track]['genre']
                         if song_name and album_name and artist_name and genre_name:
                             dataset += [{self.MELON_SESSION_ID: playlist_id,
-                                         #self._MELON_TIME_COLUMN: playlist_timestamp,
+                                         # self._MELON_TIME_COLUMN: playlist_timestamp,
                                          self.MELON_ITEM_ID: song_name,
                                          self.MELON_ALBUM_NAME_KEY: album_name,
                                          self.MELON_ARTIST_NAME_KEY: artist_name,
@@ -307,11 +314,273 @@ class MelonConverter(CsvConverter):
 
         # Write data to CSV
         spotify_dataframe = pd.DataFrame(data=dataset,
-                                         columns=[self.MELON_SESSION_ID, self.MELON_ITEM_ID, self.MELON_ALBUM_NAME_KEY, self.MELON_ARTIST_NAME_KEY, self.MELON_GENRE_KEY]
+                                         columns=[self.MELON_SESSION_ID, self.MELON_ITEM_ID, self.MELON_ALBUM_NAME_KEY,
+                                                  self.MELON_ARTIST_NAME_KEY, self.MELON_GENRE_KEY]
                                          )
         if not os.path.exists(output_file):
             output_file.parent.mkdir(parents=True, exist_ok=True)
         spotify_dataframe.to_csv(output_file, sep=self.delimiter, index=False)
+
+
+class CoveoConverter(CsvConverter):
+
+    def __init__(self, end_of_train, end_of_validation, min_item_feedback, min_sequence_length, include_pageviews, delimiter: str = "\t"):
+        self.end_of_train = end_of_train
+        self.end_of_validation = end_of_validation
+        self.min_item_feedback = min_item_feedback
+        self.min_sequence_length = min_sequence_length
+        self.include_pageviews = include_pageviews
+        self.delimiter = delimiter
+
+    def apply(self, input_dir: Path, output_file: Path):
+        output_dir = output_file.parent
+
+        browsing_train, search_train, sku_to_content = self._load_raw_files(input_dir)
+
+        self._convert_vectors_to_lists(search_train)
+        self._convert_vectors_to_arrays(sku_to_content)
+
+        self._remove_duplicates(browsing_train)
+        # browsing_train = self._add_search_clicks(browsing_train, search_train)
+        browsing_train = self._handle_pageviews(browsing_train)
+
+        full_dataset = self._merge_tables(browsing_train, sku_to_content)
+        full_dataset = self._apply_min_item_feedback(full_dataset)
+
+        self._fill_nan_values(full_dataset)
+
+        desc_vector_dict = self._create_desc_vector_dict(sku_to_content)
+        img_vector_dict = self._create_img_vector_dict(sku_to_content)
+
+        test, train, validation = self._create_split(full_dataset)
+        if not os.path.exists(output_file):
+            output_file.parent.mkdir(parents=True, exist_ok=True)
+        self._export_files(desc_vector_dict, img_vector_dict, output_dir, test, train, validation)
+
+    def _load_raw_files(self, input_dir):
+        browsing_train = pd.read_csv(os.path.join(input_dir, "browsing_train.csv"))
+        search_train = pd.read_csv(os.path.join(input_dir, "search_train.csv"))
+        sku_to_content = pd.read_csv(os.path.join(input_dir, "sku_to_content.csv"))
+        return browsing_train, search_train, sku_to_content
+
+    def _convert_vectors_to_lists(self, search_train):
+        search_train['clicked_skus_hash'] = search_train['clicked_skus_hash'].apply(self._convert_str_to_list)
+
+    def _convert_str_to_list(self, x):
+        if pd.isnull(x):
+            return x
+        return ast.literal_eval(x)
+
+    def _convert_vectors_to_arrays(self, sku_to_content):
+        sku_to_content['description_vector'] = sku_to_content['description_vector'].apply(self._convert_str_to_pdarray)
+        sku_to_content['image_vector'] = sku_to_content['image_vector'].apply(self._convert_str_to_pdarray)
+
+    def _convert_str_to_pdarray(self, x):
+        if pd.isnull(x):
+            return x
+        list_x = ast.literal_eval(x)
+        return pd.array(data=list_x, dtype=float)
+
+    def _remove_duplicates(self, browsing_train):
+        browsing_train.drop_duplicates(inplace=True)
+        # Remove indices of 'pageview' interactions from duplicated events where an interaction generate a detail and a pageview event
+        tmp = browsing_train[(browsing_train.event_type == 'pageview') & (
+            browsing_train.duplicated(['session_id_hash', 'server_timestamp_epoch_ms'], keep="first"))]
+        browsing_train.drop(tmp.index, inplace=True)
+        tmp2 = browsing_train[(browsing_train.event_type == 'pageview') & (
+            browsing_train.duplicated(['session_id_hash', 'server_timestamp_epoch_ms'], keep="last"))]
+        browsing_train.drop(tmp2.index, inplace=True)
+
+    def _add_search_clicks(self, browsing_train, search_train):
+        search_clicks = self._extract_search_clicks(search_train)
+        browsing_train = pd.concat([browsing_train, search_clicks])
+        return browsing_train
+
+    def _extract_search_clicks(self, search_train):
+        search_clicks = search_train[['session_id_hash', 'clicked_skus_hash', 'server_timestamp_epoch_ms']].copy()
+        search_clicks['event_type'] = 'event_product'
+        search_clicks['product_action'] = 'search'
+        search_clicks = search_clicks[search_clicks['clicked_skus_hash'].notnull()]
+        search_clicks = self._unstack_list_of_clicked_items_to_multiple_rows(search_clicks)
+        search_clicks['hashed_url'] = search_clicks['product_sku_hash']
+        # duplicates could indicate interest but are removed here
+        search_clicks.drop_duplicates(inplace=True)
+        return search_clicks
+
+    def _unstack_list_of_clicked_items_to_multiple_rows(self, search_clicks):
+        lst_col = 'clicked_skus_hash'
+        search_clicks = pd.DataFrame({
+            col: np.repeat(search_clicks[col].values, search_clicks[lst_col].str.len()) for col in
+            search_clicks.columns.difference([lst_col])}).assign(
+            **{lst_col: np.concatenate(search_clicks[lst_col].values)})[search_clicks.columns.tolist()]
+        search_clicks.columns = ['session_id_hash', 'product_sku_hash', 'server_timestamp_epoch_ms',
+                                 'event_type', 'product_action']
+        return search_clicks
+
+    def _handle_pageviews(self, browsing_train):
+        if self.include_pageviews:
+            browsing_train['product_sku_hash'] = browsing_train['product_sku_hash'].fillna(browsing_train['hashed_url'])
+        else:
+            browsing_train = browsing_train[browsing_train['product_sku_hash'].notnull()]
+        return browsing_train
+
+    def _merge_tables(self, browsing_train, sku_to_content):
+        full_dataset = pd.merge(browsing_train, sku_to_content, on='product_sku_hash', how='left')
+        full_dataset.drop(columns=['description_vector', 'image_vector'], inplace=True)
+        full_dataset.sort_values(['session_id_hash', 'server_timestamp_epoch_ms'], inplace=True)
+        return full_dataset
+
+    def _apply_min_item_feedback(self, full_dataset):
+        aggregated = full_dataset[full_dataset['event_type'] == 'event_product'].groupby(['product_sku_hash']).size()
+        filtered = aggregated.apply(lambda v: v >= self.min_item_feedback)
+        filtered = filtered.reset_index()
+        filtered.columns = ['product_sku_hash', 'item_feedback_bool']
+        ids = filtered[filtered['item_feedback_bool'] == False]['product_sku_hash'].tolist()
+        full_dataset = full_dataset[~full_dataset['product_sku_hash'].isin(ids)].copy()
+        return full_dataset
+
+    def _fill_nan_values(self, full_dataset):
+        full_dataset.fillna(value={"product_action": "view", "price_bucket": "missing", "category_hash": "missing"},
+                            inplace=True)
+
+    def _create_desc_vector_dict(self, sku_to_content):
+        desc_vector_dict = sku_to_content[['product_sku_hash', 'description_vector']]
+        desc_vector_dict = desc_vector_dict[desc_vector_dict['description_vector'].notnull()]
+        return desc_vector_dict
+
+    def _create_img_vector_dict(self, sku_to_content):
+        img_vector_dict = sku_to_content[['product_sku_hash', 'image_vector']]
+        img_vector_dict = img_vector_dict[img_vector_dict['image_vector'].notnull()]
+        return img_vector_dict
+
+    def _create_split(self, full_dataset):
+        full_dataset.sort_values(['server_timestamp_epoch_ms'], inplace=True)
+        train = full_dataset.loc[(full_dataset['server_timestamp_epoch_ms'] <= self.end_of_train)].copy()
+        validation = full_dataset.loc[
+            (full_dataset['server_timestamp_epoch_ms'] <= self.end_of_validation) & (
+                    full_dataset['server_timestamp_epoch_ms'] > self.end_of_train)].copy()
+        test = full_dataset.loc[(full_dataset['server_timestamp_epoch_ms'] > self.end_of_validation)].copy()
+
+        train = self._apply_min_sequence_length(train)
+        validation = self._apply_min_sequence_length(validation)
+        test = self._apply_min_sequence_length(test)
+
+        train.sort_values(['session_id_hash', 'server_timestamp_epoch_ms'], inplace=True)
+        validation.sort_values(['session_id_hash', 'server_timestamp_epoch_ms'], inplace=True)
+        test.sort_values(['session_id_hash', 'server_timestamp_epoch_ms'], inplace=True)
+        return test, train, validation
+
+    def _apply_min_sequence_length(self, dataset):
+        aggregated = dataset.groupby(['session_id_hash']).size()
+        filtered = aggregated.apply(lambda v: v >= self.min_sequence_length)
+        filtered = filtered.reset_index()
+        filtered.columns = ['session_id_hash', 'min_sequence_bool']
+        ids = filtered[filtered['min_sequence_bool']]['session_id_hash'].tolist()
+        dataset = dataset[dataset['session_id_hash'].isin(ids)].copy()
+        return dataset
+
+    def _export_files(self, desc_vector_dict, img_vector_dict, output_dir, test, train, validation):
+        train.to_csv(path_or_buf=os.path.join(output_dir, 'coveo.train.csv'), sep=self.delimiter, index=False)
+        validation.to_csv(path_or_buf=os.path.join(output_dir, 'coveo.validation.csv'), sep=self.delimiter,
+                          index=False)
+        test.to_csv(path_or_buf=os.path.join(output_dir, 'coveo.test.csv'), sep=self.delimiter, index=False)
+        desc_vector_dict.to_csv(path_or_buf=os.path.join(output_dir, "desc_vector_dict.csv"), sep=self.delimiter,
+                                index=False)
+        img_vector_dict.to_csv(path_or_buf=os.path.join(output_dir, "img_vector_dict.csv"), sep=self.delimiter,
+                               index=False)
+
+
+class HMConverter(CsvConverter):
+
+    def __init__(self, end_of_train, end_of_validation, min_item_feedback, min_sequence_length, delimiter="\t"):
+        self.end_of_train = end_of_train
+        self.end_of_validation = end_of_validation
+        self.min_item_feedback = min_item_feedback
+        self.min_sequence_length = min_sequence_length
+        self.delimiter = delimiter
+
+    def apply(self, input_dir: Path, output_file: Path):
+        output_dir = output_file.parent
+
+        articles, customers, transactions = self._load_raw_files(input_dir)
+
+        self._convert_dates_to_timestamps(transactions)
+        self._drop_irrelevant_columns(articles)
+
+        full_dataset = self._merge_tables(articles, customers, transactions)
+        self._fill_nan_values_with_zero(full_dataset)
+        full_dataset = self._apply_min_item_feedback(full_dataset)
+
+        test, train, validation = self._create_split(full_dataset)
+        if not os.path.exists(output_file):
+            output_file.parent.mkdir(parents=True, exist_ok=True)
+        self._export_split_files(output_dir, test, train, validation)
+
+    def _load_raw_files(self, input_dir):
+        articles = pd.read_csv(os.path.join(input_dir, "articles.csv"))
+        customers = pd.read_csv(os.path.join(input_dir, "customers.csv"))
+        transactions = pd.read_csv(os.path.join(input_dir, "transactions_train.csv"))
+        return articles, customers, transactions
+
+    def _convert_dates_to_timestamps(self, transactions):
+        transactions['t_dat'] = transactions['t_dat'].apply(self._datetime_to_timestamp)
+
+    def _datetime_to_timestamp(self, date):
+        return time.mktime(datetime.strptime(date, "%Y-%m-%d").timetuple())
+
+    def _drop_irrelevant_columns(self, articles):
+        articles.drop(inplace=True,
+                      columns=['product_code', 'product_type_no', 'graphical_appearance_no', 'colour_group_code',
+                               'perceived_colour_value_id', 'perceived_colour_master_id', 'department_no', 'index_code',
+                               'index_group_no', 'section_no', 'garment_group_no'])
+
+    def _merge_tables(self, articles, customers, transactions):
+        full_dataset = pd.merge(transactions, customers, on='customer_id', how='left')
+        full_dataset = pd.merge(full_dataset, articles, on='article_id', how='left')
+        full_dataset.sort_values(['customer_id', 't_dat'], inplace=True)
+        return full_dataset
+
+    def _fill_nan_values_with_zero(self, full_dataset):
+        full_dataset.fillna(0, inplace=True)
+
+    def _apply_min_item_feedback(self, full_dataset):
+        aggregated = full_dataset.groupby(['article_id']).size()
+        filtered = aggregated.apply(lambda v: v >= self.min_item_feedback)
+        filtered = filtered.reset_index()
+        filtered.columns = ['article_id', 'item_feedback_bool']
+        ids = filtered[filtered['item_feedback_bool']]['article_id'].tolist()
+        full_dataset = full_dataset[full_dataset['article_id'].isin(ids)].copy()
+        return full_dataset
+
+    def _create_split(self, full_dataset):
+        full_dataset.sort_values(['t_dat'], inplace=True)
+        train = full_dataset.loc[(full_dataset['t_dat'] <= self.end_of_train)].copy()
+        validation = full_dataset.loc[
+            (full_dataset['t_dat'] <= self.end_of_validation) & (full_dataset['t_dat'] > self.end_of_train)].copy()
+        test = full_dataset.loc[(full_dataset['t_dat'] > self.end_of_validation)].copy()
+
+        train = self._apply_min_sequence_length(train)
+        validation = self._apply_min_sequence_length(validation)
+        test = self._apply_min_sequence_length(test)
+
+        train.sort_values(['customer_id', 't_dat'], inplace=True)
+        validation.sort_values(['customer_id', 't_dat'], inplace=True)
+        test.sort_values(['customer_id', 't_dat'], inplace=True)
+        return test, train, validation
+
+    def _apply_min_sequence_length(self, dataset):
+        aggregated = dataset.groupby(['customer_id']).size()
+        filtered = aggregated.apply(lambda v: v >= self.min_sequence_length)
+        filtered = filtered.reset_index()
+        filtered.columns = ['customer_id', 'min_sequence_bool']
+        ids = filtered[filtered['min_sequence_bool']]['customer_id'].tolist()
+        dataset = dataset[dataset['customer_id'].isin(ids)].copy()
+        return dataset
+
+    def _export_split_files(self, output_dir, test, train, validation):
+        train.to_csv(path_or_buf=os.path.join(output_dir, 'hm.train.csv'), sep=self.delimiter, index=False)
+        validation.to_csv(path_or_buf=os.path.join(output_dir, 'hm.validation.csv'), sep=self.delimiter, index=False)
+        test.to_csv(path_or_buf=os.path.join(output_dir, 'hm.test.csv'), sep=self.delimiter, index=False)
 
 
 class ExampleConverter(CsvConverter):

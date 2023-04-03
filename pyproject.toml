@@ -32,7 +32,9 @@ flatten-dict = "^0.4.2"
 loguru = "^0.6.0"
 aim = "3.9.4"
 torchmetrics = "0.6.0"
-psycopg2 = ">2.0.0"
+jupyter = "^1.0.0"
+matplotlib = "^3.6.2"
+psycopg2-binary = "^2.8"
 
 
 

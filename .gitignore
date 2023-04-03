@@ -15,3 +15,5 @@ out/
 poetry.lock
 docs/build
 datasets
+
+.ipynb_checkpoints/
