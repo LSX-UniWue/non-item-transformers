@@ -39,9 +39,9 @@ def create_extended_movielens_data(input_dir, output_dir, name, stage):
     item_df = item_df.sort_values(["userId","timestamp","original_order","item_id_type"])
     if name == "ml-1m":
         item_df = item_df[['userId', 'rating', 'timestamp', 'gender', 'age',
-                       'occupation', 'title', 'genres', 'year', 'user_all', 'title_genres', 'title_uid', 'item_id_type', 'zip']]
+                       'occupation', 'title', 'genres', 'year', 'user_all', 'title_genres', 'title_uid', 'item_id_type','zip']]
     else:
-        item_df = item_df[['userId', 'rating', 'timestamp', 'title', 'genres', 'year', 'title_genres', 'title_uid', 'item_id_type', 'zip']]
+        item_df = item_df[['userId', 'rating', 'timestamp', 'title', 'genres', 'year', 'title_genres', 'title_uid', 'item_id_type']]
     os.makedirs(output_dir, exist_ok=True)
     item_df.to_csv(f'{output_dir}/{name+"-extended"}.{stage}{file_type}', sep=delimiter, index=False)
 
