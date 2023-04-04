@@ -100,9 +100,9 @@ class NextItemInSequencePredictionTrainingModule(BaseNextItemPredictionTrainingM
             item_logits = self._extract_target_item_logits(item_logits)
             cat_logits = self._extract_target_item_logits(cat_logits)
 
-        item_type_id_target = batch[self.item_type_id]
         #Set item target to padding id for nonitems to exclude them from the gradient
         if self.item_type_id is not None:
+            item_type_id_target = batch[self.item_type_id]
             item_target[item_type_id_target == 0] = self.item_tokenizer.pad_token_id
         if self.item_cat_loss is False:
             #set cat target to padding id for items to exclude this from the gradient

@@ -106,10 +106,9 @@ class NonItemMaskedTrainingModule(MetricsTrait, pl.LightningModule):
             item_target = torch.cat([prepended_content_mask, item_target], dim=1)
             cat_target = torch.cat([prepended_content_mask, cat_target], dim=1)
 
-
-        item_type_id_target = batch[self.item_type_id]
         #Set item target to padding id for nonitems to exclude them from the gradient
         if self.item_type_id is not None:
+            item_type_id_target = batch[self.item_type_id]
             item_target[item_type_id_target == 0] = self.item_tokenizer.pad_token_id
         if self.item_cat_loss is False:
             #set cat target to padding id for items to exclude this from the gradient
