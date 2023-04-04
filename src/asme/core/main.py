@@ -60,8 +60,14 @@ app = typer.Typer()
 def train(config_file: Path = typer.Argument(..., help='the path to the config file', exists=True),
           do_resume: bool = typer.Option(False, help='flag iff the model should resume training from a checkpoint'),
           print_train_val_examples: bool = typer.Option(False, help='print examples of the training '
-                                                                    'and evaluation dataset before starting training')
+                                                                    'and evaluation dataset before starting training'),
+          seed: Optional[int] = typer.Option(default=42, help='seed used eg for the sampled evaluation')
           ) -> None:
+
+
+    if seed is not None:
+        seed_everything(seed)
+
     config_file_path = Path(config_file)
     config = load_config(config_file_path)
 
