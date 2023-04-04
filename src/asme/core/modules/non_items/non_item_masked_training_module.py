@@ -1,7 +1,7 @@
 import torch
 import pytorch_lightning as pl
 
-from typing import Union, Dict, Optional, Any
+from typing import Union, Dict, Optional, Any, Tuple
 
 from torch import nn
 from torch.optim.lr_scheduler import LambdaLR
@@ -46,6 +46,7 @@ class NonItemMaskedTrainingModule(MetricsTrait, pl.LightningModule):
                  loss_factor: float = 1,
                  loss_category_epochs: int = None,
                  item_type_id: str = None,
+                 use_item_cat_loss: bool = True,
                  validation_metrics_on_item: bool = True,
                  num_warmup_steps: int = 10000,
                  ):
@@ -55,6 +56,7 @@ class NonItemMaskedTrainingModule(MetricsTrait, pl.LightningModule):
         cat_tokenizer = tokenizers.get(TOKENIZERS_PREFIX + KEY_DELIMITER + loss_category)
 
         self.model = model
+        self.item_cat_loss = use_item_cat_loss
 
         self.learning_rate = learning_rate
         self.beta_1 = beta_1
@@ -104,10 +106,15 @@ class NonItemMaskedTrainingModule(MetricsTrait, pl.LightningModule):
             item_target = torch.cat([prepended_content_mask, item_target], dim=1)
             cat_target = torch.cat([prepended_content_mask, cat_target], dim=1)
 
+
+        item_type_id_target = batch[self.item_type_id]
         #Set item target to padding id for nonitems to exclude them from the gradient
         if self.item_type_id is not None:
-            item_type_id_target = batch[self.item_type_id]
-            item_target = torch.where(item_type_id_target == 1, item_target, self.item_tokenizer.pad_token_id)
+            item_target[item_type_id_target == 0] = self.item_tokenizer.pad_token_id
+        if self.item_cat_loss is False:
+            #set cat target to padding id for items to exclude this from the gradient
+            pad_tensor = torch.tensor([self.cat_tokenizer.pad_token_id]*cat_target.shape[2]).type(torch.LongTensor)
+            cat_target[item_type_id_target == 1] = pad_tensor
 
         # call the model
         item_logits, cat_logits = self(batch, batch_idx)
@@ -125,7 +132,7 @@ class NonItemMaskedTrainingModule(MetricsTrait, pl.LightningModule):
         }
 
 
-    def _get_prediction_for_masked_item(self, batch: Any, batch_idx: int) -> torch.Tensor:
+    def _get_prediction_for_masked_item(self, batch: Any, batch_idx: int) -> tuple[torch.Tensor, torch.Tensor]:
         input_seq = batch[ITEM_SEQ_ENTRY_NAME]
         target_mask = input_seq.eq(self.item_tokenizer.mask_token_id)
 

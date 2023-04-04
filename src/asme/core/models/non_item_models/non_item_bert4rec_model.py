@@ -12,6 +12,7 @@ from asme.core.models.common.layers.layers import PROJECT_TYPE_LINEAR, build_pro
 from asme.core.models.common.layers.transformer_layers import TransformerEmbedding
 from asme.core.models.content_bert4rec.components import ContextSequenceRepresentationModifierComponent, \
     ContextSequenceElementsRepresentationComponent, PrependedTransformerSequenceRepresentationComponent
+from asme.core.models.non_item_models.components import NonItemSequenceElementsRepresentationComponent
 from asme.core.models.non_item_models.non_item_sasrec_model import CategoryAndItemProjectionLayer, \
     CategoryAndItemReuseProjectionLayer
 from asme.core.models.sequence_recommendation_model import SequenceRecommenderModel
@@ -72,13 +73,14 @@ class NonItemBERT4RecModel(SequenceRecommenderModel):
                                                   embedding_pooling_type=embedding_pooling_type,
                                                   norm_embedding=False, positional_embedding=positional_embedding)
 
-        element_representation = ContextSequenceElementsRepresentationComponent(sequence_embedding,
+        element_representation = NonItemSequenceElementsRepresentationComponent(sequence_embedding,
                                                                                 transformer_hidden_size,
                                                                                 item_tokenizer,
                                                                                 prefusion_attributes,
                                                                                 prepend_attributes,
                                                                                 attribute_tokenizers,
                                                                                 vector_dictionaries,
+                                                                                item_id_type_settings,
                                                                                 dropout=transformer_dropout,
                                                                                 segment_embedding_active=segment_embedding)
 

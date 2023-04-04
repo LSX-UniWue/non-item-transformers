@@ -139,6 +139,15 @@ class NonItemSequenceElementsRepresentationComponent(SequenceElementsRepresentat
         embedding_type = attribute_infos["embedding"]
         merge = attribute_infos.get("merge_function", None)
         additional_metadata = sequence.get_attribute(input_key)
+        skip_item = attribute_infos.get("plp_only", False)
+        if skip_item:
+            item_id_type = sequence.get_attribute(self.item_id_type_settings["name"])
+            pad_tensor = torch.zeros(additional_metadata.size()[2]).type(torch.LongTensor)
+            additional_metadata[item_id_type == 0] = pad_tensor
+
+
+
+
         if embedding_type == "keys":
             embedded_data = module(additional_metadata)
         elif embedding_type == "vector":

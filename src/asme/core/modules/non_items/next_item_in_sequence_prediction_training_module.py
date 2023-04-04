@@ -38,6 +38,7 @@ class NextItemInSequencePredictionTrainingModule(BaseNextItemPredictionTrainingM
                  loss_factor: float = 1,
                  loss_category_epochs: int = None,
                  item_type_id: str = None,
+                 use_item_cat_loss: bool = True,
                  validation_metrics_on_item: bool = True,
                  first_item: bool = False
                  ):
@@ -49,6 +50,7 @@ class NextItemInSequencePredictionTrainingModule(BaseNextItemPredictionTrainingM
         self.user_key_len = len(model.optional_metadata_keys())
         self.first_item = first_item
         self.loss_category = loss_category
+        self.item_cat_loss = use_item_cat_loss
         self.loss = loss
         self.cat_tokenizer = cat_tokenizer
         self.item_tokenizer = item_tokenizer
@@ -98,10 +100,14 @@ class NextItemInSequencePredictionTrainingModule(BaseNextItemPredictionTrainingM
             item_logits = self._extract_target_item_logits(item_logits)
             cat_logits = self._extract_target_item_logits(cat_logits)
 
+        item_type_id_target = batch[self.item_type_id]
         #Set item target to padding id for nonitems to exclude them from the gradient
         if self.item_type_id is not None:
-            item_type_id_target = batch[self.item_type_id+TARGET_SUFFIX]
-            item_target = torch.where(item_type_id_target == 1, item_target, self.item_tokenizer.pad_token_id)
+            item_target[item_type_id_target == 0] = self.item_tokenizer.pad_token_id
+        if self.item_cat_loss is False:
+            #set cat target to padding id for items to exclude this from the gradient
+            pad_tensor = torch.tensor([self.cat_tokenizer.pad_token_id]*cat_target.shape[2]).type(torch.LongTensor)
+            cat_target[item_type_id_target == 1] = pad_tensor
 
         item_loss = self.loss.item_forward(item_target, item_logits)
         cat_loss = self.loss.cat_forward(cat_target, cat_logits)
