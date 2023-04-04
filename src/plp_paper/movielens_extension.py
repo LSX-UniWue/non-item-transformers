@@ -42,7 +42,7 @@ def get_movielens_extended_preprocessing_config(
                    MetaInformation("userId", type="str"),
                    MetaInformation("user_all", type="list", configs={"delimiter": "|", "element_type": "str"}),
                    MetaInformation("year", type="str", run_tokenization=False),
-                   MetaInformation("genres", type="str", configs={"delimiter": "|"})]
+                   MetaInformation("genres", type="str", configs={"delimiter": "|", "element_type": "str"})]
     else:
         columns = [MetaInformation("rating", type="int", run_tokenization=False),
                    MetaInformation("title", type="str"),
@@ -50,7 +50,7 @@ def get_movielens_extended_preprocessing_config(
                    MetaInformation("title_uid", type="str"),
                    MetaInformation("userId", type="str"),
                    MetaInformation("year", type="str", run_tokenization=False),
-                   MetaInformation("genres", type="str", configs={"delimiter": "|"})]
+                   MetaInformation("genres", type="str", configs={"delimiter": "|", "element_type": "str"})]
 
 
     item_column = MetaInformation("item", column_name="title", type="str")
