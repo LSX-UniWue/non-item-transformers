@@ -9,6 +9,7 @@ from typing import Optional
 import optuna
 import torch
 import typer
+
 from asme.core.callbacks.metrics_history import MetricsHistoryCallback
 from asme.core.init.config import Config
 from asme.core.init.config_keys import CHECKPOINT_CONFIG_DIR_PATH
@@ -20,6 +21,7 @@ from asme.core.init.factories.metrics.metrics_container import MetricsContainerF
 from asme.core.init.templating.search.configuration import SearchConfigurationTemplateProcessor
 from asme.core.init.templating.search.processor import SearchTemplateProcessor
 from asme.core.init.templating.search.resolver import OptunaParameterResolver
+from asme.core.model_summary import ModelSummary
 from asme.core.utils import ioutils
 from asme.core.utils.ioutils import determine_log_dir
 from asme.core.utils.ioutils import finished_flag_exists
@@ -100,11 +102,32 @@ def train(config_file: Path = typer.Argument(..., help='the path to the config f
         #    preprocessing_parameters = {f"datamodule/{param}": value for param, value in preprocessing_parameters.items()}
         #    module.save_hyperparameters(preprocessing_parameters)
 
+        parameters = list(module.parameters())
+        trainable_parameters = [p for p in parameters if p.requires_grad]
+        unique = {p.data_ptr(): p for p in parameters}.values()
+        print("Unique trainable parameters",sum(p.numel() for p in unique))
+
+
+
+
+        print(ModelSummary(module,max_depth=-1))
+
         trainer.fit(module,
                     train_dataloaders=train_dataloader,
                     val_dataloaders=validation_dataloader)
 
         save_finished_flag(log_dir)
+
+
+
+
+
+
+
+
+
+
+
 
 @app.command()
 def search(template_file: Path = typer.Argument(..., help='the path to the config file'),
