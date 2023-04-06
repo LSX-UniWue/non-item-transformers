@@ -55,7 +55,7 @@ register_module("content-sasrec-full", ModuleConfig(GenericModuleFactory, UserNe
 register_module("non-items-sasrec-cross", ModuleConfig(GenericModuleFactory, NextItemInSequencePredictionTrainingModule, {
     "model_cls": NonItemSASRecModel}))
 
-register_module("non-items-bert", ModuleConfig(GenericModuleFactory, NonItemMaskedTrainingModule, {
+register_module("non-items-bert4rec", ModuleConfig(GenericModuleFactory, NonItemMaskedTrainingModule, {
     "model_cls": NonItemBERT4RecModel}))
 
 register_module("sasrec-cross", ModuleConfig(GenericModuleFactory, NextItemPredictionTrainingModule, {
