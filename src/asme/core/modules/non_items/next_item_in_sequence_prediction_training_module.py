@@ -106,7 +106,7 @@ class NextItemInSequencePredictionTrainingModule(BaseNextItemPredictionTrainingM
             item_target[item_type_id_target == 1] = self.item_tokenizer.pad_token_id
         if self.item_cat_loss is False:
             #set cat target to padding id for items to exclude this from the gradient
-            pad_tensor = torch.tensor([self.cat_tokenizer.pad_token_id]*cat_target.shape[2]).type(torch.LongTensor).to(cat_target.device)
+            pad_tensor = torch.tensor([self.cat_tokenizer.pad_token_id]*cat_target.shape[2], device=cat_target.device).type(torch.LongTensor)
             cat_target[item_type_id_target == 0] = pad_tensor
 
         item_loss = self.loss.item_forward(item_target, item_logits)
