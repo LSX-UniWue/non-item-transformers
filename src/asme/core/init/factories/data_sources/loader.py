@@ -146,11 +146,13 @@ class LoaderFactory(ObjectFactory):
         dataset = dependencies[self.DATASET_DEPENDENCY_KEY]
 
         num_workers = config.get_or_default("num_workers", multiprocessing.cpu_count() - 1)
+        print("NUM_WORKERS:",num_workers)
         persistent_workers = True if num_workers > 1 else False
         init_worker_fn = None if num_workers == 0 else mp_worker_init_fn
 
         pad_direction = PadDirection.LEFT if config.get("pad_direction") == "left" else PadDirection.RIGHT
         dynamic_padding = config.get_or_default('dynamic_padding', True)
+        pin_memory = config.get_or_default('pin_memory', False)
 
         shuffle_dataset = config.get("shuffle")
         return DataLoader(
@@ -158,6 +160,7 @@ class LoaderFactory(ObjectFactory):
             batch_size=config.get("batch_size"),
             shuffle=shuffle_dataset,
             num_workers=num_workers,
+            pin_memory=pin_memory,
             persistent_workers=persistent_workers,
             worker_init_fn=init_worker_fn,
             collate_fn=padded_session_collate(
