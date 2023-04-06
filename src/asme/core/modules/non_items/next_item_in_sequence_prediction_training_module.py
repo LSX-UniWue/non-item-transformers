@@ -103,11 +103,11 @@ class NextItemInSequencePredictionTrainingModule(BaseNextItemPredictionTrainingM
         #Set item target to padding id for nonitems to exclude them from the gradient
         if self.item_type_id is not None:
             item_type_id_target = batch[self.item_type_id]
-            item_target[item_type_id_target == 0] = self.item_tokenizer.pad_token_id
+            item_target[item_type_id_target == 1] = self.item_tokenizer.pad_token_id
         if self.item_cat_loss is False:
             #set cat target to padding id for items to exclude this from the gradient
             pad_tensor = torch.tensor([self.cat_tokenizer.pad_token_id]*cat_target.shape[2]).type(torch.LongTensor).to(cat_target.device)
-            cat_target[item_type_id_target == 1] = pad_tensor
+            cat_target[item_type_id_target == 0] = pad_tensor
 
         item_loss = self.loss.item_forward(item_target, item_logits)
         cat_loss = self.loss.cat_forward(cat_target, cat_logits)
