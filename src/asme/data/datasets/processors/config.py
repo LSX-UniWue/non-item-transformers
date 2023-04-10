@@ -13,6 +13,8 @@ from asme.core.init.factories.data_sources.datasets.processor.position_token imp
 from asme.core.init.factories.data_sources.datasets.processor.positive_item_extractor import \
     PositiveItemExtractorProcessorFactory
 from asme.core.init.factories.data_sources.datasets.processor.input_dictionary import InputDictionaryProcessorFactory
+from asme.core.init.factories.data_sources.datasets.processor.product_sequence_end import \
+    ProductSequenceEndProcessorFactory
 from asme.core.init.factories.data_sources.datasets.processor.target_extractor import TargetExtractorProcessorFactory
 from asme.core.init.factories.data_sources.datasets.processor.tokenizer import TokenizerProcessorFactory
 from asme.data.datasets.processors.registry import register_processor, ProcessorConfig
@@ -29,4 +31,5 @@ register_processor("positive_item_extractor", ProcessorConfig(PositiveItemExtrac
 register_processor("fixed_sequence_length_processor", ProcessorConfig(CutToFixedSequenceLengthProcessorFactory))
 register_processor("pad_feature", ProcessorConfig(PadFeatureProcessorFactory))
 register_processor("input_dictionaries", ProcessorConfig(InputDictionaryProcessorFactory))
+register_processor("product_sequence_end", ProcessorConfig(ProductSequenceEndProcessorFactory))
 

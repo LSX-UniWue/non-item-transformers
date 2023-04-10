@@ -1010,10 +1010,11 @@ def get_coveo_preprocessing_config(output_directory: str,
                                    end_of_train: int = 1552138259347,  # 1552145314852 (with search clicks)
                                    end_of_validation: int = 1553704815974,  # 1553710162865 (with search clicks)
                                    min_sequence_length: int = 2,
-                                   min_item_feedback: int = 5,
-                                   include_pageviews: bool = False
+                                   min_item_feedback: int =5,
+                                   include_pageviews: bool = False,
+                                   prefix: str = "coveo"
                                    ) -> DatasetPreprocessingConfig:
-    prefix = "coveo"
+
     context = Context()
     context.set(PREFIXES_KEY, [prefix])
     context.set(DELIMITER_KEY, "\t")
@@ -1028,8 +1029,11 @@ def get_coveo_preprocessing_config(output_directory: str,
                MetaInformation("server_timestamp_epoch_ms", column_name="server_timestamp_epoch_ms", type="timestamp",
                                run_tokenization=False),
                MetaInformation("hashed_url", column_name="hashed_url", type="str"),
-               MetaInformation("category_hash", column_name="category_hash", type="str"),
+               MetaInformation("category_hash", column_name="category_hash", type="list", configs={"delimiter": "/", "element_type": "str"}),
                MetaInformation("price_bucket", column_name="price_bucket", type="str")]
+
+    if prefix == "coveo-extended":
+        columns.append(MetaInformation("category_product_id", column_name="category_product_id", type="str"))
 
     item_column = MetaInformation("item", column_name="product_sku_hash", type="str")
     min_item_feedback_column = "product_sku_hash"
@@ -1040,7 +1044,8 @@ def get_coveo_preprocessing_config(output_directory: str,
                                                  end_of_validation=end_of_validation,
                                                  include_pageviews=include_pageviews,
                                                  min_item_feedback=min_item_feedback,
-                                                 min_sequence_length=min_sequence_length))
+                                                 min_sequence_length=min_sequence_length,
+                                                 prefix=prefix))
     use_existing_split = UseExistingSplit(
         split_names=["train", "validation", "test"],
         split_type=DatasetSplit.RATIO_SPLIT,

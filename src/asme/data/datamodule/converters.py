@@ -324,43 +324,91 @@ class MelonConverter(CsvConverter):
 
 class CoveoConverter(CsvConverter):
 
-    def __init__(self, end_of_train, end_of_validation, min_item_feedback, min_sequence_length, include_pageviews, delimiter: str = "\t"):
+    def __init__(self, end_of_train, end_of_validation, min_item_feedback, min_sequence_length, include_pageviews,
+                 prefix, delimiter: str = "\t"):
         self.end_of_train = end_of_train
         self.end_of_validation = end_of_validation
         self.min_item_feedback = min_item_feedback
         self.min_sequence_length = min_sequence_length
         self.include_pageviews = include_pageviews
         self.delimiter = delimiter
+        self.prefix = prefix
+        self.search_list_page = prefix == "coveo-extended"
 
     def apply(self, input_dir: Path, output_file: Path):
         output_dir = output_file.parent
-
         browsing_train, search_train, sku_to_content = self._load_raw_files(input_dir)
 
         self._convert_vectors_to_lists(search_train)
         self._convert_vectors_to_arrays(sku_to_content)
 
-        self._remove_duplicates(browsing_train)
+        # self._remove_duplicates(browsing_train)
         # browsing_train = self._add_search_clicks(browsing_train, search_train)
         browsing_train = self._handle_pageviews(browsing_train)
 
         full_dataset = self._merge_tables(browsing_train, sku_to_content)
         full_dataset = self._apply_min_item_feedback(full_dataset)
-
         self._fill_nan_values(full_dataset)
 
         desc_vector_dict = self._create_desc_vector_dict(sku_to_content)
         img_vector_dict = self._create_img_vector_dict(sku_to_content)
 
-        test, train, validation = self._create_split(full_dataset)
+        if self.search_list_page:
+            search_train = self._prepare_search_list_pages(search_train, sku_to_content)
+        else:
+            search_train = None
+
+        full_dataset["item_id_type"] = 1
+        test, train, validation = self._create_split(full_dataset, search=search_train)
+
+        self._fill_nan_values(test)
+        self._fill_nan_values(train)
+        self._fill_nan_values(validation)
+
         if not os.path.exists(output_file):
             output_file.parent.mkdir(parents=True, exist_ok=True)
-        self._export_files(desc_vector_dict, img_vector_dict, output_dir, test, train, validation)
+        self._export_files(desc_vector_dict, img_vector_dict, output_dir, test, train, validation, prefix=self.prefix)
+
+    def _prepare_search_list_pages(self, search_clicks, sku_to_content):
+        search_clicks = search_clicks[['session_id_hash', 'product_skus_hash', 'server_timestamp_epoch_ms']].copy()
+        search_clicks.drop_duplicates(inplace=True)
+        search_clicks = search_clicks[search_clicks['product_skus_hash'].notnull()]
+        search_clicks["product_skus_hash"] = search_clicks["product_skus_hash"].str.replace('\[|\]|\'', '')
+        search_clicks["product_skus_hash"] = search_clicks["product_skus_hash"].str.split(",")
+        search_clicks = search_clicks.explode("product_skus_hash")
+        category_dict = sku_to_content[["product_sku_hash", "category_hash"]].set_index("product_sku_hash").to_dict()[
+            "category_hash"]
+        search_clicks["category_hash"] = search_clicks["product_skus_hash"].map(category_dict)
+        search_clicks.dropna()
+        search_clicks = search_clicks[["session_id_hash", "server_timestamp_epoch_ms", 'category_hash']]
+        search_clicks.assign(category_hash=search_clicks['category_hash'].str.split('/')).explode('category_hash')
+        search_clicks = self.get_list_page_categories(search_clicks)
+        search_clicks["item_id_type"] = 0
+        search_clicks["event_type"] = "search"
+        search_clicks["product_action"] = "search"
+        search_clicks["product_sku_hash"] = "SEARCHLIST"
+        search_clicks["hashed_url"] = "SEARCHLIST"
+        search_clicks["price_bucket"] = "0"
+        search_clicks['server_timestamp_epoch_ms'] = search_clicks[['server_timestamp_epoch_ms']].astype(int)
+
+        return search_clicks
+
+    def get_list_page_categories(self, df):
+        def concat_values(df):
+            return df['category_hash'].str.cat(sep='/')
+
+        counts = df.groupby(['session_id_hash', 'server_timestamp_epoch_ms'])['category_hash'].value_counts().reset_index(
+            name='count')
+        counts = counts.groupby(["session_id_hash", "server_timestamp_epoch_ms"]).apply(
+            lambda x: x.nlargest(3, 'count')).reset_index(drop=True)
+        result = counts.groupby(["session_id_hash", "server_timestamp_epoch_ms"]).apply(concat_values).reset_index(
+            name='category_hash')
+        return result
 
     def _load_raw_files(self, input_dir):
-        browsing_train = pd.read_csv(os.path.join(input_dir, "browsing_train.csv"))
-        search_train = pd.read_csv(os.path.join(input_dir, "search_train.csv"))
-        sku_to_content = pd.read_csv(os.path.join(input_dir, "sku_to_content.csv"))
+        browsing_train = pd.read_csv(os.path.join(input_dir, "browsing_train.csv"), header=0)
+        search_train = pd.read_csv(os.path.join(input_dir, "search_train.csv"), header=0)
+        sku_to_content = pd.read_csv(os.path.join(input_dir, "sku_to_content.csv"), header=0)
         return browsing_train, search_train, sku_to_content
 
     def _convert_vectors_to_lists(self, search_train):
@@ -453,7 +501,10 @@ class CoveoConverter(CsvConverter):
         img_vector_dict = img_vector_dict[img_vector_dict['image_vector'].notnull()]
         return img_vector_dict
 
-    def _create_split(self, full_dataset):
+    def _create_split(self, full_dataset, search=None):
+
+        if search is not None:
+            full_dataset["category_product_id"]= full_dataset["product_sku_hash"]
         full_dataset.sort_values(['server_timestamp_epoch_ms'], inplace=True)
         train = full_dataset.loc[(full_dataset['server_timestamp_epoch_ms'] <= self.end_of_train)].copy()
         validation = full_dataset.loc[
@@ -465,10 +516,28 @@ class CoveoConverter(CsvConverter):
         validation = self._apply_min_sequence_length(validation)
         test = self._apply_min_sequence_length(test)
 
+        if search is not None:
+            search["category_product_id"] = search["category_hash"]
+            search_train = search.loc[(search['server_timestamp_epoch_ms'] <= self.end_of_train)].copy()
+            search_validation = search.loc[
+                (search['server_timestamp_epoch_ms'] <= self.end_of_validation) & (
+                        search['server_timestamp_epoch_ms'] > self.end_of_train)].copy()
+            search_test = search.loc[(search['server_timestamp_epoch_ms'] > self.end_of_validation)].copy()
+
+            # Add list pages only to existing valid sessions
+            train = self._filtered_concat(train, search_train)
+            validation = self._filtered_concat(validation, search_validation)
+            test = self._filtered_concat(test, search_test)
+
         train.sort_values(['session_id_hash', 'server_timestamp_epoch_ms'], inplace=True)
         validation.sort_values(['session_id_hash', 'server_timestamp_epoch_ms'], inplace=True)
         test.sort_values(['session_id_hash', 'server_timestamp_epoch_ms'], inplace=True)
+
         return test, train, validation
+
+    def _filtered_concat(self, dataframe, search):
+        search = search[search['session_id_hash'].isin(dataframe['session_id_hash'])]
+        return pd.concat([dataframe,search])
 
     def _apply_min_sequence_length(self, dataset):
         aggregated = dataset.groupby(['session_id_hash']).size()
@@ -479,15 +548,17 @@ class CoveoConverter(CsvConverter):
         dataset = dataset[dataset['session_id_hash'].isin(ids)].copy()
         return dataset
 
-    def _export_files(self, desc_vector_dict, img_vector_dict, output_dir, test, train, validation):
-        train.to_csv(path_or_buf=os.path.join(output_dir, 'coveo.train.csv'), sep=self.delimiter, index=False)
-        validation.to_csv(path_or_buf=os.path.join(output_dir, 'coveo.validation.csv'), sep=self.delimiter,
+    def _export_files(self, desc_vector_dict, img_vector_dict, output_dir, test, train, validation, prefix="coveo"):
+        os.makedirs(output_dir, exist_ok=True)
+
+        train.to_csv(path_or_buf=os.path.join(output_dir, prefix + '.train.csv'), sep=self.delimiter, index=False)
+        validation.to_csv(path_or_buf=os.path.join(output_dir, prefix + '.validation.csv'), sep=self.delimiter,
                           index=False)
-        test.to_csv(path_or_buf=os.path.join(output_dir, 'coveo.test.csv'), sep=self.delimiter, index=False)
-        desc_vector_dict.to_csv(path_or_buf=os.path.join(output_dir, "desc_vector_dict.csv"), sep=self.delimiter,
-                                index=False)
-        img_vector_dict.to_csv(path_or_buf=os.path.join(output_dir, "img_vector_dict.csv"), sep=self.delimiter,
-                               index=False)
+        test.to_csv(path_or_buf=os.path.join(output_dir, prefix + '.test.csv'), sep=self.delimiter, index=False)
+        # desc_vector_dict.to_csv(path_or_buf=os.path.join(output_dir, "desc_vector_dict.csv"), sep=self.delimiter,
+        #                        index=False)
+        # img_vector_dict.to_csv(path_or_buf=os.path.join(output_dir, "img_vector_dict.csv"), sep=self.delimiter,
+        #                       index=False)
 
 
 class HMConverter(CsvConverter):
