@@ -20,6 +20,7 @@ from asme.core.init.factories.util import check_context_entries_exists
 from asme.core.init.object_factory import CanBuildResult
 from asme.core.init.object_factory import CanBuildResultType
 from asme.core.init.object_factory import ObjectFactory
+from asme.core.utils.logging import get_root_logger
 from asme.data.collate import padded_session_collate
 from asme.data.collate import PadDirection
 from asme.data.collate import PadInformation
@@ -64,8 +65,8 @@ def _build_padding_info_map(context: Context,
     return {
         key: pad_info,
         key + TARGET_SUFFIX: pad_info,
-        NEGATIVE_SAMPLES_ENTRY_NAME+"."+key: pad_info,
-        POSITIVE_SAMPLES_ENTRY_NAME+"."+key: pad_info
+        NEGATIVE_SAMPLES_ENTRY_NAME + "." + key: pad_info,
+        POSITIVE_SAMPLES_ENTRY_NAME + "." + key: pad_info
     }
 
 
@@ -91,6 +92,7 @@ def _build_entries_to_pad(config: Config,
 
 LOADER_FACTORIES = []
 
+
 class LoaderFactory(ObjectFactory):
     KEY = "loader"
 
@@ -112,7 +114,7 @@ class LoaderFactory(ObjectFactory):
     def __init__(self,
                  dependencies: DependenciesFactory = DependenciesFactory(
                      [
-                        UnionFactory(get_dataset_factories(), DATASET_DEPENDENCY_KEY, [DATASET_DEPENDENCY_KEY])
+                         UnionFactory(get_dataset_factories(), DATASET_DEPENDENCY_KEY, [DATASET_DEPENDENCY_KEY])
                      ]
                  )):
         super(LoaderFactory, self).__init__()
@@ -146,18 +148,21 @@ class LoaderFactory(ObjectFactory):
         dataset = dependencies[self.DATASET_DEPENDENCY_KEY]
 
         num_workers = config.get_or_default("num_workers", multiprocessing.cpu_count() - 1)
-        print("NUM_WORKERS:",num_workers)
         persistent_workers = True if num_workers > 1 else False
         init_worker_fn = None if num_workers == 0 else mp_worker_init_fn
-
         pad_direction = PadDirection.LEFT if config.get("pad_direction") == "left" else PadDirection.RIGHT
         dynamic_padding = config.get_or_default('dynamic_padding', True)
         pin_memory = config.get_or_default('pin_memory', False)
-
         shuffle_dataset = config.get("shuffle")
+        batch_size = config.get("batch_size")
+
+        msg = f"Dataloader configured as follows: \n num_workers: '{num_workers}' \n pin_memory: '{pin_memory}' " \
+              f"\n shuffle_dataset: '{shuffle_dataset}' \n batch_size: '{batch_size}' \n persistent_workers: '{persistent_workers}'"
+        get_root_logger().warning(msg)
+
         return DataLoader(
             dataset=dataset,
-            batch_size=config.get("batch_size"),
+            batch_size=batch_size,
             shuffle=shuffle_dataset,
             num_workers=num_workers,
             pin_memory=pin_memory,

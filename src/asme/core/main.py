@@ -291,7 +291,7 @@ def predict(output_file: Path = typer.Argument(..., help='path where output is w
 
 
     module.eval()
-    device = torch.device('cuda') if torch.cuda.is_available() and gpu >0 else torch.device('cpu')
+    device = torch.device('cuda') if torch.cuda.is_available() and gpu > 0 else torch.device('cpu')
     module.to(device)
     with torch.no_grad():
         with open(output_file, 'w') as result_file:

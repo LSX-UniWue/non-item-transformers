@@ -3,6 +3,8 @@ from abc import abstractmethod
 
 import torch
 
+from asme.core.utils.logging import get_root_logger
+
 
 class MultiProcessSupport:
     """
@@ -36,6 +38,8 @@ class MultiProcessSupport:
 
 def mp_worker_init_fn(worker_id: int):
     worker_info = torch.utils.data.get_worker_info()
+    msg = f"Worker info: '{worker_info}'"
+    get_root_logger().warning(msg)
 
     dataset = worker_info.dataset
     if isinstance(dataset, MultiProcessSupport):

@@ -121,10 +121,10 @@ class NonItemSequenceElementsRepresentationComponent(SequenceElementsRepresentat
 
         #User segmeent embedding
         if self.use_segment_embedding:
-            segments = torch.ones(sequence.sequence.shape, dtype=torch.int64, device=sequence.sequence.device)
+            segments = torch.ones(sequence.sequence.shape, dtype=torch.int64, device=self.device)
             if sequence_metadata_embedding is not None:
                 user_segment = torch.zeros(sequence.sequence.shape[0], 1, dtype=torch.int64,
-                                           device=sequence.sequence.device)
+                                           device=self.device)
                 segments = torch.cat([user_segment, segments], dim=1)
             embedding += self.segment_embedding(segments)
 
@@ -142,7 +142,7 @@ class NonItemSequenceElementsRepresentationComponent(SequenceElementsRepresentat
         skip_item = attribute_infos.get("plp_only", False)
         if skip_item:
             item_id_type = sequence.get_attribute(self.item_id_type_settings["name"])
-            pad_tensor = torch.zeros(additional_metadata.size()[2], device=sequence.sequence.device).type(torch.LongTensor)
+            pad_tensor = torch.zeros(additional_metadata.size()[2], device=self.device).type(torch.LongTensor)
             additional_metadata[item_id_type == 0] = pad_tensor
 
 
