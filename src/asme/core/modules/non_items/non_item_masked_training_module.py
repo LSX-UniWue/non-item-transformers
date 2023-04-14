@@ -230,9 +230,12 @@ class NonItemMaskedTrainingModule(MetricsTrait, pl.LightningModule):
 
         # when we have multiple target per sequence step, we have to provide a mask for the paddings applied to
         # the target tensor
-        mask = None if len(targets.size()) == 1 else ~ targets.eq(self.item_tokenizer.pad_token_id)
-
-        return build_eval_step_return_dict(input_seq, item_prediction, targets, mask=mask)
+        if self.validation_on_item:
+            mask = None if len(item_target.size()) == 1 else ~ item_target.eq(self.item_tokenizer.pad_token_id)
+            return build_eval_step_return_dict(item_input_seq, item_prediction, item_target, mask=mask)
+        else:
+            mask = None if len(cat_target.size()) == 1 else ~ cat_target.eq(self.cat_tokenizer.pad_token_id)
+            return build_eval_step_return_dict(cat_input_seq, cat_prediction, cat_target, mask=mask)
 
     def test_step(self, batch, batch_idx):
         return self._eval_step(batch, batch_idx, is_test=True)
