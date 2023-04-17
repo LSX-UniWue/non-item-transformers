@@ -5,6 +5,7 @@ from aim.sdk.adapters.pytorch_lightning import AimLogger
 from pytorch_lightning import Trainer, Callback
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import LightningLoggerBase, TensorBoardLogger, MLFlowLogger, WandbLogger
+from pytorch_lightning.profiler import Profiler, BaseProfiler, PyTorchProfiler
 
 TRAINER_INIT_KEYS = ['logger',
                      'checkpoint_callback',
@@ -108,7 +109,7 @@ class TrainerBuilder:
             parameters["dirpath"] = Path(self.kwargs["default_root_dir"]) / "checkpoints"
         if "filename" not in parameters:
             monitored_metric = parameters["monitor"]
-            parameters['filename'] = f"{monitored_metric}"+"{epoch}"
+            parameters['filename'] = f"{monitored_metric}" + "{epoch}"
         checkpoint = ModelCheckpoint(**parameters)
         return self.add_callback(checkpoint)
 
@@ -119,9 +120,12 @@ class TrainerBuilder:
             logger_config = sanitized_args.pop("logger")
             if len(self.loggers) == 0:
                 self.add_logger(LoggerBuilder(parameters=logger_config).build())
+        if "profiler" in sanitized_args:
+            profiler_config = sanitized_args.pop("profiler")
+            profiler = ProfilerBuilder(parameters=profiler_config).build()
 
         # Build the actual trainer object from the parameters we got and the callbacks/loggers we constructed
-        return Trainer(**sanitized_args, callbacks=self.callbacks, logger=self.loggers)
+        return Trainer(**sanitized_args, callbacks=self.callbacks, logger=self.loggers, profiler=profiler)
 
 
 def _build_tensorboard_logger(parameters: Dict[str, Any]) -> LightningLoggerBase:
@@ -135,7 +139,7 @@ def _build_mlflow_logger(parameters: Dict[str, Any]) -> LightningLoggerBase:
     return MLFlowLogger(
         experiment_name=parameters["experiment_name"],
         tracking_uri=parameters["tracking_uri"],
-        run_name = parameters.get("run_name")
+        run_name=parameters.get("run_name")
     )
 
 
@@ -145,11 +149,12 @@ def _build_wandb_logger(parameters: Dict[str, Any]) -> LightningLoggerBase:
         log_model=parameters.get('log_model', False)
     )
 
+
 def _build_aim_logger(parameters: Dict[str, Any]) -> LightningLoggerBase:
     return AimLogger(
         repo=parameters['repo'],
         experiment=parameters.get('experiment'),
-        log_system_params = False
+        log_system_params=False
     )
 
 
@@ -185,6 +190,43 @@ class LoggerBuilder:
             raise RuntimeError("Parameter 'type' has to be included in logger configuration")
         return LOGGER_REGISTRY[self.type.lower()](self.parameters)
 
+
+class ProfilerBuilder:
+
+    def __init__(self, name: str = None, parameters: Dict[str, Any] = None):
+        self.parameters = parameters if parameters is not None else {}
+        self.type = name
+
+    def load_dict(self, parameters: Dict[str, Any]):
+        for key, value in parameters:
+            self.set(key, value)
+        return self
+
+    def set(self, key: str, value: Any):
+        self.parameters[key] = value
+
+        return self
+
+    def build(self) -> BaseProfiler:
+        if "type" in self.parameters:
+            self.type = self.parameters.pop("type")
+        if self.type is None:
+            raise RuntimeError("Parameter 'type' has to be included in logger configuration")
+        return PROFILER_REGISTRY[self.type.lower()](self.parameters)
+
+
+def _build_pytorch_profiler(parameters: Dict[str, Any]) -> PyTorchProfiler:
+    return PyTorchProfiler(
+        filename=parameters.get("filename", None),
+        export_to_chrome=parameters.get("export_to_chrome", False),
+        profiler_memory=parameters.get("profiler_memory", False),
+        row_limit=parameters.get("row_limit", -1)
+    )
+
+
+PROFILER_REGISTRY = {
+    'pytorch': _build_pytorch_profiler,
+}
 
 CALLBACK_REGISTRY = {
 
