@@ -81,10 +81,16 @@ class NonItemSASRecModel(SequenceRecommenderModel):
                                                                     len(attribute_tokenizers.get(
                                                                         TOKENIZERS_PREFIX + "." + loss_category)))
 
-        if linked_projection_layer > 2:
-            projection_layer = ResuseLinkedCategoryAndItemProjectionLayer(linked_projection_layer,transformer_hidden_size, len(item_tokenizer),
+        if linked_projection_layer in [3,4]:
+            projection_layer = ReuseLinkedCategoryAndItemProjectionLayer(linked_projection_layer,transformer_hidden_size, len(item_tokenizer),
                                                                 len(attribute_tokenizers.get(
                                                                     TOKENIZERS_PREFIX + "." + loss_category)))
+
+        if linked_projection_layer in [5]:
+            projection_layer = ReuseLinkedCategoryAndItemProjectionLayer(linked_projection_layer,transformer_hidden_size, len(item_tokenizer),
+                                                                     len(attribute_tokenizers.get(
+                                                                         TOKENIZERS_PREFIX + "." + loss_category)))
+
 
 
 
@@ -181,7 +187,8 @@ class LinkedCategoryAndItemProjectionLayer(ProjectionLayer):
         return item_rep, cat_rep
 
 
-class ResuseLinkedCategoryAndItemProjectionLayer(ProjectionLayer):
+
+class CategoryFromItemProjectionLayer(ProjectionLayer):
 
     @save_hyperparameters
     def __init__(self,
@@ -198,15 +205,23 @@ class ResuseLinkedCategoryAndItemProjectionLayer(ProjectionLayer):
         if linked_layers == 4:
             self.intermediate = nn.Linear(hidden_size+category_vocab_size,hidden_size+category_vocab_size)
 
+class ReuseLinkedCategoryAndItemProjectionLayer(ProjectionLayer):
+    @save_hyperparameters
+    def __init__(self,
+                 hidden_size: int,
+                 item_vocab_size: int,
+                 category_vocab_size: int):
+        super().__init__()
+
+        self.item_linear = nn.Linear(hidden_size, item_vocab_size)
+        self.category_linear = nn.Linear(item_vocab_size, category_vocab_size)
+
     def forward(self,
                 modified_sequence_representation: ModifiedSequenceRepresentation
                 ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
         representation = modified_sequence_representation.modified_encoded_sequence
-        cat_rep = self.category_linear(representation)
-        concated_cat_item = torch.cat((representation, cat_rep), dim=2)
-        if self.linked_layers == 4:
-            concated_cat_item = self.intermediate(concated_cat_item)
-        item_rep = self.mapping_item(concated_cat_item)
+        item_rep = self.item_linear(representation)
+        cat_rep = self.category_linear(item_rep)
         return item_rep, cat_rep
 
 class CategoryAndItemProjectionLayer(ProjectionLayer):
@@ -226,10 +241,8 @@ class CategoryAndItemProjectionLayer(ProjectionLayer):
                 ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
         representation = modified_sequence_representation.modified_encoded_sequence
         cat_rep = self.category_linear(representation)
-
         item_rep = self.item_linear(representation)
-
-        return item_rep, self.category_linear(representation)
+        return item_rep, cat_rep
 
 class CategoryAndItemReuseProjectionLayer(ProjectionLayer):
 
