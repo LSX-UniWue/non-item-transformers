@@ -11,6 +11,7 @@ from asme.core.models.content_bert4rec.components import ContextSequenceElements
     PrependedTransformerSequenceRepresentationComponent, ContextSequenceRepresentationModifierComponent
 from asme.core.models.non_item_models.components import NonItemSequenceElementsRepresentationComponent
 from asme.core.models.sequence_recommendation_model import SequenceRecommenderModel
+from asme.core.modules.util.module_util import convert_target_to_multi_hot
 from asme.core.tokenization.tokenizer import Tokenizer
 from asme.core.tokenization.item_dictionary import SpecialValues
 from asme.core.utils.hyperparameter_utils import save_hyperparameters
@@ -53,10 +54,11 @@ class NonItemSASRecModel(SequenceRecommenderModel):
         # save for later call by the training module
         self.item_metadata_keys = []
         self.sequence_metadata_keys = []
-        self.add_keys_to_metadata(item_attributes, self.item_metadata_keys)
-        self.add_keys_to_metadata(sequence_attributes, self.item_metadata_keys)
-        self.add_keys_to_metadata(sequence_attributes, self.sequence_metadata_keys)
+        self._add_keys_to_metadata(item_attributes, self.item_metadata_keys)
+        self._add_keys_to_metadata(sequence_attributes, self.item_metadata_keys)
+        self._add_keys_to_metadata(sequence_attributes, self.sequence_metadata_keys)
         self.item_metadata_keys.append(item_id_type_settings["name"])
+        self.item_metadata_keys.append(loss_category+".target")
 
         prefusion_attributes = get_attributes(item_attributes, prefusion)
         postfusion_attributes = get_attributes(item_attributes, postfusion)
@@ -87,9 +89,14 @@ class NonItemSASRecModel(SequenceRecommenderModel):
                                                                     TOKENIZERS_PREFIX + "." + loss_category)))
 
         if linked_projection_layer in [5]:
-            projection_layer = ReuseLinkedCategoryAndItemProjectionLayer(linked_projection_layer,transformer_hidden_size, len(item_tokenizer),
+            projection_layer = CategoryFromItemProjectionLayer(linked_projection_layer,transformer_hidden_size, len(item_tokenizer),
                                                                      len(attribute_tokenizers.get(
                                                                          TOKENIZERS_PREFIX + "." + loss_category)))
+
+        if linked_projection_layer in [6]:
+            projection_layer = GoldCategoryAndItemProjectionLayer(linked_projection_layer,transformer_hidden_size, len(item_tokenizer),
+                                                               attribute_tokenizers.get(TOKENIZERS_PREFIX + "." + loss_category),
+                                                                  loss_category+".target")
 
 
 
@@ -146,7 +153,7 @@ class NonItemSASRecModel(SequenceRecommenderModel):
     def optional_metadata_keys(self):
         return self.sequence_metadata_keys
 
-    def add_keys_to_metadata(self, dictionary, metadata_keys):
+    def _add_keys_to_metadata(self, dictionary, metadata_keys):
         if dictionary is not None:
             if dictionary.get(prefusion):
                 metadata_keys.extend(list(dictionary[prefusion].keys()))
@@ -188,7 +195,7 @@ class LinkedCategoryAndItemProjectionLayer(ProjectionLayer):
 
 
 
-class CategoryFromItemProjectionLayer(ProjectionLayer):
+class ReuseLinkedCategoryAndItemProjectionLayer(ProjectionLayer):
 
     @save_hyperparameters
     def __init__(self,
@@ -205,9 +212,23 @@ class CategoryFromItemProjectionLayer(ProjectionLayer):
         if linked_layers == 4:
             self.intermediate = nn.Linear(hidden_size+category_vocab_size,hidden_size+category_vocab_size)
 
-class ReuseLinkedCategoryAndItemProjectionLayer(ProjectionLayer):
+    def forward(self,
+                modified_sequence_representation: ModifiedSequenceRepresentation
+                ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
+        representation = modified_sequence_representation.modified_encoded_sequence
+        cat_rep = self.category_linear(representation)
+        concated_cat_item = torch.cat((representation, cat_rep), dim=2)
+        if self.linked_layers == 4:
+            concated_cat_item = self.intermediate(concated_cat_item)
+        item_rep = self.mapping_item(concated_cat_item)
+        return item_rep, cat_rep
+
+
+class CategoryFromItemProjectionLayer(ProjectionLayer):
+
     @save_hyperparameters
     def __init__(self,
+                 linked_layers: int,
                  hidden_size: int,
                  item_vocab_size: int,
                  category_vocab_size: int):
@@ -222,6 +243,41 @@ class ReuseLinkedCategoryAndItemProjectionLayer(ProjectionLayer):
         representation = modified_sequence_representation.modified_encoded_sequence
         item_rep = self.item_linear(representation)
         cat_rep = self.category_linear(item_rep)
+        return item_rep, cat_rep
+
+class GoldCategoryAndItemProjectionLayer(ProjectionLayer):
+
+    @save_hyperparameters
+    def __init__(self,
+                 linked_layers: int,
+                 hidden_size: int,
+                 item_vocab_size: int,
+                 cat_tokenizer, gold_cat):
+        super().__init__()
+
+        self.category_vocab_size = len(cat_tokenizer)
+        self.cat_tokenizer = cat_tokenizer
+        self.item_linear = nn.Linear(hidden_size, item_vocab_size)
+        self.category_linear = nn.Linear(hidden_size, self.category_vocab_size)
+        self.mapping_item = nn.Linear(hidden_size+self.category_vocab_size, item_vocab_size)
+        self.linked_layers = linked_layers
+        self.gold_cat = gold_cat
+
+    def forward(self,
+                modified_sequence_representation: ModifiedSequenceRepresentation
+                ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
+        representation = modified_sequence_representation.modified_encoded_sequence
+        cat_rep = self.category_linear(representation)
+
+        gold_cat = modified_sequence_representation.input_sequence.get_attribute(self.gold_cat)
+
+        #Only at training time
+        if len(gold_cat.size()) > 2:
+            gold_cat = convert_target_to_multi_hot(gold_cat, len(self.cat_tokenizer), self.cat_tokenizer.pad_token_id)
+            concated_cat_item = torch.cat((representation, gold_cat), dim=2)
+        else:
+            concated_cat_item = torch.cat((representation, cat_rep), dim=2)
+        item_rep = self.mapping_item(concated_cat_item)
         return item_rep, cat_rep
 
 class CategoryAndItemProjectionLayer(ProjectionLayer):
