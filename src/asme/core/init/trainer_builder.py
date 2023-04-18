@@ -120,9 +120,11 @@ class TrainerBuilder:
             logger_config = sanitized_args.pop("logger")
             if len(self.loggers) == 0:
                 self.add_logger(LoggerBuilder(parameters=logger_config).build())
+        profiler = None
         if "profiler" in sanitized_args:
             profiler_config = sanitized_args.pop("profiler")
             profiler = ProfilerBuilder(parameters=profiler_config).build()
+
 
         # Build the actual trainer object from the parameters we got and the callbacks/loggers we constructed
         return Trainer(**sanitized_args, callbacks=self.callbacks, logger=self.loggers, profiler=profiler)

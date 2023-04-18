@@ -38,9 +38,6 @@ class MultiProcessSupport:
 
 def mp_worker_init_fn(worker_id: int):
     worker_info = torch.utils.data.get_worker_info()
-    msg = f"Worker info: '{worker_info}'"
-    get_root_logger().warning(msg)
-
     dataset = worker_info.dataset
     if isinstance(dataset, MultiProcessSupport):
         dataset.init_class_for_worker(worker_info.id, worker_info.num_workers, worker_info.seed)

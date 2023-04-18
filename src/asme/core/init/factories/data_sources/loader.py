@@ -156,9 +156,9 @@ class LoaderFactory(ObjectFactory):
         shuffle_dataset = config.get("shuffle")
         batch_size = config.get("batch_size")
 
-        msg = f"Dataloader configured as follows: \n num_workers: '{num_workers}' \n pin_memory: '{pin_memory}' " \
-              f"\n shuffle_dataset: '{shuffle_dataset}' \n batch_size: '{batch_size}' \n persistent_workers: '{persistent_workers}'"
-        get_root_logger().warning(msg)
+        #msg = f"Dataloader configured as follows: \n num_workers: '{num_workers}' \n pin_memory: '{pin_memory}' " \
+        #      f"\n shuffle_dataset: '{shuffle_dataset}' \n batch_size: '{batch_size}' \n persistent_workers: '{persistent_workers}'"
+        #get_root_logger().warning(msg)
 
         return DataLoader(
             dataset=dataset,
