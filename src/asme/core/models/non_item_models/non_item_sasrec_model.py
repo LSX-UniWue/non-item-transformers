@@ -257,7 +257,6 @@ class GoldCategoryAndItemProjectionLayer(ProjectionLayer):
 
         self.category_vocab_size = len(cat_tokenizer)
         self.cat_tokenizer = cat_tokenizer
-        self.item_linear = nn.Linear(hidden_size, item_vocab_size)
         self.category_linear = nn.Linear(hidden_size, self.category_vocab_size)
         self.mapping_item = nn.Linear(hidden_size+self.category_vocab_size, item_vocab_size)
         self.linked_layers = linked_layers
