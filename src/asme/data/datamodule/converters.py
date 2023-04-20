@@ -325,7 +325,7 @@ class MelonConverter(CsvConverter):
 class CoveoConverter(CsvConverter):
 
     def __init__(self, end_of_train, end_of_validation, min_item_feedback, min_sequence_length, include_pageviews,
-                 prefix, delimiter: str = "\t"):
+                 prefix, search_sessions_only = False, delimiter: str = "\t"):
         self.end_of_train = end_of_train
         self.end_of_validation = end_of_validation
         self.min_item_feedback = min_item_feedback
@@ -334,6 +334,7 @@ class CoveoConverter(CsvConverter):
         self.delimiter = delimiter
         self.prefix = prefix
         self.search_list_page = prefix == "coveo-extended"
+        self.search_sessions_only = search_sessions_only
 
     def apply(self, input_dir: Path, output_file: Path):
         output_dir = output_file.parent
@@ -359,7 +360,7 @@ class CoveoConverter(CsvConverter):
             search_train = None
 
         full_dataset["item_id_type"] = 1
-        test, train, validation = self._create_split(full_dataset, search=search_train)
+        test, train, validation = self._create_split(full_dataset, search=search_train, search_sessions_only= self.search_sessions_only)
 
         self._fill_nan_values(test)
         self._fill_nan_values(train)
@@ -400,7 +401,7 @@ class CoveoConverter(CsvConverter):
         counts = df.groupby(['session_id_hash', 'server_timestamp_epoch_ms'])['category_hash'].value_counts().reset_index(
             name='count')
         counts = counts.groupby(["session_id_hash", "server_timestamp_epoch_ms"]).apply(
-            lambda x: x.nlargest(3, 'count')).reset_index(drop=True)
+            lambda x: x.nlargest(5, 'count')).reset_index(drop=True)
         result = counts.groupby(["session_id_hash", "server_timestamp_epoch_ms"]).apply(concat_values).reset_index(
             name='category_hash')
         return result
@@ -501,7 +502,7 @@ class CoveoConverter(CsvConverter):
         img_vector_dict = img_vector_dict[img_vector_dict['image_vector'].notnull()]
         return img_vector_dict
 
-    def _create_split(self, full_dataset, search=None):
+    def _create_split(self, full_dataset, search=None, search_sessions_only= False):
 
         if search is not None:
             full_dataset["category_product_id"]= full_dataset["product_sku_hash"]
@@ -525,9 +526,9 @@ class CoveoConverter(CsvConverter):
             search_test = search.loc[(search['server_timestamp_epoch_ms'] > self.end_of_validation)].copy()
 
             # Add list pages only to existing valid sessions
-            train = self._filtered_concat(train, search_train)
-            validation = self._filtered_concat(validation, search_validation)
-            test = self._filtered_concat(test, search_test)
+            train = self._filtered_concat(train, search_train, search_sessions_only)
+            validation = self._filtered_concat(validation, search_validation, search_sessions_only)
+            test = self._filtered_concat(test, search_test, search_sessions_only)
 
         train.sort_values(['session_id_hash', 'server_timestamp_epoch_ms'], inplace=True)
         validation.sort_values(['session_id_hash', 'server_timestamp_epoch_ms'], inplace=True)
@@ -535,8 +536,10 @@ class CoveoConverter(CsvConverter):
 
         return test, train, validation
 
-    def _filtered_concat(self, dataframe, search):
+    def _filtered_concat(self, dataframe, search, search_sessions_only):
         search = search[search['session_id_hash'].isin(dataframe['session_id_hash'])]
+        if search_sessions_only:
+            dataframe = dataframe[dataframe['session_id_hash'].isin(dataframe['session_id_hash'])]
         return pd.concat([dataframe,search])
 
     def _apply_min_sequence_length(self, dataset):
