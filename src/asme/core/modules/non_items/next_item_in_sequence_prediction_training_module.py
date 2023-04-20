@@ -58,7 +58,11 @@ class NextItemInSequencePredictionTrainingModule(BaseNextItemPredictionTrainingM
         self.validation_on_item = validation_metrics_on_item
         self.loss_category_epochs = loss_category_epochs
         self.item_type_id = item_type_id
+
         self.save_hyperparameters(self.hyperparameters)
+        if not self.validation_on_item:
+            print(" VALIDATION ON CATEGORIES")
+
 
 
     def forward(self,
