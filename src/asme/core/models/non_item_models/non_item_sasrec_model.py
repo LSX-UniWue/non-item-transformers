@@ -19,6 +19,7 @@ from asme.core.utils.inject import InjectTokenizers, inject, InjectTokenizer, In
 from typing import Dict, Any, Union, Tuple
 
 from asme.data.datasets import ITEM_SEQ_ENTRY_NAME
+from asme.data.datasets.processors.utils import random_uniform
 
 prefusion = "prefusion"
 postfusion = "postfusion"
@@ -271,7 +272,8 @@ class GoldCategoryAndItemProjectionLayer(ProjectionLayer):
         gold_cat = modified_sequence_representation.input_sequence.get_attribute(self.gold_cat)
 
         #Only at training time
-        if len(gold_cat.size()) > 2:
+        choice_gold = random_uniform()
+        if len(gold_cat.size()) > 2 and (choice_gold > 0.5):
             gold_cat = convert_target_to_multi_hot(gold_cat, len(self.cat_tokenizer), self.cat_tokenizer.pad_token_id)
             concated_cat_item = torch.cat((representation, gold_cat), dim=2)
         else:
