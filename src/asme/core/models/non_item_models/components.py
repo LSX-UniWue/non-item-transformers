@@ -142,8 +142,8 @@ class NonItemSequenceElementsRepresentationComponent(SequenceElementsRepresentat
         skip_item = attribute_infos.get("plp_only", False)
         if skip_item:
             item_id_type = sequence.get_attribute(self.item_id_type_settings["name"])
-            pad_tensor = torch.zeros(additional_metadata.size()[2], device=self.device).type(torch.LongTensor)
-            additional_metadata[item_id_type == 0] = pad_tensor
+            pad_tensor = torch.zeros(additional_metadata.size()[2], device=sequence.sequence.device).type(torch.LongTensor)
+            additional_metadata[item_id_type == 1] = pad_tensor
 
 
 
