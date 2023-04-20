@@ -354,13 +354,10 @@ class CoveoConverter(CsvConverter):
         desc_vector_dict = self._create_desc_vector_dict(sku_to_content)
         img_vector_dict = self._create_img_vector_dict(sku_to_content)
 
-        if self.search_list_page:
-            search_train = self._prepare_search_list_pages(search_train, sku_to_content)
-        else:
-            search_train = None
+        search_train = self._prepare_search_list_pages(search_train, sku_to_content)
 
         full_dataset["item_id_type"] = 1
-        test, train, validation = self._create_split(full_dataset, search=search_train, search_sessions_only= self.search_sessions_only)
+        test, train, validation = self._create_split(full_dataset, search=search_train)
 
         self._fill_nan_values(test)
         self._fill_nan_values(train)
@@ -502,10 +499,9 @@ class CoveoConverter(CsvConverter):
         img_vector_dict = img_vector_dict[img_vector_dict['image_vector'].notnull()]
         return img_vector_dict
 
-    def _create_split(self, full_dataset, search=None, search_sessions_only= False):
+    def _create_split(self, full_dataset, search):
 
-        if search is not None:
-            full_dataset["category_product_id"]= full_dataset["product_sku_hash"]
+        full_dataset["category_product_id"]= full_dataset["product_sku_hash"]
         full_dataset.sort_values(['server_timestamp_epoch_ms'], inplace=True)
         train = full_dataset.loc[(full_dataset['server_timestamp_epoch_ms'] <= self.end_of_train)].copy()
         validation = full_dataset.loc[
@@ -517,18 +513,18 @@ class CoveoConverter(CsvConverter):
         validation = self._apply_min_sequence_length(validation)
         test = self._apply_min_sequence_length(test)
 
-        if search is not None:
-            search["category_product_id"] = search["category_hash"]
-            search_train = search.loc[(search['server_timestamp_epoch_ms'] <= self.end_of_train)].copy()
-            search_validation = search.loc[
-                (search['server_timestamp_epoch_ms'] <= self.end_of_validation) & (
-                        search['server_timestamp_epoch_ms'] > self.end_of_train)].copy()
-            search_test = search.loc[(search['server_timestamp_epoch_ms'] > self.end_of_validation)].copy()
 
-            # Add list pages only to existing valid sessions
-            train = self._filtered_concat(train, search_train, search_sessions_only)
-            validation = self._filtered_concat(validation, search_validation, search_sessions_only)
-            test = self._filtered_concat(test, search_test, search_sessions_only)
+        search["category_product_id"] = search["category_hash"]
+        search_train = search.loc[(search['server_timestamp_epoch_ms'] <= self.end_of_train)].copy()
+        search_validation = search.loc[
+            (search['server_timestamp_epoch_ms'] <= self.end_of_validation) & (
+                    search['server_timestamp_epoch_ms'] > self.end_of_train)].copy()
+        search_test = search.loc[(search['server_timestamp_epoch_ms'] > self.end_of_validation)].copy()
+
+        # Add search pages if necessary
+        train = self._filtered_concat(train, search_train, self.search_sessions_only)
+        validation = self._filtered_concat(validation, search_validation, self.search_sessions_only)
+        test = self._filtered_concat(test, search_test, self.search_sessions_only)
 
         train.sort_values(['session_id_hash', 'server_timestamp_epoch_ms'], inplace=True)
         validation.sort_values(['session_id_hash', 'server_timestamp_epoch_ms'], inplace=True)
@@ -540,7 +536,9 @@ class CoveoConverter(CsvConverter):
         search = search[search['session_id_hash'].isin(dataframe['session_id_hash'])]
         if search_sessions_only:
             dataframe = dataframe[dataframe['session_id_hash'].isin(dataframe['session_id_hash'])]
-        return pd.concat([dataframe,search])
+        if self.search_list_page:
+            return pd.concat([dataframe,search])
+        return dataframe
 
     def _apply_min_sequence_length(self, dataset):
         aggregated = dataset.groupby(['session_id_hash']).size()

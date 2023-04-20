@@ -1037,8 +1037,6 @@ def get_coveo_preprocessing_config(output_directory: str,
         columns.append(MetaInformation("category_product_id", column_name="category_product_id", type="str"))
 
     item_column = MetaInformation("item", column_name="product_sku_hash", type="str")
-    min_item_feedback_column = "product_sku_hash"
-    min_sequence_length_column = "session_id_hash"
     session_key = ["session_id_hash"]
 
     convert_to_csv = ConvertToCsv(CoveoConverter(end_of_train=end_of_train,
