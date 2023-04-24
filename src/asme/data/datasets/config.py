@@ -1013,7 +1013,9 @@ def get_coveo_preprocessing_config(output_directory: str,
                                    min_item_feedback: int =5,
                                    include_pageviews: bool = False,
                                    prefix: str = "coveo",
-                                   search_sessions_only: bool = False
+                                   include_search = False,
+                                   search_sessions_only: bool = False,
+                                   filter_immediate_duplicates: bool = False
                                    ) -> DatasetPreprocessingConfig:
 
     context = Context()
@@ -1045,7 +1047,9 @@ def get_coveo_preprocessing_config(output_directory: str,
                                                  min_item_feedback=min_item_feedback,
                                                  min_sequence_length=min_sequence_length,
                                                  prefix=prefix,
-                                                 search_sessions_only= search_sessions_only
+                                                 search_sessions_only= search_sessions_only,
+                                                 include_search=include_search,
+                                                 filter_immediate_duplicates=filter_immediate_duplicates
                                                  ))
     use_existing_split = UseExistingSplit(
         split_names=["train", "validation", "test"],

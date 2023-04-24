@@ -325,7 +325,8 @@ class MelonConverter(CsvConverter):
 class CoveoConverter(CsvConverter):
 
     def __init__(self, end_of_train, end_of_validation, min_item_feedback, min_sequence_length, include_pageviews,
-                 prefix, search_sessions_only = False, delimiter: str = "\t"):
+                 prefix, search_sessions_only=False, include_search=False, filter_immediate_duplicates=False,
+                 delimiter: str = "\t"):
         self.end_of_train = end_of_train
         self.end_of_validation = end_of_validation
         self.min_item_feedback = min_item_feedback
@@ -333,8 +334,9 @@ class CoveoConverter(CsvConverter):
         self.include_pageviews = include_pageviews
         self.delimiter = delimiter
         self.prefix = prefix
-        self.search_list_page = prefix == "coveo-extended"
+        self.search_list_page = include_search
         self.search_sessions_only = search_sessions_only
+        self.filter_immediate_duplicates = filter_immediate_duplicates
 
     def apply(self, input_dir: Path, output_file: Path):
         output_dir = output_file.parent
@@ -343,22 +345,44 @@ class CoveoConverter(CsvConverter):
         self._convert_vectors_to_lists(search_train)
         self._convert_vectors_to_arrays(sku_to_content)
 
-        # self._remove_duplicates(browsing_train)
+        self._remove_duplicates(browsing_train)
         # browsing_train = self._add_search_clicks(browsing_train, search_train)
-        browsing_train = self._handle_pageviews(browsing_train)
+        browsing_train, page_views = self._handle_pageviews(browsing_train)
 
-        full_dataset = self._merge_tables(browsing_train, sku_to_content)
-        full_dataset = self._apply_min_item_feedback(full_dataset)
-        self._fill_nan_values(full_dataset)
+        def find_immediate_duplicates(group):
+            group = group.sort_values('server_timestamp_epoch_ms')  # sort the group by column 'y'
+            group['duplicate'] = group['product_sku_hash'].shift(1) == group[
+                'product_sku_hash']  # add a new column with the shifted value of 'y'
+            return group
+
+        # Filter immediate duplicates
+        if self.filter_immediate_duplicates:
+            browsing_train = browsing_train.groupby(["session_id_hash"]).apply(find_immediate_duplicates)
+            browsing_train = browsing_train[browsing_train["duplicate"] != True].drop(columns="duplicate")
+
+        product_dataset = self._merge_tables(browsing_train, sku_to_content)
+        product_dataset = self._apply_min_item_feedback(product_dataset)
+        page_views = self._apply_min_page_view_feedback(page_views)
+        #self._fill_nan_values(product_dataset)
 
         desc_vector_dict = self._create_desc_vector_dict(sku_to_content)
         img_vector_dict = self._create_img_vector_dict(sku_to_content)
 
         search_train = self._prepare_search_list_pages(search_train, sku_to_content)
 
-        full_dataset["item_id_type"] = 1
-        test, train, validation = self._create_split(full_dataset, search=search_train)
+        product_dataset["item_id_type"] = 1
+        test, train, validation = self._create_split(product_dataset, search=search_train, page_views=page_views)
 
+        if "query_vector" in test.columns:
+            nan_vector = np.zeros(45,dtype=float).tolist()
+            def replace_nan_with_predefined_list(row):
+                if pd.isna(row['query_vector']):
+                    row['query_vector'] = nan_vector
+                return row
+
+            test = test.apply(replace_nan_with_predefined_list, axis=1)
+            train = train.apply(replace_nan_with_predefined_list, axis=1)
+            validation = validation.apply(replace_nan_with_predefined_list, axis=1)
         self._fill_nan_values(test)
         self._fill_nan_values(train)
         self._fill_nan_values(validation)
@@ -368,19 +392,25 @@ class CoveoConverter(CsvConverter):
         self._export_files(desc_vector_dict, img_vector_dict, output_dir, test, train, validation, prefix=self.prefix)
 
     def _prepare_search_list_pages(self, search_clicks, sku_to_content):
-        search_clicks = search_clicks[['session_id_hash', 'product_skus_hash', 'server_timestamp_epoch_ms']].copy()
+        search_clicks = search_clicks[
+            ['session_id_hash', 'product_skus_hash', 'server_timestamp_epoch_ms', 'query_vector']].copy()
         search_clicks.drop_duplicates(inplace=True)
         search_clicks = search_clicks[search_clicks['product_skus_hash'].notnull()]
         search_clicks["product_skus_hash"] = search_clicks["product_skus_hash"].str.replace('\[|\]|\'', '')
         search_clicks["product_skus_hash"] = search_clicks["product_skus_hash"].str.split(",")
-        search_clicks = search_clicks.explode("product_skus_hash")
+        search_clicks_expl = search_clicks.explode("product_skus_hash")
         category_dict = sku_to_content[["product_sku_hash", "category_hash"]].set_index("product_sku_hash").to_dict()[
             "category_hash"]
-        search_clicks["category_hash"] = search_clicks["product_skus_hash"].map(category_dict)
-        search_clicks.dropna()
-        search_clicks = search_clicks[["session_id_hash", "server_timestamp_epoch_ms", 'category_hash']]
-        search_clicks.assign(category_hash=search_clicks['category_hash'].str.split('/')).explode('category_hash')
-        search_clicks = self.get_list_page_categories(search_clicks)
+
+        search_category = search_clicks_expl[
+            ["session_id_hash", "server_timestamp_epoch_ms", 'product_skus_hash']].copy()
+        search_category["category_hash"] = search_category["product_skus_hash"].map(category_dict)
+        search_category.dropna()
+        search_category.assign(category_hash=search_category['category_hash'].str.split('/')).explode('category_hash')
+        search_category = self.get_list_page_categories(search_category)
+        search_clicks = search_clicks[["session_id_hash", "server_timestamp_epoch_ms", 'query_vector']]
+        # search_clicks.dropna()
+        search_clicks = search_clicks.merge(search_category, how="left", on=["session_id_hash", "server_timestamp_epoch_ms"])
         search_clicks["item_id_type"] = 0
         search_clicks["event_type"] = "search"
         search_clicks["product_action"] = "search"
@@ -395,7 +425,8 @@ class CoveoConverter(CsvConverter):
         def concat_values(df):
             return df['category_hash'].str.cat(sep='/')
 
-        counts = df.groupby(['session_id_hash', 'server_timestamp_epoch_ms'])['category_hash'].value_counts().reset_index(
+        counts = df.groupby(['session_id_hash', 'server_timestamp_epoch_ms'])[
+            'category_hash'].value_counts().reset_index(
             name='count')
         counts = counts.groupby(["session_id_hash", "server_timestamp_epoch_ms"]).apply(
             lambda x: x.nlargest(5, 'count')).reset_index(drop=True)
@@ -464,11 +495,11 @@ class CoveoConverter(CsvConverter):
         return search_clicks
 
     def _handle_pageviews(self, browsing_train):
-        if self.include_pageviews:
-            browsing_train['product_sku_hash'] = browsing_train['product_sku_hash'].fillna(browsing_train['hashed_url'])
-        else:
-            browsing_train = browsing_train[browsing_train['product_sku_hash'].notnull()]
-        return browsing_train
+        product_views = browsing_train[browsing_train['product_sku_hash'].notnull()]
+        browsing_train['product_sku_hash'] = browsing_train['product_sku_hash'].fillna(browsing_train['hashed_url'])
+        page_views = browsing_train[browsing_train.event_type == 'pageview']
+        page_views["item_id_type"] = 0
+        return (product_views, page_views)
 
     def _merge_tables(self, browsing_train, sku_to_content):
         full_dataset = pd.merge(browsing_train, sku_to_content, on='product_sku_hash', how='left')
@@ -485,6 +516,15 @@ class CoveoConverter(CsvConverter):
         full_dataset = full_dataset[~full_dataset['product_sku_hash'].isin(ids)].copy()
         return full_dataset
 
+    def _apply_min_page_view_feedback(self, page_views):
+        aggregated = page_views.groupby(['hashed_url']).size()
+        filtered = aggregated.apply(lambda v: v >= self.min_item_feedback)
+        filtered = filtered.reset_index()
+        filtered.columns = ['hashed_url', 'item_feedback_bool']
+        ids = filtered[filtered['item_feedback_bool'] == False]['hashed_url'].tolist()
+        full_dataset = page_views[~page_views['hashed_url'].isin(ids)].copy()
+        return full_dataset
+
     def _fill_nan_values(self, full_dataset):
         full_dataset.fillna(value={"product_action": "view", "price_bucket": "missing", "category_hash": "missing"},
                             inplace=True)
@@ -499,9 +539,9 @@ class CoveoConverter(CsvConverter):
         img_vector_dict = img_vector_dict[img_vector_dict['image_vector'].notnull()]
         return img_vector_dict
 
-    def _create_split(self, full_dataset, search):
+    def _create_split(self, full_dataset, search, page_views):
 
-        full_dataset["category_product_id"]= full_dataset["product_sku_hash"]
+        full_dataset["category_product_id"] = full_dataset["product_sku_hash"]
         full_dataset.sort_values(['server_timestamp_epoch_ms'], inplace=True)
         train = full_dataset.loc[(full_dataset['server_timestamp_epoch_ms'] <= self.end_of_train)].copy()
         validation = full_dataset.loc[
@@ -509,10 +549,17 @@ class CoveoConverter(CsvConverter):
                     full_dataset['server_timestamp_epoch_ms'] > self.end_of_train)].copy()
         test = full_dataset.loc[(full_dataset['server_timestamp_epoch_ms'] > self.end_of_validation)].copy()
 
-        train = self._apply_min_sequence_length(train)
-        validation = self._apply_min_sequence_length(validation)
-        test = self._apply_min_sequence_length(test)
+        train = self._apply_min_sequence_length(full_dataset)
+        validation = train  # self._apply_min_sequence_length(validation)
+        test = validation  # self._apply_min_sequence_length(test)
 
+        page_views["category_product_id"] = "PAGE_VIEW"
+        page_views["product_sku_hash"] = "PAGE_VIEW"
+        page_views_train = page_views.loc[(page_views['server_timestamp_epoch_ms'] <= self.end_of_train)].copy()
+        page_views_validation = page_views.loc[
+            (page_views['server_timestamp_epoch_ms'] <= self.end_of_validation) & (
+                    page_views['server_timestamp_epoch_ms'] > self.end_of_train)].copy()
+        page_views_test = page_views.loc[(page_views['server_timestamp_epoch_ms'] > self.end_of_validation)].copy()
 
         search["category_product_id"] = search["category_hash"]
         search_train = search.loc[(search['server_timestamp_epoch_ms'] <= self.end_of_train)].copy()
@@ -522,9 +569,9 @@ class CoveoConverter(CsvConverter):
         search_test = search.loc[(search['server_timestamp_epoch_ms'] > self.end_of_validation)].copy()
 
         # Add search pages if necessary
-        train = self._filtered_concat(train, search_train, self.search_sessions_only)
-        validation = self._filtered_concat(validation, search_validation, self.search_sessions_only)
-        test = self._filtered_concat(test, search_test, self.search_sessions_only)
+        train = self._filtered_concat(train, search_train, page_views_train)
+        validation = self._filtered_concat(validation, search_validation, page_views_validation)
+        test = self._filtered_concat(test, search_test, page_views_test)
 
         train.sort_values(['session_id_hash', 'server_timestamp_epoch_ms'], inplace=True)
         validation.sort_values(['session_id_hash', 'server_timestamp_epoch_ms'], inplace=True)
@@ -532,12 +579,15 @@ class CoveoConverter(CsvConverter):
 
         return test, train, validation
 
-    def _filtered_concat(self, dataframe, search, search_sessions_only):
+    def _filtered_concat(self, dataframe, search, page_views):
         search = search[search['session_id_hash'].isin(dataframe['session_id_hash'])]
-        if search_sessions_only:
+        page_views = page_views[page_views['session_id_hash'].isin(dataframe['session_id_hash'])]
+        if self.search_sessions_only:
             dataframe = dataframe[dataframe['session_id_hash'].isin(dataframe['session_id_hash'])]
         if self.search_list_page:
-            return pd.concat([dataframe,search])
+            dataframe = pd.concat([dataframe, search])
+        if self.include_pageviews:
+            dataframe = pd.concat([dataframe, page_views])
         return dataframe
 
     def _apply_min_sequence_length(self, dataset):

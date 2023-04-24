@@ -8,14 +8,12 @@ from asme.data.datasets import SESSION_IDENTIFIER
 
 
 class PadDirection(Enum):
-
     RIGHT = 'right'
     LEFT = 'left'
 
 
 @dataclass
 class PadInformation:
-
     pad_value: Any
     max_seq_length: int
     max_seq_step_length: int = None
@@ -111,7 +109,7 @@ def _padded_session_collate(entries_to_pad: Dict[str, PadInformation],
                     else:
                         value_to_convert = pad(padded_entries,
                                                lambda length: [[padding_token_id] * max_seq_step_length] * (
-                                                           max_length - length), max_length)
+                                                       max_length - length), max_length)
 
 
                 else:
@@ -121,8 +119,9 @@ def _padded_session_collate(entries_to_pad: Dict[str, PadInformation],
             if entry_name != SESSION_IDENTIFIER:
                 try:
                     padded_sample[entry_name] = torch.as_tensor(value_to_convert)
-                except ValueError:
-                    raise ValueError(f'Value {value_to_convert} from feature {entry_name} can not be converted to a tensor.')
+                except:
+                    raise ValueError(
+                        f'Value {value_to_convert} from feature {entry_name} can not be converted to a tensor.')
 
         padded_batch.append(padded_sample)
 
