@@ -147,17 +147,24 @@ class ContextSequenceElementsRepresentationComponent(SequenceElementsRepresentat
         embedding = self.dropout_embedding(embedding)
         return EmbeddedElementsSequence(embedding)
 
+
     def get_embedded_attribute(self, attribute, input_key, module, sequence):
         attribute_infos = attribute[input_key]
         embedding_type = attribute_infos["embedding"]
         merge = attribute_infos.get("merge_function", None)
         additional_metadata = sequence.get_attribute(input_key)
+        skip_item = attribute_infos.get("plp_only", False)
+        if skip_item:
+            item_id_type = sequence.get_attribute(self.item_id_type_settings["name"])
+            pad_tensor = torch.zeros(additional_metadata.size()[2], device=sequence.sequence.device).type(additional_metadata.dtype)
+            additional_metadata[item_id_type == 1] = pad_tensor
         if embedding_type == "keys":
             embedded_data = module(additional_metadata)
         elif embedding_type == "vector":
             embedded_data = module(content_sequence=additional_metadata, item_sequence=sequence.sequence)
         merge_function = _merge_function(merge)
         return embedded_data, merge_function
+
 
 
 class ContextSequenceRepresentationModifierComponent(SequenceRepresentationModifierLayer):

@@ -144,10 +144,6 @@ class NonItemSequenceElementsRepresentationComponent(SequenceElementsRepresentat
             item_id_type = sequence.get_attribute(self.item_id_type_settings["name"])
             pad_tensor = torch.zeros(additional_metadata.size()[2], device=sequence.sequence.device).type(additional_metadata.dtype)
             additional_metadata[item_id_type == 1] = pad_tensor
-
-
-
-
         if embedding_type == "keys":
             embedded_data = module(additional_metadata)
         elif embedding_type == "vector":
