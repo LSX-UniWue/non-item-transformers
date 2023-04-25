@@ -496,7 +496,9 @@ class CoveoConverter(CsvConverter):
 
     def _handle_pageviews(self, browsing_train):
         product_views = browsing_train[browsing_train['product_sku_hash'].notnull()]
-        browsing_train['product_sku_hash'] = browsing_train['product_sku_hash'].fillna(browsing_train['hashed_url'])
+        browsing_train['category_product_id'] = browsing_train['product_sku_hash']
+        browsing_train['product_sku_hash'] = browsing_train['product_sku_hash'].fillna(browsing_train['pageview'])
+        browsing_train['category_product_id'] = browsing_train['category_product_id'].fillna(browsing_train['hashed_url'])
         page_views = browsing_train[browsing_train.event_type == 'pageview']
         page_views["item_id_type"] = 0
         return (product_views, page_views)
@@ -553,7 +555,7 @@ class CoveoConverter(CsvConverter):
         validation = self._apply_min_sequence_length(validation)
         test = self._apply_min_sequence_length(test)
 
-        page_views["category_product_id"] = "PAGE_VIEW"
+        page_views["category_product_id"] = page_views["hashed_url"]
         page_views["product_sku_hash"] = "PAGE_VIEW"
         page_views_train = page_views.loc[(page_views['server_timestamp_epoch_ms'] <= self.end_of_train)].copy()
         page_views_validation = page_views.loc[
