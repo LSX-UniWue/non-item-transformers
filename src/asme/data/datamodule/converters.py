@@ -549,9 +549,9 @@ class CoveoConverter(CsvConverter):
                     full_dataset['server_timestamp_epoch_ms'] > self.end_of_train)].copy()
         test = full_dataset.loc[(full_dataset['server_timestamp_epoch_ms'] > self.end_of_validation)].copy()
 
-        train = self._apply_min_sequence_length(full_dataset)
-        validation = train  # self._apply_min_sequence_length(validation)
-        test = validation  # self._apply_min_sequence_length(test)
+        train = self._apply_min_sequence_length(train)
+        validation = self._apply_min_sequence_length(validation)
+        test = self._apply_min_sequence_length(test)
 
         page_views["category_product_id"] = "PAGE_VIEW"
         page_views["product_sku_hash"] = "PAGE_VIEW"
