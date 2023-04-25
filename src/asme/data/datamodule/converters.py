@@ -497,7 +497,7 @@ class CoveoConverter(CsvConverter):
     def _handle_pageviews(self, browsing_train):
         product_views = browsing_train[browsing_train['product_sku_hash'].notnull()]
         browsing_train['category_product_id'] = browsing_train['product_sku_hash']
-        browsing_train['product_sku_hash'] = browsing_train['product_sku_hash'].fillna(browsing_train['pageview'])
+        #browsing_train['product_sku_hash'] = browsing_train['product_sku_hash'].fillna(browsing_train['pageview'])
         browsing_train['category_product_id'] = browsing_train['category_product_id'].fillna(browsing_train['hashed_url'])
         page_views = browsing_train[browsing_train.event_type == 'pageview']
         page_views["item_id_type"] = 0
