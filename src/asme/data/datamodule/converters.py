@@ -349,24 +349,18 @@ class CoveoConverter(CsvConverter):
         # browsing_train = self._add_search_clicks(browsing_train, search_train)
         browsing_train, page_views = self._handle_pageviews(browsing_train)
 
-        def find_immediate_duplicates(group):
-            group = group.sort_values('server_timestamp_epoch_ms')  # sort the group by column 'y'
-            group['duplicate'] = group['product_sku_hash'].shift(1) == group[
-                'product_sku_hash']  # add a new column with the shifted value of 'y'
-            return group
-
         # Filter immediate duplicates
         if self.filter_immediate_duplicates:
-            browsing_train = browsing_train.groupby(["session_id_hash"]).apply(find_immediate_duplicates)
-            browsing_train = browsing_train[browsing_train["duplicate"] != True].drop(columns="duplicate")
+            browsing_train["duplicate"] = browsing_train.sort_values(['server_timestamp_epoch_ms']).groupby(["session_id_hash"])["product_sku_hash"].shift()
+            browsing_train = browsing_train[browsing_train["duplicate"] != browsing_train["product_sku_hash"]].drop(columns="duplicate")
 
         product_dataset = self._merge_tables(browsing_train, sku_to_content)
         product_dataset = self._apply_min_item_feedback(product_dataset)
         page_views = self._apply_min_page_view_feedback(page_views)
         #self._fill_nan_values(product_dataset)
 
-        desc_vector_dict = self._create_desc_vector_dict(sku_to_content)
-        img_vector_dict = self._create_img_vector_dict(sku_to_content)
+        desc_vector_dict = None #self._create_desc_vector_dict(sku_to_content)
+        img_vector_dict = None #self._create_img_vector_dict(sku_to_content)
 
         search_train = self._prepare_search_list_pages(search_train, sku_to_content)
 
