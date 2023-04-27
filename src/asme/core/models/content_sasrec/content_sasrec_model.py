@@ -4,6 +4,7 @@ from asme.core.models.common.layers.layers import IdentitySequenceRepresentation
 from asme.core.models.common.layers.transformer_layers import TransformerEmbedding
 from asme.core.models.content_bert4rec.components import ContextSequenceElementsRepresentationComponent, \
     PrependedTransformerSequenceRepresentationComponent, ContextSequenceRepresentationModifierComponent
+from asme.core.models.non_item_models.components import NonItemSequenceElementsRepresentationComponent
 from asme.core.models.sequence_recommendation_model import SequenceRecommenderModel
 from asme.core.tokenization.tokenizer import Tokenizer
 from asme.core.tokenization.item_dictionary import SpecialValues
@@ -42,6 +43,7 @@ class ContentSASRecModel(SequenceRecommenderModel):
                  attribute_tokenizers: Dict[str, Tokenizer] = None,
                  vector_dictionaries: Dict[str, SpecialValues] = None,
                  positional_embedding: bool = True,
+                 item_id_type_settings: Dict[str, Any] = None,
                  segment_embedding: bool = False,
                  embedding_pooling_type: str = None,
                  transformer_intermediate_size: int = None,
@@ -55,6 +57,7 @@ class ContentSASRecModel(SequenceRecommenderModel):
         self.add_keys_to_metadata(item_attributes, self.item_metadata_keys)
         self.add_keys_to_metadata(sequence_attributes, self.item_metadata_keys)
         self.add_keys_to_metadata(sequence_attributes, self.sequence_metadata_keys)
+        self.item_metadata_keys.append(item_id_type_settings["name"])
 
         prefusion_attributes = get_attributes(item_attributes, prefusion)
         postfusion_attributes = get_attributes(item_attributes, postfusion)
@@ -72,13 +75,14 @@ class ContentSASRecModel(SequenceRecommenderModel):
 
         projection_layer = LinearProjectionLayer(transformer_hidden_size, len(item_tokenizer))
 
-        element_representation = ContextSequenceElementsRepresentationComponent(embedding_layer,
+        element_representation = NonItemSequenceElementsRepresentationComponent(embedding_layer,
                                                                                 transformer_hidden_size,
                                                                                 item_tokenizer,
                                                                                 prefusion_attributes,
                                                                                 prepend_attributes,
                                                                                 attribute_tokenizers,
                                                                                 vector_dictionaries,
+                                                                                item_id_type_settings=item_id_type_settings,
                                                                                 dropout=transformer_dropout,
                                                                                 segment_embedding_active=segment_embedding)
 

@@ -9,6 +9,7 @@ from asme.core.models.common.layers.layers import PROJECT_TYPE_LINEAR, build_pro
 from asme.core.models.common.layers.transformer_layers import TransformerEmbedding
 from asme.core.models.content_bert4rec.components import ContextSequenceRepresentationModifierComponent, \
     ContextSequenceElementsRepresentationComponent, PrependedTransformerSequenceRepresentationComponent
+from asme.core.models.non_item_models.components import NonItemSequenceElementsRepresentationComponent
 from asme.core.models.sequence_recommendation_model import SequenceRecommenderModel
 from asme.core.tokenization.tokenizer import Tokenizer
 from asme.core.tokenization.item_dictionary import SpecialValues
@@ -41,6 +42,7 @@ class ContentBERT4RecModel(SequenceRecommenderModel):
                  attribute_tokenizers: Dict[str, Tokenizer] = None,
                  vector_dictionaries: Dict[str, SpecialValues] = None,
                  positional_embedding: bool = True,
+                 item_id_type_settings: Dict[str, Any] = None,
                  segment_embedding: bool = False,
                  embedding_pooling_type: str = None,
                  initializer_range: float = 0.02,
@@ -54,6 +56,8 @@ class ContentBERT4RecModel(SequenceRecommenderModel):
         self.add_keys_to_metadata(item_attributes, self.item_metadata_keys)
         self.add_keys_to_metadata(sequence_attributes, self.item_metadata_keys)
         self.add_keys_to_metadata(sequence_attributes, self.sequence_metadata_keys)
+        self.item_metadata_keys.append(item_id_type_settings["name"])
+
 
         prefusion_attributes = None if item_attributes is None else item_attributes.get(prefusion, None)
         postfusion_attributes = None if item_attributes is None else item_attributes.get(postfusion, None)
@@ -65,13 +69,14 @@ class ContentBERT4RecModel(SequenceRecommenderModel):
                                                   norm_embedding=False, positional_embedding=positional_embedding)
 
 
-        element_representation = ContextSequenceElementsRepresentationComponent(sequence_embedding,
+        element_representation = NonItemSequenceElementsRepresentationComponent(sequence_embedding,
                                                                                 transformer_hidden_size,
                                                                                 item_tokenizer,
                                                                                 prefusion_attributes,
                                                                                 prepend_attributes,
                                                                                 attribute_tokenizers,
                                                                                 vector_dictionaries,
+                                                                                item_id_type_settings=item_id_type_settings,
                                                                                 dropout=transformer_dropout,
                                                                                 segment_embedding_active=segment_embedding)
 
