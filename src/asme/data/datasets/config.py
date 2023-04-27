@@ -1038,6 +1038,11 @@ def get_coveo_preprocessing_config(output_directory: str,
     if prefix == "coveo-extended":
         columns.append(MetaInformation("category_product_id", column_name="category_product_id", type="str"))
 
+    if include_search:
+        columns.append(MetaInformation("first_result_category_hash", column_name="category_hash", type="list", configs={"delimiter": "/", "element_type": "str"}),)
+        columns.append(MetaInformation("first_result_product", column_name="first_result_product", type="str"))
+        columns.append(MetaInformation("first_result_cat", column_name="first_result_cat", type="str"))
+
     item_column = MetaInformation("item", column_name="product_sku_hash", type="str")
     session_key = ["session_id_hash"]
 

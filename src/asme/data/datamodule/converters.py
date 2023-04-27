@@ -392,20 +392,27 @@ class CoveoConverter(CsvConverter):
         search_clicks = search_clicks[search_clicks['product_skus_hash'].notnull()]
         search_clicks["product_skus_hash"] = search_clicks["product_skus_hash"].str.replace('\[|\]|\'', '')
         search_clicks["product_skus_hash"] = search_clicks["product_skus_hash"].str.split(",")
+
+        #Get most common cats
         search_clicks_expl = search_clicks.explode("product_skus_hash")
         category_dict = sku_to_content[["product_sku_hash", "category_hash"]].set_index("product_sku_hash").to_dict()[
             "category_hash"]
-
         search_category = search_clicks_expl[
             ["session_id_hash", "server_timestamp_epoch_ms", 'product_skus_hash']].copy()
         search_category["category_hash"] = search_category["product_skus_hash"].map(category_dict)
         search_category.dropna()
         search_category.assign(category_hash=search_category['category_hash'].str.split('/')).explode('category_hash')
         search_category = self.get_list_page_categories(search_category)
-        search_clicks = search_clicks[["session_id_hash", "server_timestamp_epoch_ms", 'query_vector']]
-        # search_clicks.dropna()
+
+        #First result
+        search_clicks["first_result_product"] = search_clicks["product_skus_hash"].apply(lambda x: x[0])
+        search_clicks["first_result_cat"] = search_clicks["first_result_product"].map(category_dict)
+        search_clicks["first_result_category_hash"] = search_clicks["first_result_cat"]
+        search_clicks = search_clicks[["session_id_hash", "server_timestamp_epoch_ms", 'query_vector',
+                                       'first_result_product','first_result_cat']]
         search_clicks = search_clicks.merge(search_category, how="left", on=["session_id_hash", "server_timestamp_epoch_ms"])
         search_clicks["item_id_type"] = 0
+        search_clicks["category_product_id"] = search_clicks["category_hash"]
         search_clicks["event_type"] = "search"
         search_clicks["product_action"] = "search"
         search_clicks["product_sku_hash"] = "SEARCHLIST"
@@ -522,7 +529,8 @@ class CoveoConverter(CsvConverter):
         return full_dataset
 
     def _fill_nan_values(self, full_dataset):
-        full_dataset.fillna(value={"product_action": "view", "price_bucket": "missing", "category_hash": "missing"},
+        full_dataset.fillna(value={"product_action": "view", "price_bucket": "missing", "category_hash": "missing",
+                                   "first_result_product":"missing", "first_result_cat":"missing"},
                             inplace=True)
 
     def _create_desc_vector_dict(self, sku_to_content):
@@ -538,6 +546,8 @@ class CoveoConverter(CsvConverter):
     def _create_split(self, full_dataset, search, page_views):
 
         full_dataset["category_product_id"] = full_dataset["product_sku_hash"]
+        full_dataset["first_result_product"] = full_dataset["product_sku_hash"]
+        full_dataset["first_result_cat"] = full_dataset["product_sku_hash"]
         full_dataset.sort_values(['server_timestamp_epoch_ms'], inplace=True)
         train = full_dataset.loc[(full_dataset['server_timestamp_epoch_ms'] <= self.end_of_train)].copy()
         validation = full_dataset.loc[
@@ -579,7 +589,7 @@ class CoveoConverter(CsvConverter):
         search = search[search['session_id_hash'].isin(dataframe['session_id_hash'])]
         page_views = page_views[page_views['session_id_hash'].isin(dataframe['session_id_hash'])]
         if self.search_sessions_only:
-            dataframe = dataframe[dataframe['session_id_hash'].isin(dataframe['session_id_hash'])]
+            dataframe = dataframe[dataframe['session_id_hash'].isin(search['session_id_hash'])]
         if self.search_list_page:
             dataframe = pd.concat([dataframe, search])
         if self.include_pageviews:
