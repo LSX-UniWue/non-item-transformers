@@ -33,13 +33,13 @@ class NonItemSequenceElementsRepresentationComponent(SequenceElementsRepresentat
         self.item_id_type_settings = item_id_type_settings
         self.no_id_for_plp = no_id_for_plp
 
-
-        self.item_id_type_extra_embbedding = self.item_id_type_settings.get("extra_embbedding", None)
-        if self.item_id_type_extra_embbedding:
-            self.item_id_type_embedding = _build_embedding_type(
-                embedding_type='content_embedding',
-                vocab_size=2,
-                hidden_size=transformer_hidden_size)
+        if self.item_id_type_settings is not None:
+            self.item_id_type_extra_embbedding = self.item_id_type_settings.get("extra_embbedding", None)
+            if self.item_id_type_extra_embbedding:
+                self.item_id_type_embedding = _build_embedding_type(
+                    embedding_type='content_embedding',
+                    vocab_size=2,
+                    hidden_size=transformer_hidden_size)
 
         prefusion_attribute_embeddings = {}
         if prefusion_attributes is not None:
@@ -92,7 +92,7 @@ class NonItemSequenceElementsRepresentationComponent(SequenceElementsRepresentat
             embedding = torch.where(type_info_tensor,embedding, no_id_embedding)
 
         #Add the item /non-item embedding
-        if self.item_id_type_extra_embbedding:
+        if self.item_id_type_settings is not None and self.item_id_type_extra_embbedding:
             additional_metadata = sequence.get_attribute(self.item_id_type_settings["name"])
             embedded_data = self.item_id_type_embedding(additional_metadata)
             merge_function = _merge_function(self.item_id_type_settings["merge"])
