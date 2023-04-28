@@ -57,7 +57,8 @@ class ContentSASRecModel(SequenceRecommenderModel):
         self.add_keys_to_metadata(item_attributes, self.item_metadata_keys)
         self.add_keys_to_metadata(sequence_attributes, self.item_metadata_keys)
         self.add_keys_to_metadata(sequence_attributes, self.sequence_metadata_keys)
-        self.item_metadata_keys.append(item_id_type_settings["name"])
+        if item_id_type_settings is not None:
+            self.item_metadata_keys.append(item_id_type_settings["name"])
 
         prefusion_attributes = get_attributes(item_attributes, prefusion)
         postfusion_attributes = get_attributes(item_attributes, postfusion)
