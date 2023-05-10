@@ -1,0 +1,88 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: eval-100-base-token-
+  labels:
+    app: ds4rec
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      containers:
+      - args:
+        - python
+        - -m
+        - plp_paper.plp_main
+        - evaluate
+        - --output-file
+        - /home/ls6/fischer/plp-paper/experiments/ml-20m/sasrec/100-base-token/eval.csv
+        - --config-file
+        - /home/ls6/fischer/diss-recommender-configs/plp_paper/ml-20m/sasrec/100-base-token/config.yaml
+        - --checkpoint-file
+        - /home/ls6/fischer/plp-paper/experiments/ml-20m/sasrec/100-base-token/checkpoints/best.ckpt
+        - --gpu
+        - '1'
+        - --overwrite
+        env:
+        - name: HOME
+          value: /home/ls6/fischer
+        - name: PROJECT_DIR
+          value: /home/ls6/fischer/recommender/category_loss_non_item/
+        - name: REPO_USER
+          value: elf38vg
+        - name: REPO_BRANCH
+          value: category_loss_non_item
+        - name: GIT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: token
+              name: gitlab-token
+        - name: PREPARE_SCRIPT
+          value: /home/ls6/fischer/diss-recommender-configs/plp_paper/cache_ml-20m.sh
+        image: lsx-harbor.informatik.uni-wuerzburg.de/fischer-recommender/asme-env:latest
+        imagePullPolicy: Always
+        name: ds4rec
+        resources:
+          limits: &id001
+            cpu: '16'
+            memory: 32Gi
+            nvidia.com/gpu: 1
+          requests: *id001
+        volumeMounts:
+        - mountPath: /home/ls6/fischer
+          name: home
+        - mountPath: /scratch
+          name: scratch
+        - mountPath: /dev/shm
+          name: dshm
+        - mountPath: /ssd
+          name: cache
+      imagePullSecrets:
+      - name: lsx-harbor-fischer-recommender
+      priorityClassName: research-med
+      restartPolicy: Never
+      volumes:
+      - cephfs:
+          monitors:
+          - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
+          path: /home/ls6/fischer
+          secretRef:
+            name: ceph-secret
+          user: fischer
+        name: home
+      - cephfs:
+          monitors:
+          - 132.187.14.16,132.187.14.17,132.187.14.19,132.187.14.20
+          path: /scratch
+          secretRef:
+            name: ceph-secret
+          user: fischer
+        name: scratch
+      - emptyDir:
+          medium: Memory
+          sizeLimit: 4Gi
+        name: dshm
+      - emptyDir:
+          medium: Memory
+          sizeLimit: 32Gi
+        name: cache

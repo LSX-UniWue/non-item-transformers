@@ -1,0 +1,120 @@
+datamodule:
+  data_sources:
+    batch_size: 32
+    file_prefix: coveo
+    mask_probability: 0.2
+    mask_seed: 42
+    max_seq_length: 30
+    num_workers: 16
+    split: ratio_split
+    test:
+      processors:
+        - type: "target_extractor"
+        - type: "last_item_mask"
+      type: session
+    train:
+      processors:
+        - type: "cloze"
+          mask_probability: 0.2
+          only_last_item_mask_prob: 0.1
+          exclude_features: ["item_id_type"]
+      type: session
+    validation:
+      processors:
+        - type: "target_extractor"
+        - type: "last_item_mask"
+      type: session
+  dataset: coveo
+  preprocessing:
+    input_directory: /ssd/dataset/ #/home/ls6/fischer/datasets/plp-paper/source-coveo/
+    output_directory: /ssd/dataset/ #/home/ls6/fischer/datasets/plp-paper/coveo-nd/ #
+    filter_immediate_duplicates: true
+    perform_convert_to_csv: False
+evaluation:
+  evaluators:
+  - type: sid
+    use_session_id: false
+  - type: recommendation
+  - type: metrics
+  - type: input
+  - type: scores
+  - type: target
+  number_predictions: 5
+  writer:
+    type: csv-single-line
+features:
+  category_hash:
+    column_name: category_hash
+    delimiter: '/'
+    element_type: str
+    max_sequence_step_length: 3
+    sequence_length: 30
+    tokenizer:
+      special_tokens:
+        mask_token: <MASK>
+        pad_token: <PAD>
+        unk_token: <UNK>
+      vocabulary:
+        file: coveo.vocabulary.category_hash-split.txt
+    type: list
+  item:
+    column_name: product_sku_hash
+    sequence_length: 30
+    tokenizer:
+      special_tokens:
+        mask_token: <MASK>
+        pad_token: <PAD>
+        unk_token: <UNK>
+      vocabulary: null
+module:
+  metrics:
+    full:
+      metrics:
+        mrr:
+        - 1
+        - 5
+        - 10
+        ndcg:
+        - 1
+        - 5
+        - 10
+        recall:
+        - 1
+        - 5
+        - 10
+  model:
+    max_seq_length: 30
+    num_transformer_heads: 2
+    num_transformer_layers: 2
+    transformer_dropout: 0.2
+    transformer_hidden_size: 64
+  type: content-bert4rec
+templates:
+  unified_output:
+    path: /home/ls6/fischer/plp-paper/experiments/coveo-nd/bert4rec/100-base-token
+trainer:
+  check_val_every_n_epoch: 5
+  checkpoint:
+    mode: max
+    monitor: recall@10
+    save_top_k: 5
+  deterministic: true
+  early_stopping:
+    min_delta: 0.001
+    mode: max
+    monitor: recall@10
+    patience: 100
+  gpus: 1
+  loggers:
+    #tensorboard:
+     # name: coveo-bert4rec-base-token
+      #save_dir: /home/ls6/fischer/plp-paper/experiments/coveo-nd/bert4rec/plp-base-url
+    aim:
+      experiment: coveo-nd-bert4rec-100-base-token
+      repo: /home/ls6/fischer/model_logging/aim/
+    #csv:
+    #  save_dir: /home/ls6/fischer/plp-paper/experiments/coveo/sasrec/100-base-token
+    #mlflow:
+    #  experiment_name: coveo-sasrec-100-base-token
+    #  tracking_uri: file:/home/ls6/fischer/model_logging/mlflow/
+  max_epochs: 50

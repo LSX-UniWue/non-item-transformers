@@ -1,0 +1,169 @@
+datamodule:
+  data_sources:
+    batch_size: 32
+    file_prefix: coveo-extended
+    mask_probability: 0.2
+    mask_seed: 42
+    max_seq_length: 30
+    num_workers: 16
+    split: ratio_split
+    test:
+      processors:
+          - type: product_sequence_end
+            item_type_id: item_id_type
+          - type: target_extractor
+      type: session
+    train:
+      processors:
+          - type: target_extractor
+            parallel: true
+      type: session
+    validation:
+      processors:
+          - type: product_sequence_end
+            item_type_id: item_id_type
+          - type: target_extractor
+      type: session
+  dataset: coveo-extended
+  preprocessing:
+    perform_convert_to_csv: False
+    include_pageviews: False
+    search_sessions_only: True
+    include_search: True
+    filter_immediate_duplicates: True
+    input_directory: /ssd/dataset/ #/home/ls6/fischer/datasets/plp-paper/source-coveo/ #
+    output_directory: /ssd/dataset/ #/home/ls6/fischer/datasets/plp-paper/coveo-slnd-search/ #
+evaluation:
+  evaluators:
+  - type: sid
+    use_session_id: false
+  - type: recommendation
+  - type: metrics
+  - type: input
+  - type: scores
+  - type: target
+  number_predictions: 5
+  writer:
+    type: csv-single-line
+features:
+  category_hash:
+    column_name: category_hash
+    delimiter: '/'
+    element_type: str
+    max_sequence_step_length: 3
+    sequence_length: 30
+    tokenizer:
+      special_tokens:
+        mask_token: <MASK>
+        pad_token: <PAD>
+        unk_token: <UNK>
+      vocabulary:
+        file: coveo-extended.vocabulary.category_hash-split.txt
+    type: list
+  item:
+    column_name: product_sku_hash
+    sequence_length: 30
+    tokenizer:
+      special_tokens:
+        mask_token: <MASK>
+        pad_token: <PAD>
+        unk_token: <UNK>
+      vocabulary: null
+  item_id_type:
+    column_name: item_id_type
+    run_tokenization: false
+    sequence_length: 30
+    special_values:
+      mask_value: '0'
+      pad_value: '0'
+      unk_value: '0'
+    type: int
+  query_vector:
+    column_name: "query_vector"
+    sequence_length: 30
+    max_sequence_step_length: 45
+    run_tokenization: false
+    type: "pd.array"
+    element_type: "float"
+    delimiter: ","
+    special_values:
+      type: "pd.array"
+      element_type: "float"
+      pad_value: "[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]"
+      mask_value: "[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]"
+      unk_value: "[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]"
+module:
+  metrics:
+    fixed:
+      item_file: /home/ls6/fischer/datasets/plp-paper/coveo-slnd/coveo.vocabulary.product_sku_hash.txt
+      metrics:
+        mrr:
+        - 1
+        - 5
+        - 10
+        ndcg:
+        - 1
+        - 5
+        - 10
+        recall:
+        - 1
+        - 5
+        - 10
+    full:
+      metrics:
+        mrr:
+        - 1
+        - 5
+        - 10
+        ndcg:
+        - 1
+        - 5
+        - 10
+        recall:
+        - 1
+        - 5
+        - 10
+  model:
+    max_seq_length: 30
+    num_transformer_heads: 2
+    num_transformer_layers: 2
+    transformer_dropout: 0.2
+    transformer_hidden_size: 64
+    item_id_type_settings:
+      name: "item_id_type"
+      extra_embbedding: false
+    item_attributes:
+      prefusion:
+        query_vector:
+          embedding: "vector"
+          embedding_type: 'linear_upscale'
+          merge_function: "add"
+          plp_only: True
+  type: content-sasrec-full
+templates:
+  unified_output:
+    path: /home/ls6/fischer/plp-paper/experiments/coveo-slnd-search/sasrec/100-plp-base-query
+trainer:
+  #accumulate_grad_batches: 2
+  check_val_every_n_epoch: 5
+  checkpoint:
+    mode: max
+    monitor: recall@10
+    save_top_k: 3
+  #deterministic: true
+  early_stopping:
+    min_delta: 0.001
+    mode: max
+    monitor: recall@10
+    patience: 100
+  gpus: 1
+  loggers:
+    aim:
+      experiment: coveo-slnd-search-sasrec-100-plp-base-query
+      repo: /home/ls6/fischer/model_logging/aim/
+    #csv:
+     # save_dir: /home/ls6/fischer/plp-paper/experiments/coveo-extended/sasrec/plp-base-token
+    #tensorboard:
+    #  name: coveo-extended-sasrec-plp-base-token
+    #  save_dir: /home/ls6/fischer/plp-paper/experiments/coveo-extended/sasrec/plp-base-token
+  max_epochs: 100

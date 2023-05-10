@@ -2,6 +2,22 @@
 
 # Getting Started
 
+Configuration files for "Enhancing Sequential Next-Item Prediction through Modelling Non-Item Pages in Transformer-Based
+Recommender Systems" can be found under non-items-paper-configs.
+
+To train, install the dependencies as described below. You can train a model with ```train config_file``` and evaluate
+with ```evaluate --config-file config_file --checkpoint-file checkpoint```. The ML-20m dataset will be downloaded automatically,
+the Coveo dataset has to be downloaded manually. To (re-)generate the coveo files in the first run, set    ```perform_convert_to_csv: true``` in the config. 
+
+
+## Install Locally
+* Install [Poetry](https://python-poetry.org)
+* Clone the repository
+* Build the development virtual environment: `poetry install`
+* Enter the virtual environment: `poetry shell`
+
+
+
 ## Development
 The development image automatically pulls and updates the specified branch and uses poetry to execute asme.
 ### Build Container
@@ -62,8 +78,3 @@ Even though the password is supplied via an environment variable that can be pop
 kubectl -n <namespace> create secret generic gitlab-token --from-literal=token=xxx
 ```
 
-## Install Locally
-* Install [Poetry](https://python-poetry.org)
-* Clone the repository
-* Build the development virtual environment: `poetry install`
-* Enter the virtual environment: `poetry shell`
