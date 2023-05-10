@@ -2,7 +2,7 @@
 name = "asme"
 version = "1.0.0"
 description = "A framework for training and evaluating item prediction recommender models."
-authors = ["Alexander Dallmann <dallman@informatik.uni-wuerzburg.de>"]
+authors = ["*"]
 license = "LGPLv3"
 
 packages = [
