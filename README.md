@@ -5,7 +5,11 @@
 The configuration files for "Enhancing Sequential Next-Item Prediction through Modelling Non-Item Pages in Transformer-Based
 Recommender Systems" can be found under non-items-paper-configs for the public datasets.
 
-To train, install the dependencies as described below. You can train a model with 
+To train, install the dependencies as described below. Add the src folder to your pythonpath and run the main, e.g.
+```shell 
+poetry run python -m plp_paper.plp_main train config_file
+```
+You can train a model with 
 ```shell 
 train config_file
 ```

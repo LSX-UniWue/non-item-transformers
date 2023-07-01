@@ -30,4 +30,4 @@ fi
 # now run the configuration using poetry
 
 export PYTHONPATH=${PROJECT_DIR}/recommender
-/bin/bash -c "cd ${PROJECT_DIR}/recommender && poetry run python -m asme.core.main $*"
+/bin/bash -c "cd ${PROJECT_DIR}/recommender && poetry run python -m plp_paper.plp_main $*"
