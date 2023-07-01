@@ -2,13 +2,25 @@
 
 # Getting Started
 
-Configuration files for "Enhancing Sequential Next-Item Prediction through Modelling Non-Item Pages in Transformer-Based
-Recommender Systems" can be found under non-items-paper-configs.
+The configuration files for "Enhancing Sequential Next-Item Prediction through Modelling Non-Item Pages in Transformer-Based
+Recommender Systems" can be found under non-items-paper-configs for the public datasets.
 
-To train, install the dependencies as described below. You can train a model with ```train config_file``` and evaluate
-with ```evaluate --config-file config_file --checkpoint-file checkpoint```. The ML-20m dataset will be downloaded automatically,
-the Coveo dataset has to be downloaded manually. To (re-)generate the coveo files in the first run, set    ```perform_convert_to_csv: true``` in the config. 
+To train, install the dependencies as described below. You can train a model with 
+```shell 
+train config_file
+```
+and evaluate with 
+```shell
+evaluate --config-file config_file --checkpoint-file checkpoint
+```
+The ML-20m dataset will be downloaded automatically, the Coveo dataset (https://github.com/coveooss/SIGIR-ecom-data-challenge) has to be downloaded manually. To (re-)generate the coveo files for the first run, set  ```perform_convert_to_csv: true``` in the config. 
 
+## Experiments
+The config files for "ml-20m" are split into the folders "ml-20m" for the models using items only, and "ml-20m-extended" for models using artificial non-iten pages.
+For the Coveo-Pageview dataset you can find the configs for items-only in "coveo-nd" and with non-item pages in "coveo-nd-pageview".
+![](results_ml_cv_p.png)
+For the Coveo-Search dataset you can find the configs for items-only in "coveo-slnd" and with non-item pages in "coveo-slnd-search".
+![](results_coveo_s.png)
 
 ## Install Locally
 * Install [Poetry](https://python-poetry.org)
@@ -16,19 +28,9 @@ the Coveo dataset has to be downloaded manually. To (re-)generate the coveo file
 * Build the development virtual environment: `poetry install`
 * Enter the virtual environment: `poetry shell`
 
+## Docker
+The docker file in /k8/dev can be used to create an image which automatically pulls and updates the specified branch from gitlab and uses poetry to execute asme.
 
-
-## Development
-The development image automatically pulls and updates the specified branch and uses poetry to execute asme.
-### Build Container
-```
-podman build -f Dockerfile -t asme-dev:latest --target asme-dev
-```
-### Train a model
-Here is an example how you can use the dev image to train a model on the latest version from the repository
-```shell
-podman run -e GIT_TOKEN=<token> -e REPO_USER=<user> -e REPO_BRANCH=master PROJECT_DIR=/project -v /path/to/project:/project:Z asme-dev:latest train /project/sample.jsonnet
-```
 ### Environment Variables
 * PREPARE_SCRIPT:
   If set the script will be executed before the framework command is run. This is useful for copying data to a faster drive
@@ -41,27 +43,6 @@ podman run -e GIT_TOKEN=<token> -e REPO_USER=<user> -e REPO_BRANCH=master PROJEC
 * PROJECT_DIR:
   A writeable path within the container, that will be used to store the repository
 
-## Release
-
-### Build
-```shell
-podman build -f Dockerfile --target asme-release -t asme:latest
-```
-### Run
-```shell
-# with GPU support on linux
-podman run -it -v /path/to/project:/project:Z --security-opt=no-new-privileges --cap-drop=ALL --security-opt label=type:nvidia_container_t asme:latest asme train /project/config.jsonnet
-
-# without GPU support on linux
-podman run -it -v /path/to/project:/project:Z asme:latest asme train /project/config.jsonnet
-```
-### Environment Variables
-* PREPARE_SCRIPT: if set the script will be executed before the framework command is run. This is useful for copying data to a faster drive.
-
-### Kubernetes
-Both containers can be used as in a kubernetes cluster. Please follow the instructions below to correctly setup your namespace for the `Development` container.
-
-#### Development
 The development container does not come with a preinstalled version of the framework. Instead, the entrypoint will clone the specified branch and setup an environment using poetry. Your command will be executed inside this environment.
 
 ##### Generate Gitlab access token
